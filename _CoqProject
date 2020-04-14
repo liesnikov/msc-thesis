@@ -1,0 +1,5 @@
+-R ../iris/theories iris
+-R . Local
+
+ltac2_tactics.v
+test.v
