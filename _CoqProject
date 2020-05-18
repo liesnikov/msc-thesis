@@ -2,4 +2,5 @@
 -R . Local
 
 ltac2_tactics.v
+tauto_solver.v
 test.v
