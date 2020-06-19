@@ -6,7 +6,7 @@ From iris.proofmode Require Import base spec_patterns
      sel_patterns coq_tactics reduction.
 
 From Ltac2 Require Import Ltac2 List.
-Set Ltac2 Backtrace.
+(*Set Ltac2 Backtrace.*)
 
 From iris.proofmode Require Import classes notation.
 
@@ -29,7 +29,7 @@ Proof.
   tauto_solver_go [].
 Qed.
 
-Lemma test_one (P : PROP) (Q : PROP): (<affine> P ∗ Q) ⊢ (<pers> Q) → Q ∗ P.
+Lemma test_one (P : PROP) (Q : PROP): (<affine> P ∗ Q) ⊢ (Q) → Q ∗ P.
 Proof.
   i_start_proof ().
   i_intro_constr '(INamed "pq").

@@ -24,10 +24,10 @@ Module Misc.
     end.
 End Misc.
 
-Module Iriseption.
+Module Iriception.
   Import Misc.
   Ltac2 Type exn ::= [ Iriception(message) ].
-  Ltac2 iriception t := Iriception (Message.of_string t).
+  Ltac2 iriception t := Control.zero (Iriception (Message.of_string t)).
 
   Ltac2 failwith t s :=
     orelse t (fun e => Control.zero
@@ -35,7 +35,7 @@ Module Iriseption.
                                   (cc (os s)
                                       (os ": "))
                                   (oe e)))).
-End Iriseption.
+End Iriception.
 
 
 Module Array.
@@ -71,7 +71,7 @@ Module Evars.
     ().
 
 
-  Ltac2 instantiate (n : ident) term :=
+  Ltac2 instantiate0 (n : ident) term :=
     unify0 term (Unsafe.make (Unsafe.Var n)).
 
   Ltac2 is_evar (term : constr) :=
@@ -100,7 +100,7 @@ Ltac2 Notation "evar" "(" n(ident) ":" type(constr) ")" :=
   Evars.evar n type.
 
 Ltac2 Notation "instantiate" "(" n(ident) ":=" t(constr) ")" :=
-  Evars.instantiate n t.
+  Evars.instantiate0 n t.
 
 Ltac2 Notation "unify" t1(constr) t2(constr) :=
   Evars.unify0 t1 t2.

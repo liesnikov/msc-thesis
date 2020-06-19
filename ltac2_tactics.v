@@ -8,7 +8,7 @@ From Ltac2 Require Import Ltac2.
 From Ltac2 Require List.
 
 From Local Require utils.
-Import utils.Iriseption utils.Misc.
+Import utils.Iriception utils.Misc.
 
 Set Ltac2 Backtrace.
 
@@ -62,20 +62,26 @@ Ltac2 i_intro_constr (x:constr) :=
     (fun () => refine '(@tac_impl_intro _ _ $x _ _ _ _ _ _ _ _) >
      [() | () | ()
      | i_solve_tc ()
-     | pm_reduce (); i_solve_tc ()
-       (* lazymatch goal with |- Persistent ?P => P end in fail 1 "iIntro: introducing non-persistent" H ":" P "into non-empty spatial context" *)
+     | pm_reduce ();
+       orelse i_solve_tc
+              (fun e => lazy_match! goal with
+                     | [|- Persistent ?p] => iriception "iIntro: introducing non-persistent into non-empty spatial context"
+                     | [|- _ ] => Control.zero e
+                     end)
      | i_solve_tc ()
      | pm_reduce ();
        lazy_match! goal with
        | [|- False] => Control.zero (Iriception (os "i_intro " ++ oc x ++ os " not fresh"))
        | [|- _] => ()
-       end
-       (* lazymatch goal with | |- False => let H := pretty_ident H in fail 1 "iIntro:" H "not fresh" | _ => idtac (* subgoal *)*)])
+       end])
     (fun () => refine '(@tac_wand_intro _ _ $x _ _ _ _ _) >
      [ () | ()
      | i_solve_tc ()
-     | pm_reduce ()
-(* lazymatch goal with | |- False => let H := pretty_ident H in fail 1 "iIntro:" H "not fresh" | _ => idtac (* subgoal *)*)])).
+     | pm_reduce ();
+       lazy_match! goal with
+       | [|- False] => Control.zero (Iriception (os "i_intro " ++ oc x ++ os " not fresh"))
+       | [|- _] => ()
+       end])).
 
 
 Ltac2 i_fresh_fun () :=
@@ -145,7 +151,7 @@ Ltac2 i_split_r_pure (hs : constr) :=
   | i_solve_tc ()
   | pm_reduce ();
     lazy_match! goal with
-    | [ |- False] => Control.zero(iriception "hypotheses not found")
+    | [ |- False] => iriception "hypotheses not found"
     | [ |- _] => split > [() | ()]
     end
   ].
@@ -186,7 +192,7 @@ Ltac2 i_exact h :=
 Ltac2 i_stop_proof () :=
   lazy_match! goal with
   | [|- @envs_entails _ _ _] => refine '(tac_stop _ _ _) > [pm_reduce ()]
-  | [|- _ : _] => Control.zero (iriception "iStopProof: proofmode not started")
+  | [|- _ : _] => iriception "iStopProof: proofmode not started"
   end.
 
 
