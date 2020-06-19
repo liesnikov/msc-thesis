@@ -1,0 +1,9 @@
+-R ../../iris/theories iris
+-R .. Local
+
+named_prop.v
+numbered_prop.v
+split_evars.v
+connection.v
+splitting_tactics.v
+test.v
