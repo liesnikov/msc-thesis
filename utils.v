@@ -39,13 +39,43 @@ End Iriception.
 
 
 Module Array.
-  Ltac2 rec to_list (a : 'a array) :=
-    match (Int.equal (Array.length a) 0) with
-    | true => []
-    | _ => let el := Array.get a 0 in
-          el :: to_list a
+  Ltac2 to_list arr :=
+    let rec go n :=
+        match Int.equal (Array.length arr) n with
+        | true => []
+        | false => let h := Array.get arr n in
+                  let t := go (Int.add 1 n) in
+                  h :: t
+        end in
+    go 0.
+
+  Ltac2 of_list all el :=
+    let rec go (ar : 'a array) (al : 'a list) (n : int) :=
+      match al with
+      | [] => ar
+      | h :: t => let _ := Array.set ar n h in
+                 go ar t (Int.add n 1)
+      end in
+    match all with
+    | [] => Array.make 0 el
+    | h :: t => let arr := Array.make (List.length all) h in
+               go arr all 0
     end.
 
+  Ltac2 append arr brr e :=
+    let al := to_list arr in
+    let bl := to_list brr in
+    of_list (List.append al bl).
+
+  Ltac2 copy_into_starting (arr : 'a array) (brr : 'a array) (s : int) :=
+    let rec go n :=
+      match Int.equal (Array.length arr) n with
+      | true => ()
+      | false => let el := Array.get arr n in
+                let _ := Array.set brr (Int.add s n) in
+                go (Int.add 1 n)
+      end in
+    go 0.
 End Array.
 
 

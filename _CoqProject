@@ -4,4 +4,5 @@
 utils.v
 ltac2_tactics.v
 tauto_solver.v
+imatch.v
 test.v
