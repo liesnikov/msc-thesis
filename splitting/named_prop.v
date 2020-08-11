@@ -79,6 +79,16 @@ Fixpoint env_Forall {A} (f : bool -> A -> bool) (Δ : env A): bool :=
   | Esnoc Γ (b, _) x => if f b x then env_Forall f Γ else false
   end.
 
+
+Fixpoint env_split_go {A}
+  (bs : list bool) (Δ : env A) : option (env A * env A) :=
+  match Δ, bs with
+  | Enil, [] => Some (Enil, Enil)
+  | Esnoc Δ (b,j) x, bh :: bt =>
+    ''(Δ1,Δ2) ← env_split_go bt Δ;
+      mret (Esnoc Δ1 (bh && b, j) x, Esnoc Δ2 (negb bh && b, j) x)
+  | _, _ => None
+  end.
 Section env.
 Context {A : Type}.
 Implicit Types Γ : env A.
@@ -132,6 +142,23 @@ Proof. induction Γ; intros; simplify; eauto. Qed.
 
 Lemma env_delete_wf Γ j : env_wf Γ → env_wf (env_delete j Γ).
 Proof. induction 1; simplify; eauto using env_delete_fresh. Qed.
+
+Lemma env_split_same_ids (Δs Δs1 Δs2 : env A) bs:
+  env_split_go bs Δs = Some (Δs1, Δs2) ->
+  forall i, Δs !! i = Δs1 !! i /\  Δs !! i = Δs2 !! i.
+Proof.
+    move: Δs bs Δs1 Δs2.
+    induction Δs as [|Δs IH] => bs Δs1 Δs2; destruct bs.
+    - rewrite /env_split_go //= => [=]<- <-.
+      split; constructor; done.
+    - done.
+    - by destruct m.
+    - cbn. destruct m, (env_split_go bs Δs) as [|] eqn: ?; [|done].
+      destruct p as [Δ1 Δ2].
+      move => [=] <- <- j //=.
+      destruct (IH _ _ _ Heqo j), (ident_beq _ _); done.
+Qed.
+
 End env.
 
 Record envs (PROP : bi) := Envs {
@@ -220,20 +247,9 @@ Definition envs_delete {PROP} (remove_intuitionistic : bool)
   end.
 
 
-Fixpoint envs_split_go {PROP}
-  (bs : list bool) (Δ : env PROP) : option (env PROP * env PROP) :=
-  match Δ, bs with
-  | Enil, [] => Some (Enil, Enil)
-  | Esnoc Δ (b,j) x, bh :: bt =>
-    ''(Δ1,Δ2) ← envs_split_go bt Δ;
-      mret (Esnoc Δ1 (bh && b, j) x, Esnoc Δ2 (negb bh && b, j) x)
-  | _, _ => None
-  end.
-
-
 Definition envs_split {PROP}
   (bs : list bool) (Δ : envs PROP) : option (envs PROP * envs PROP) :=
-  ''(Δ1,Δ2) ← envs_split_go bs (env_spatial Δ);
+  ''(Δ1,Δ2) ← env_split_go bs (env_spatial Δ);
   mret (Envs (env_intuitionistic Δ) Δ1 (env_counter Δ),
         Envs (env_intuitionistic Δ) Δ2 (env_counter Δ)).
 
@@ -325,42 +341,104 @@ Proof.
   apply pure_intro. destruct Hwf; constructor; simpl; auto using Enil_wf.
 Qed.
 
-Lemma envs_split_go_sound Δi Δs bs Δs1 Δs2 c:
-  envs_split_go bs Δs = Some (Δs1, Δs2) ->
-  of_envs (Envs Δi Δs c) ⊢ of_envs (Envs Δi Δs1 c) ∗ @of_envs PROP (Envs Δi Δs2 c).
+Lemma envs_take_apart Δ:
+  of_envs Δ ⊢ □ (⌜envs_wf Δ⌝ ∧ □ [∧] (env_intuitionistic Δ)) ∗ [∗] (env_spatial Δ).
 Proof.
-  revert Δs1 Δs2.
-  induction bs, Δs as [|Δs b j IH]=> Δs1 Δs2; cbn.
-  - injection 1 => [<-] [<-] //.
-    unfold of_envs, of_envs'. cbn.
-    rewrite <-persistently_and_intuitionistically_sep_l at 1.
-    rewrite (and_elim_l _ (emp)%I)
-            persistently_and_intuitionistically_sep_r.
-    rewrite <-persistently_pure at 1. rewrite -> persistently_sep_dup at 1.
-    rewrite persistently_pure.
-    rewrite ->intuitionistically_sep_dup at 1.
-    rewrite <-sep_assoc, (sep_assoc _ (□ [∧] Δi)%I), (sep_comm _ (□ [∧] Δi)%I), ->(sep_assoc (⌜_⌝)%I _).
-    admit.
-  - destruct b; congruence.
-  - congruence.
-  - admit.
-Admitted.
+  destruct Δ as [Δi Δs c].
+  assert (of_envs (Envs Δi Δs c) ⊢ (⌜envs_wf' Δi Δs⌝ ∧ □ [∧] Δi) ∗ [∗] Δs). {
+    rewrite of_envs_eq //=.
+    apply pure_elim_l=>H1. apply sep_mono; [|done].
+    apply and_intro; by try (apply pure_intro).
+  }
 
+  assert (⌜envs_wf' Δi Δs⌝ ∧ □ [∧] Δi ⊢ □ (⌜envs_wf' Δi Δs⌝ ∧ □ [∧] Δi)). {
+    rewrite /bi_intuitionistically {1}affinely_and_r persistently_and;
+    by rewrite persistently_affinely_elim persistently_idemp persistently_pure.
+  }
+
+  rewrite H {1}H0 /envs_wf //=.
+Qed.
+
+Lemma sep_and_dist_1 (b c a: PROP):
+  ((b ∧ c) ∗ a) ⊢ (b ∗ a) ∧ (c ∗ a).
+Proof.
+  intros.
+  apply and_intro; apply sep_mono; try done.
+  apply and_elim_l. apply and_elim_r.
+Qed.
+
+Lemma env_split_go_wf (Δi Δs Δs1 Δs2 : env PROP) bs c:
+  env_split_go bs Δs = Some (Δs1, Δs2) -> envs_wf (Envs Δi Δs c) ->
+  envs_wf (Envs Δi Δs1 c) /\ envs_wf (Envs Δi Δs2 c).
+Proof.
+  move => H. move : Δs bs Δs1 Δs2 H.
+  induction Δs as [|Δs IH] => bs Δs1 Δs2; destruct bs.
+  - rewrite /env_split_go //= => [=]<- <- [Hi Hs H].
+    split; constructor; done.
+  - done.
+  - by destruct m.
+  - cbn. destruct m, (env_split_go bs Δs) as [|] eqn: Heqo; [|done].
+    destruct p as [Δ1 Δ2].
+    move => [=] <- <- [Hi Hs H].
+    destruct (IH _ _ _ Heqo).
+    + constructor; [done| |]; inversion Hs.
+      assumption. intros i'. destruct (H i'); [by left|right].
+      cbn in *. destruct (ident_beq _ _); done.
+    + split; (constructor; [done|constructor|]);
+        pose (env_split_same_ids _ _ _ _ Heqo) as E;
+        destruct (E i) as [R1 R2]; rewrite -?R1 -?R2 {R1 R2}.
+      1,4: by inversion Hs.
+      1,3: by (destruct H0; destruct H1).
+      1,2: move => j; (destruct (H j) as [J|J]; [by left|]);
+           right; move: J; cbn;
+           destruct (ident_beq _ _), (E j) as [R1 R2];
+           rewrite -?R1 -?R2 //.
+Qed.
+
+Lemma env_split_go_sound Δi Δs bs Δs1 Δs2 c:
+  env_split_go bs Δs = Some (Δs1, Δs2) ->
+  of_envs (Envs Δi Δs c) ⊢ of_envs (Envs Δi Δs1 c) ∗ (@of_envs PROP (Envs Δi Δs2 c)).
+Proof.
+  move => S.
+  assert (of_envs (Envs Δi Δs c) ⊢
+          (⌜envs_wf' Δi Δs⌝ ∧ □ [∧] Δi) ∗
+          (⌜envs_wf' Δi Δs⌝ ∧ □ [∧] Δi) ∗ [∗] Δs) as Renvs. {
+    by rewrite envs_take_apart intuitionistically_sep_dup intuitionistically_elim /envs_wf //= assoc.
+  }
+
+  assert ([∗] Δs ⊢ [∗] Δs1 ∗ [∗] Δs2) as M. {
+    move: Δs bs Δs1 Δs2 S {Renvs}.
+    induction Δs as [|Δs IH m p] => bs Δs1 Δs2.
+    - destruct bs; [|done].
+      move => [=] <- <-. by rewrite sep_emp.
+    - destruct bs, m; [done|]. simpl.
+      destruct (env_split_go _ _) as [|] eqn: ?; [|done].
+      destruct p0 as [Δ1 Δ2]. move => [=]<- <-.
+      destruct b0, b; simpl; rewrite IH //.
+      + rewrite assoc //.
+      + rewrite (comm _ ([∗] _)%I ([∗] _)%I) assoc comm //.
+  }
+
+  rewrite Renvs M {Renvs M}.
+  rewrite 2!assoc -(assoc _ _ _ ([∗] Δs1)%I)
+          (comm _ _ ([∗] Δs1)%I) assoc -assoc.
+  rewrite 2! (sep_and_dist_1 _ _ ([∗] _)%I ).
+  rewrite -absorbingly_pure 2! sep_elim_l absorbingly_pure.
+  rewrite 2! of_envs_eq 2! /envs_wf //=.
+  rewrite sep_mono; [done| |];
+  apply pure_elim_l=>WF;
+  destruct (env_split_go_wf _ _ _ _ _ c S WF);
+  (apply and_intro; [by apply pure_intro | by apply sep_mono]).
+Qed.
 
 Lemma envs_split_sound Δ bs Δ1 Δ2 :
   envs_split bs Δ = Some (Δ1,Δ2) → of_envs Δ ⊢ of_envs Δ1 ∗ of_envs Δ2.
 Proof.
   rewrite /envs_split=> Hyp.
-  (* rewrite -(idemp bi_and (of_envs Δ)).
-  rewrite {2}envs_clear_spatial_sound.
-  rewrite (env_spatial_is_nil_intuitionistically (envs_clear_spatial _)) //.
-  rewrite -persistently_and_intuitionistically_sep_l.
-  rewrite (and_elim_l (<pers> _)%I)
-          persistently_and_intuitionistically_sep_r intuitionistically_elim. *)
   destruct Δ as [Δi Δs c]. unfold envs_clear_spatial. cbn in *.
-  destruct (envs_split_go _ _) as [[Δ1' Δ2']|] eqn:HΔ; [|done]. cbn in *.
+  destruct (env_split_go _ _) as [[Δ1' Δ2']|] eqn:HΔ; [|done]. cbn in *.
   injection Hyp => Hyp1 Hyp2. rewrite -Hyp1 -Hyp2.
-  apply (envs_split_go_sound _ _ bs). done.
+  apply (env_split_go_sound _ _ bs). done.
 Qed.
 End envs.
 
