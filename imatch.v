@@ -38,9 +38,6 @@ Ltac2 i_match_term (kpat : kinded_pattern) (term : constr) :=
                             end))
   end.
 
-Ltac2 Type exn ::= [TestThrow (((bool * Pattern.match_kind * Pattern.t) array) *
-                               ((constr * (constr array) * (Pattern.context option)) array))].
-
 (* given a term, goes through patterns and tries to match one against it *)
 Ltac2 rec i_match_pattern
       (pats : (bool * Pattern.match_kind * Pattern.t) array)
@@ -70,8 +67,6 @@ Ltac2 rec i_match_pattern
                     end)
     end
   end.
-
-Ltac2 Eval Array.get.
 
 Ltac2 i_match_ihyps
       (phyps : kinded_patterns)
@@ -191,12 +186,10 @@ Set Ltac2 Backtrace.
 Lemma test_iAssumption_coq_1 P Q : Q ⊢ <affine> P -∗ Q.
 Proof.
   i_start_proof ().
-  i_intro_constr '(INamed "Q").
-  i_intro_constr '(INamed "P").
-  Ltac2 Eval (
-          iMatch! goal with
-        | [h2 : (<affine> ?v)%I, h1: _ |- ?p] => h2
-          end).
-  i_intro ().
+  i_intro_constr '(INamed "q").
+  i_intro_constr '(INamed "p").
+  iMatch! goal with
+  | [h1: Q , h2 : _ |- ?p] => Message.print (oc h1)
+  end.
   i_assumption ().
 Qed.
