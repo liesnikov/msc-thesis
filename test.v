@@ -1,10 +1,24 @@
-From Local Require Import ltac2_tactics tauto_solver.
-
 From iris.proofmode Require Import tactics intro_patterns.
 From iris.proofmode Require Import coq_tactics.
 From iris.proofmode Require Import base spec_patterns
      sel_patterns coq_tactics reduction.
 
+Goal exists a, (a = true \/ a = false) ∧ (a = true).
+  eexists.
+  split.
+  - eauto.
+Abort.
+
+Lemma example_1 {PROP : bi} {A : Type} (P : PROP) (Φ Ψ : A → PROP) :
+  P ∗ (∃ a, Φ a ∨ Ψ a) -∗ ∃ a, (P ∗ Φ a) ∨ (P ∗ Ψ a).
+Proof.
+  iIntros "[HP H]". Show.
+  iDestruct "H" as (x) "[H1|H2]".
+  - Show. iExists x. iLeft. iSplitL "HP"; iAssumption.
+  - Show. iExists x. iRight. iSplitL "HP"; iAssumption.
+Qed.
+
+From Local Require Import ltac2_tactics tauto_solver.
 From Ltac2 Require Import Ltac2 List.
 (*Set Ltac2 Backtrace.*)
 
@@ -29,12 +43,12 @@ Proof.
   tauto_solver_go [].
 Qed.
 
-Lemma test_one (P : PROP) (Q : PROP): (<affine> P ∗ Q) ⊢ (Q) → Q ∗ P.
+Lemma test_one (P : PROP) (Q : PROP): (<affine> P ∗ Q) ⊢ (<pers> Q) → Q ∗ P.
 Proof.
   i_start_proof ().
   i_intro_constr '(INamed "pq").
   i_intro_constr '(INamed "qq").
-  Unset Printing All.
+  Set Printing All.
   i_and_destruct '(INamed "pq") '(INamed "p") '(INamed "q").
   i_split_l '(["q"; "qq"]).
   i_assumption ().
