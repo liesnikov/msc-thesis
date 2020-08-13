@@ -13,7 +13,7 @@ Import utils.Iriception utils.Misc utils.Array utils.Iriception.
 Ltac2 Type kinded_pattern := (Pattern.match_kind * Pattern.t).
 Ltac2 Type kinded_patterns := kinded_pattern list.
 
-Ltac2 Type exn ::= [Intermediate_match_failure].
+Ltac2 Type exn ::= [IMatch_failure].
 
 Ltac2 i_match_term (kpat : kinded_pattern) (term : constr) :=
   let (k, pat) := kpat in
@@ -24,7 +24,7 @@ Ltac2 i_match_term (kpat : kinded_pattern) (term : constr) :=
               (bind, None))
            (fun e =>
               Control.zero (match e with
-                            | Match_failure => Intermediate_match_failure
+                            | Match_failure => IMatch_failure
                             | _ => e
                             end))
   | Pattern.MatchContext =>
@@ -33,7 +33,7 @@ Ltac2 i_match_term (kpat : kinded_pattern) (term : constr) :=
               (bind, Some context))
            (fun e =>
               Control.zero (match e with
-                            | Match_failure => Intermediate_match_failure
+                            | Match_failure => IMatch_failure
                             | _ => e
                             end))
   end.
@@ -61,7 +61,7 @@ Ltac2 rec i_match_pattern
                 false
              )
              (fun e => match e with
-                    | Intermediate_match_failure =>
+                    | IMatch_failure =>
                       (i_match_pattern pats acc identifer term (Int.add 1 n) false)
                     | _ => Control.zero e
                     end)
