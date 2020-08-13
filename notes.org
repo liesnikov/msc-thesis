@@ -1,0 +1,242 @@
+* questions for today <2020-04-16 чт>
+** test which apply gets loaded with just Ltac2                       :DONE:
+no, it's really ssreflect messing with apply
+e.g. this script doesn't have "apply" as a definiton
+#+begin_src coq
+From Ltac2 Require Import Ltac2.
+From Ltac2 Require Option.
+
+Goal (True -> True) -> True.
+Proof.
+  intro H. apply H.
+  exact True.
+Qed.
+#+end_src
+** how does refine in test cases uses patterns?
+~refine~ doesn't accept wildcards with vanilla syntax, but you
+if you put quotation there it works!
+like
+#+begin_src coq
+Goal (False -> True) -> True.
+Proof.
+  intro H.
+  refine '(H _).
+Admitted.
+#+end_src
+** try rewriting pieces of iIntros
+** for some reason typeclass resolution works in a different way?
+** weird bug?
+restart got rid of it?
+
+
+results in
+~Error: Anomaly "Uncaught exception Failure("unknown level 6")."~
+
+#+begin_src coq
+From Ltac2 Require Import Ltac2.
+From Ltac2 Require Option.
+
+Ltac2 i_solve_tc () :=
+  solve [typeclasses_eauto].
+#+end_src
+* problems as of now [2020-04-20 пн]
+** weird typeclass resolution?
+even copy-pasting iSolveTC leads to different behaviours, where
+tactic from ltac2_tactics fails, but one from ltac_tactics works fine
+** no eval in ltac2
+but it is in the sources, so probably possible to patch coq itself to export it?
+or, at the very least, there's ltac1 escaping is working fine with ltac2 exceptions
+
+#+begin_src coq
+From Ltac2 Require Import Ltac2.
+
+Ltac2 Type exn ::= [ Iriception(message) ].
+
+Ltac2 iriception t := Iriception (Message.of_string t).
+
+Ltac2 pp1 () :=
+  Control.plus
+    (fun () => ltac1:(fail "sorry"))
+    (fun e => Control.zero(iriception "sorry indeed")).
+#+end_src
+** what I should focus on in the PoC?
+** name shadowing by ssreflect?
+~apply~ in particular
+not really happening inside Ltac2, thus resolved?
+* still unresolved <2020-04-22 ср>
+** binding of names?
+#+begin_src coq
+Ltac2 i_intro_pat x(intropattern) := ()
+
+Tactic Notation "iIntro" simple_intropattern(x) := ltac2:(i_intro_pat x ()).
+#+end_src
+
+Yeah, that doesn't work
+You're supposed to do something like ~ltac2:(x |- i_intro_pat Ltac1.to_constr x)~
+But I can't make it work with Tactic Notation,
+
+#+begin_src coq
+Tactic Notation "iiIntro#" constr(h) :=
+  (ltac2:(h |- match (Ltac1.to_constr h) with
+              | Some h1 => i_intro_constr h1
+              | None => fail0 ()
+              end) h).
+#+end_src
+This results in an error
+~Syntax error: ')' expected after [tactic:tactic_expr] (in [tactic:tactic_expr]).~
+right after the closing parathesis of ltac2:().
+** weird behaviour of imports
+if I define a ~Tactic Notation "iiStartProof"~ in ltac2_tactics and import it into test, it works
+but if I import ltac2_tactics and then Ltac2, it doesn't
+Ltac2 functions, however, are not shadowed, so I can still use ~i_start_proof ()~ in the latter case.
+* plan for these weeks
+** make error messages ML-style
+
+** port intro-patterns from Ltac IPM
+
+** look into intropatterns in Ltac2
+the type is opaque and defined directly in the parser?
+[[file:~/my-dir/ed/uni/saar/prjcts/coq/coq/user-contrib/Ltac2/g_ltac2.mlg][g_ltac2]]#473
+#+begin_src ocaml
+  intropatterns:
+    [ [ l = LIST0 nonsimple_intropattern -> { CAst.make ~loc l } ] ]
+#+end_src
+** figure out what syntax extentions are
+also defined in g_ltac2.mlg
+https://gitter.im/coq/coq?at=5e65ffc847b424792535c78d
+** to use Notation syntax the following's possible:
+#+begin_src coq
+Notation "'test' a" :=
+  ltac:(ltac2:(a |- let a := Ltac2.Ltac1.to_constr a in ...) a)
+#+end_src
+* monday 18/05 meeting
+** Solver
+have a dumb thing, handles
+** Ltac2 parser
+we have a grammar (OcamlYacc) to describe a grammar (coqpp_parse.mly) to describe a grammar (g_ltac2.mlg) to describe a grammar (the Ltac2 notation grammar) to describe the grammar (the final Ltac2 syntax)
+https://gitter.im/coq/coq?at=5e6600dc8e42396957780ccc
+** Notations precedence doesn't work
+https://github.com/coq/coq/issues/11866
+* IPM error messages issues
+** https://mattermost.mpi-sws.org/iris/pl/f9csc8yi9frhmy55datrtcu47o
+my least favorite error message is "cannot eliminate modality"
+especially when the solution is iApply fupd_wp
+** possible reasons for modality error
+specifically for the modality error, there's so many possible reasons...
+- we might be doing a mask-changing view shift and the WP on the goal is not atomic
+- the view shift could have the wrong mask
+- the goal could lack the right modality
+** https://mattermost.mpi-sws.org/iris/pl/a4ejqrtje78wmcbw17epgbswoh
+The worst possible one for beginners is when you haven't proved that a type T is inhabited and you're trying to destruct <later> exists x : T, ...
+** https://mattermost.mpi-sws.org/iris/pl/46ggiu9aptnjzyppyqap5qpfzy
+Missing typeclasses in general.
+Trying to strip a later from something for which you haven't proven timelessness comes to mind
+** https://mattermost.mpi-sws.org/iris/pl/wn578qm4miybdgxjxdgwugxeie
+#+begin_src coq
+ wp_apply (wp_forBreak_cond
+              (λ b, "Hlocked" ∷ locked γ.(lock_name) ∗
+                    "Hstate" ∷ ∃ σ, "Hfields" ∷ wal_linv_fields σₛ.(wal_st) σ ∗
+                                    "HmemLog_linv" ∷ memLog_linv γ σ.(memLog) ∗
+                                    ⌜b → (length σ.(memLog).(slidingM.log) ≤ Z.to_nat LogSz)%nat⌝
+              )%I
+              with "[] [Hlocked Hfields HmemLog_linv $Hlocked]").
+#+end_src
+Error: Tactic failure: iSpecialize: hypotheses [] not found.
+** it normally would report a list of names; I suspect no names were added to that list, but that error reporting path got triggered anyway
+Minimized example
+#+begin_src coq
+Theorem foo (P1 P2: PROP) :
+  ⊢ (P1 -∗ P2) -∗ P1 -∗ P2.
+Proof.
+  iIntros "Hwand HP".
+  iSpecialize ("Hwand" with "[HP HP]").
+#+end_src
+** here's another message that could be improved
+#+begin_src coq
+Error: Tactic failure: iSpecialize:
+(|==> is_buftxn buftx γt γDisk ∗ ([∗ map] a↦v ∈ kvs_init sz, mapsto a 1 v))%I not an implication/wand.
+#+end_src
+
+the issue was that she was passing too many arguments, with "[Hbtxn] [Hkvs]" instead of with "[Hbtxn Hkvs]"
+
+"too many arguments" would be really helpful in this error (bonus points: report how many arguments the original wand expected and how many were provided; this requires tracking some more state)
+** also this error isn't even as good as the above
+the difference is that it's with "Hwand" instead of with "[Hwand]"
+#+begin_src coq
+Theorem foo (P1 P2: PROP) :
+  ⊢ (P1 -∗ P2) -∗ P1 -∗ P2.
+Proof.
+  iIntros "Hwand HP1".
+  iSpecialize ("HP1" with "Hwand").
+(* Error: Tactic failure: iSpecialize: cannot instantiate P1 with (P1 -∗ P2)%I. *)
+#+end_src
+* Plans
+-----------------
+-----------------| iDestruct H
+H : {?b} exists y, P y |- Q
+
+y: b = true -> Y
+-----------------
+forall p : b = true
+if b then P y else emp 
+-----------------| iDestruct H
+Q
+
+
+y: Maybe Y
+-----------------
+y >>= P y
+-----------------| iDestruct H
+Q
+
+A, B
+-----------------
+(A \/ B) * wp e {{A}}
+
+
+?a
+-----------------
+(?a = true \/ ?a = false) /\ (?a = false)
+
+** Repo with examples for things that we're solving
+** finishing iMatch
+** writing down rules splitting (section 2 of MoSeL)
+  rules: wand, star, forall, exists, disj, conj, later, always
+** implement more tactics
+** writing goals / challenges solved/encountered
+* Meeting of 21/07 results
+** WRITE STUFF UP!
+Meeting next week on the structure of the thesis
+Preliminary structure
+*** General Ltac2 reimplementation
+*** Stuff with constraints
+*** iMatch
+*** Solver on top of all those things
+** Why do we need backtracking in the match
+H1 : (P -∗ Q) -∗ R
+H2 : P -* Q
+----------
+If you want to specialize H1 with H2 -- no chance without backtracking
+** Separators as weird inductives
+#+begin_src coq
+match! goal with
+| [x : Q, Is, h : P | - _] => smth smth
+end.
+#+end_src
+where Is is some inductive with no constructors
+** non-linear matches
+Is Ltac even doing this?
+Ltac2 certainly doesn't
+#+begin_src coq
+match! goal with
+| [x : nat, _:Is, h : [l ↦ x] |- _] => smth smth
+end).
+#+end_src
+** To destruct existentials you don't need to pose a restriction for a solver
+Since you're normalizing the context, it'll be destructed immediately with constraints being just "true"
+In general, two things are possible:
+- either prove that the type is inhabited as a side-condition
+- or play around with the context to include a restriction that the constraint is true
+* Current issues:
+** i_intro of coq assumption after i_start_proof fails.
+** is iMatch as of now linear?

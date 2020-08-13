@@ -1,0 +1,91 @@
+* Introduction/contributions
+** thesis in general -- experiment with Ltac2 and some new things
+** separation logic/tactics
+** motivational example
+solving tautolgies
+different from coq tautologies
+
+approaches:
+- ad-hoc procedure (check what Bedrock, VST (Princeton) has)
+- composable tactics, view it as as PL
+** problem statement
+** high-level idea of the solution
+** contributions
+* Ltac2
+** Semantics of Ltac2
+*** Links to the new tactic engine as per PMP's post
+*** Derivation of the Ltac2 monad with examples
+*** Implementation of few showcased tactics with Ltac2
+** Standard library for Ltac2 and differences from Ltac1
+*** Datatypes
+*** Exceptions
+*** Notations
+*** Scopes
+* Reimplementation of IPM in Ltac2
+tutorial-style
+take an example and work it out in Ltac2
+** Explain what is IPM, judgements, tactics as proof rules for the judgment
+*** Rules for regular IPM
+MoSeL paper only has a handful of them, so maybe it makes sense to put all here for comparison with "splitting" ones later?
+*** Tactics compose
+** How to implement tactic in IPM, how does IPM work
+** Examples Ltac2 features are/can be used
+*** Fix arities from original IPM
+*** Error messages
+- nested exceptions, rethrowing errors, example: iintros uses idestruct
+- there's more to do here -- I haven't touched Typeclass search yet and not sure there's much I can do in general
+** Missing from Ltac2: notations for intropatterns, user-defined scopes?
+** Interop between Ltac1 and Ltac2?
+i.e. iris indent-string has to go through the goal to get the result from one to another
+* Postponed splitting
+** Motivation/examples
+** Rules for environments with constraints
+*** Alternatives for destructing existentials
+**** for introduced variables
+- proving the type is inhabited
+- guarding the introduced variable with a proof that constraint is true
+- conditional Maybe
+**** for propositions
+- conditional empty
+- whole environemnts with proofs of constraints that constraint is equal to true quantified
+*** The need to solve constraints afterwards for modalities with action "clear"
+** Design implemented
+** Possible designs and comparisons, what do we need
+*** Continuation-style environments
+*** Boolean constraints with existential variables
+*** Boolean constraints resolved post-factum with equations posed as goals
+*** Different styles of environemnts?
+** Ltac2 features used
+"Reflection on the use of Ltac2"
+Mention that Ltac2 was complete for our puposes
+* iMatch
+** Motivation/examples
+** Implemented thing
+** Possible semantics and tradeoffs
+*** Bactracking over branches (lazy match)
+*** Backtracking over matches (current behaviour of coq match)
+If there are two hyps: H1: P, H2: Q,
+both
+| [h1: P, h2: _ |- _] => ...
+and
+| [h2: _, h1: P |- _] => ...
+will succeed, which requires matching h2 with P and then backtracking
+** Ltac2 features missing
+patterns in Ltac2
+same handling as with constr?
+unquoting patterns inside patterns, contexts in contexts?
+* Solver
+** put together everything from before
+** what problmes are we handling
+** comparison with existing solvers
+*** pros
+certified
+not complete - heuristic
+higher-order -- example with instantiation
+*** cons
+not complete
+* Related work
+** look at IPM/solving constraints related
+** programmable tactics
+compare with other tactic languages
+Mtac2 gives stronger types to tactics, what can you say about the tactics
