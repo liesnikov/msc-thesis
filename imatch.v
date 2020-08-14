@@ -15,121 +15,83 @@ Ltac2 Type kinded_patterns := kinded_pattern list.
 
 Ltac2 Type exn ::= [IMatch_failure].
 
+Ltac2 rec env_to_list e :=
+  lazy_match! e with
+  | Esnoc ?gg ?j ?pp => (j,pp) :: env_to_list gg
+  | _ => []
+end.
+
+Ltac2 Type iris_id := constr.
+Ltac2 Type iris_prop := constr.
+Ltac2 Type ('a, 'b) sum := [Left ('a) | Right ('b)].
+
 Ltac2 i_match_term (kpat : kinded_pattern) (term : constr) :=
   let (k, pat) := kpat in
   match k with
   | Pattern.MatchPattern =>
-    orelse (fun () =>
-              let bind := Pattern.matches_vect pat term in
-              (bind, None))
-           (fun e =>
-              Control.zero (match e with
-                            | Match_failure => IMatch_failure
-                            | _ => e
-                            end))
+    orelse (fun () => (Pattern.matches_vect pat term, None))
+           (fun e => Control.zero (match e with
+                                | Match_failure => IMatch_failure
+                                | _ => e
+                                end))
   | Pattern.MatchContext =>
-    orelse (fun _ =>
-              let (context, bind) := Pattern.matches_subterm_vect pat term in
-              (bind, Some context))
-           (fun e =>
-              Control.zero (match e with
-                            | Match_failure => IMatch_failure
-                            | _ => e
-                            end))
+    orelse (fun _ => let (context, bind) := Pattern.matches_subterm_vect pat term in
+                  (bind, Some context))
+           (fun e => Control.zero (match e with
+                                | Match_failure => IMatch_failure
+                                | _ => e
+                                end))
   end.
 
-(* given a term, goes through patterns and tries to match one against it *)
-Ltac2 rec i_match_pattern
-      (pats : (bool * Pattern.match_kind * Pattern.t) array)
-      (acc :  (constr * (constr array) * (Pattern.context option)) array)
-      (identifer : constr)
-      (term : constr)
-      (n : int) (all_matched : bool) :=
-  match Int.equal (Array.length pats) n with
-  | true =>
-    all_matched
-  | false =>
-    let (p_matched, k, p) := Array.get pats n in
-    match p_matched with
-    | true =>
-      i_match_pattern pats acc identifer term (Int.add 1 n) all_matched
-    | false =>
-      orelse (fun () =>
-                let (binders, ctx) := i_match_term (k, p) term in
-                let () := Array.set pats n (true, k, p) in
-                let () := Array.set acc n (identifer, binders, ctx) in
-                false
-             )
-             (fun e => match e with
-                    | IMatch_failure =>
-                      (i_match_pattern pats acc identifer term (Int.add 1 n) false)
-                    | _ => Control.zero e
-                    end)
-    end
-  end.
+Ltac2 rec pick_match_rec
+      (acc : (iris_id * iris_prop) list)
+      (env : (iris_id * iris_prop) list)
+      (kpat : kinded_pattern)
+  := match env with
+    | [] => Control.zero IMatch_failure
+    | eh :: et =>
+      let (id, prop) := eh in
+      Control.plus (fun () => let (bs, octx) := i_match_term kpat prop in
+                           (id, bs, octx, List.append (List.rev acc) et))
+                   (fun _ => pick_match_rec (eh :: acc) et kpat)
+    end.
+
+Ltac2 pick_match (env : (iris_id * iris_prop) list) (kpat : kinded_pattern) :=
+  pick_match_rec [] env kpat.
+
+Ltac2 rec i_match_ihyps_list
+      (pats : kinded_patterns)
+      (penv : (iris_id * iris_prop) list)
+      (senv : (iris_id * iris_prop) list)
+  := match pats with
+    | [] => ([], [], [])
+    | p :: pats' =>
+      let (i, b, c, e) :=
+          or (fun () =>
+                let (i, b, c, penv') := pick_match penv p in
+                (i, b, c , Left penv'))
+             (fun () =>
+                let (i, b, c, senv') := pick_match senv p in
+                (i, b, c, Right senv')) in
+      let (it, bt, ct) := match e with
+        | Left penv' => i_match_ihyps_list pats' penv' senv
+        | Right senv' => i_match_ihyps_list pats' penv senv'
+        end in
+      (i:: it, b :: bt, c :: ct)
+   end.
 
 Ltac2 i_match_ihyps
-      (phyps : kinded_patterns)
+      (pats : kinded_patterns)
       (penv : constr)
       (senv : constr)
-  := (* i_match_pattern will toggle 'false' when the pattern is matched *)
-    let pats := of_list (List.map (fun x => let (k,p) := x in (false, k, p)) phyps)
-                       (false, Pattern.MatchPattern, pattern:(_)) in
-
-    (* identifer of the hypothesis, matched vars and context*)
-    let placeholder := ('(1), Array.make 0 '(1), None) in
-
-    (* accumulating binders and contexts from matches *)
-    let acc := Array.make (List.length phyps) placeholder in
-
-    (* go through env and match on propositions *)
-    let rec recurse_env (env : constr) :=
-      lazy_match! env with
-      | Esnoc ?gamma ?id ?prop =>
-        let all_matched := i_match_pattern pats acc id prop 0 true in
-        match all_matched with
-        | true => true
-        | false => recurse_env gamma
-        end
-      | Enil =>
-        let rec check_all n :=
-            match (Int.equal (Array.length pats)) n with
-            | true => true
-            | false =>
-              let (b,_,_) := Array.get pats n in
-              Bool.and b (check_all (Int.add 1 n))
-            end in
-        check_all 0
-      | _ => iriception "The environment isn't of the right shape"
-      end in
-
-    (* actual code *)
-    (* lookup in persistent environment first, then spatial *)
-    let accl :=
-      let p_all_matched := recurse_env penv in
-      match p_all_matched with
-      | true => to_list acc
-      | false =>
-        let s_all_matched := recurse_env senv in
-        match s_all_matched with
-        | true => to_list acc
-        | false => Control.zero Match_failure
-        end
-      end in
-    (* convert acc to the right type *)
-    let (ids, binders, contexts) :=
-        List.fold_right (fun ne ac =>
-                           let (i,b,c) := ne in
-                           let (iac,bac,cac) := ac in
-                           let bl := to_list b in
-                           let cl := Option.map_default (fun x => [x]) [] c in
-                           (i::iac, List.append bl bac, List.append cl cac)
-                        )
-                        ([],[],[]) accl in
+  := let penvl := env_to_list penv in
+    let senvl := env_to_list senv in
+    let (ids, bins, ctxs) := i_match_ihyps_list pats penvl senvl in
+    let bins' := List.flat_map (fun x => to_list x) bins in
+    let ctxs' := List.flat_map (Option.map_default (fun e => [e]) []) ctxs in
     (of_list ids '(1),
-     of_list binders '(1),
-     of_list contexts (Pattern.empty_context())).
-
+     of_list bins' '(1),
+     of_list ctxs' (Pattern.empty_context())).
 
 Ltac2 i_match_igoal conclpat concl :=
   let (knd, pat) := conclpat in
@@ -157,8 +119,8 @@ Ltac2 i_matches_goal phyps pconcl :=
 Ltac2 i_match_goal pats :=
   let rec interp m := match m with
   | [] => Control.zero Match_failure
-  | p :: m =>
-    let next _ := interp m in
+  | p :: mt =>
+    let next _ := interp mt in
     let (pat, f) := p in
     let (phyps, pconcl) := pat in
     let cur _ :=
@@ -166,14 +128,12 @@ Ltac2 i_match_goal pats :=
         f hids hctx subst cctx
     in Control.plus cur next
   end in
-  match Control.case (fun _ => interp pats) with
-  | Err e => Control.zero e
-  | Val ans =>
-    let (x,k) := ans in x
-  end.
+  interp pats.
+
+Ltac2 i_match_one_goal pats := Control.once (fun _ => i_match_goal pats).
 
 Ltac2 Notation "iMatch!" "goal" "with" m(goal_matching) "end" :=
-  i_match_goal m.
+  i_match_one_goal m.
 
 From iris.proofmode Require Import classes notation.
 From Local Require Import ltac2_tactics.
@@ -189,7 +149,10 @@ Proof.
   i_intro_constr '(INamed "q").
   i_intro_constr '(INamed "p").
   iMatch! goal with
-  | [h1: Q , h2 : _ |- ?p] => Message.print (oc h1)
+  | [h1 : (<affine> _)%I, h2 : _ |- ?p] => Message.print (oc h1)
+  end.
+  iMatch! goal with
+  | [h1 : _, h2 : (<affine> _)%I |- ?p] => Message.print (oc h1)
   end.
   i_assumption ().
 Qed.
