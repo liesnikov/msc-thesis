@@ -29,23 +29,18 @@ Ltac2 i_match_term (kpat : kinded_pattern) (term : constr) :=
   let (k, pat) := kpat in
   match k with
   | Pattern.MatchPattern =>
-    orelse (fun () =>
-              let bind := Pattern.matches_vect pat term in
-              (bind, None))
-           (fun e =>
-              Control.zero (match e with
-                            | Match_failure => IMatch_failure
-                            | _ => e
-                            end))
+    orelse (fun () => (Pattern.matches_vect pat term, None))
+           (fun e => Control.zero (match e with
+                                | Match_failure => IMatch_failure
+                                | _ => e
+                                end))
   | Pattern.MatchContext =>
-    orelse (fun _ =>
-              let (context, bind) := Pattern.matches_subterm_vect pat term in
-              (bind, Some context))
-           (fun e =>
-              Control.zero (match e with
-                            | Match_failure => IMatch_failure
-                            | _ => e
-                            end))
+    orelse (fun _ => let (context, bind) := Pattern.matches_subterm_vect pat term in
+                  (bind, Some context))
+           (fun e => Control.zero (match e with
+                                | Match_failure => IMatch_failure
+                                | _ => e
+                                end))
   end.
 
 Ltac2 rec pick_match_rec
@@ -54,12 +49,11 @@ Ltac2 rec pick_match_rec
       (kpat : kinded_pattern)
   := match env with
     | [] => Control.zero IMatch_failure
-    | eh :: et => let (id, prop) := eh in
-                Control.plus (fun () =>
-                                let (bs, octx) := i_match_term kpat prop in
-                                (id, bs, octx, List.append (List.rev acc) et))
-                             (fun _ =>
-                                pick_match_rec (eh :: acc) et kpat)
+    | eh :: et =>
+      let (id, prop) := eh in
+      Control.plus (fun () => let (bs, octx) := i_match_term kpat prop in
+                           (id, bs, octx, List.append (List.rev acc) et))
+                   (fun _ => pick_match_rec (eh :: acc) et kpat)
     end.
 
 Ltac2 pick_match (env : (iris_id * iris_prop) list) (kpat : kinded_pattern) :=
@@ -90,9 +84,9 @@ Ltac2 i_match_ihyps
       (pats : kinded_patterns)
       (penv : constr)
       (senv : constr)
-  := let persh := env_to_list penv in
-    let spath := env_to_list senv in
-    let (ids, bins, ctxs) := i_match_ihyps_list pats persh spath in
+  := let penvl := env_to_list penv in
+    let senvl := env_to_list senv in
+    let (ids, bins, ctxs) := i_match_ihyps_list pats penvl senvl in
     let bins' := List.flat_map (fun x => to_list x) bins in
     let ctxs' := List.flat_map (Option.map_default (fun e => [e]) []) ctxs in
     (of_list ids '(1),
@@ -125,8 +119,8 @@ Ltac2 i_matches_goal phyps pconcl :=
 Ltac2 i_match_goal pats :=
   let rec interp m := match m with
   | [] => Control.zero Match_failure
-  | p :: m =>
-    let next _ := interp m in
+  | p :: mt =>
+    let next _ := interp mt in
     let (pat, f) := p in
     let (phyps, pconcl) := pat in
     let cur _ :=
