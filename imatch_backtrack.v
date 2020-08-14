@@ -69,16 +69,15 @@ Ltac2 rec i_match_ihyps_list
       (pats : kinded_patterns)
       (penv : (iris_id * iris_prop) list)
       (senv : (iris_id * iris_prop) list)
-      (* : (iris_id list * iris_constr list * context list *)
   := match pats with
-    | [] => Control.zero IMatch_failure
+    | [] => ([], [], [])
     | p :: pats' =>
       let (i, b, c, e) :=
           or (fun () =>
                 let (i, b, c, penv') := pick_match penv p in
                 (i, b, c , Left penv'))
              (fun () =>
-                let (i, b, c, senv') := pick_match penv p in
+                let (i, b, c, senv') := pick_match senv p in
                 (i, b, c, Right senv')) in
       let (it, bt, ct) := match e with
         | Left penv' => i_match_ihyps_list pats' penv' senv
@@ -135,11 +134,31 @@ Ltac2 i_match_goal pats :=
         f hids hctx subst cctx
     in Control.plus cur next
   end in
-  match Control.case (fun _ => interp pats) with
-  | Err e => Control.zero e
-  | Val ans =>
-    let (x,k) := ans in x
-  end.
+  interp pats.
+
+Ltac2 i_match_one_goal pats := Control.once (fun _ => i_match_goal pats).
 
 Ltac2 Notation "iMatch!" "goal" "with" m(goal_matching) "end" :=
-  i_match_goal m.
+  i_match_one_goal m.
+
+From iris.proofmode Require Import classes notation.
+From Local Require Import ltac2_tactics.
+
+Context {PROP : sbi}.
+Implicit Types P Q R : PROP.
+
+Set Ltac2 Backtrace.
+
+Lemma test_iAssumption_coq_1 P Q : Q ⊢ <affine> P -∗ Q.
+Proof.
+  i_start_proof ().
+  i_intro_constr '(INamed "q").
+  i_intro_constr '(INamed "p").
+  iMatch! goal with
+  | [h1 : (<affine> _)%I, h2 : _ |- ?p] => Message.print (oc h1)
+  end.
+  iMatch! goal with
+  | [h1 : _, h2 : (<affine> _)%I |- ?p] => Message.print (oc h1)
+  end.
+  i_assumption ().
+Qed.
