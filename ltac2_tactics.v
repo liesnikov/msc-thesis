@@ -23,6 +23,7 @@ Ltac2 i_solve_tc () := ltac1:(iSolveTC).
 
 Ltac2 pm_reduce () := ltac1:(pm_reduce).
 Ltac2 pm_reflexivity () := ltac1:(pm_reflexivity).
+Ltac2 pm_prettify () := ltac1:(pm_prettify).
 (*Ltac2 pm_reflexivity () := pm_reduce (); exact eq_refl.*)
 
 
@@ -39,25 +40,29 @@ Ltac2 i_start_proof () :=
 
 Tactic Notation "iiStartProof" := ltac2:(i_start_proof ()).
 
-Ltac2 i_intro_pat (x : ident) :=
-  or (fun () => intros x)
+Ltac2 i_intro_pat' (x : Std.intro_pattern) :=
+  or (fun () => failwith (fun () => intros0 false [x]) "couldn't use intro")
      (fun () =>
-      failwith i_start_proof "couldn't start proof in intro_pat";
-      match! goal with
-       | [|- @envs_entails _ _ _] =>
-         refine '(tac_forall_intro _ _ _ _ _)>[ () | () | i_solve_tc () | ()]
-                                                   (* ^match goes here *)
-         (* match! goal with
-           | [|- FromForall ?p _ : _] =>
-             Control.zero (Iriception
-                             ((Message.of_string "iIntro: cannot turn ") ++
-                              (Message.of_constr p) ++
-                              (Message.of_string " into a universal quantifier")))
-           | [|- _] => () *)
-       end).
+      failwith i_start_proof "couldn't start proof in i_intro_pat";
+      lazy_match! goal with
+      | [|- @envs_entails _ _ _] =>
+        refine '(tac_forall_intro _ _ _ _ _) >
+        [ () | ()
+        | orelse i_solve_tc
+                 (fun e => lazy_match! goal with
+                 | [|- FromForall ?p _ : _] =>
+                   Control.zero (Iriception
+                                   ((Message.of_string "iIntro: cannot turn ") ++
+                                    (Message.of_constr p) ++
+                                    (Message.of_string " into a universal quantifier")))
+                  end)
+        | pm_prettify (); intros0 false [x] ]
+      end).
+
+Ltac2 Notation "i_intro_pat" p(intropattern) := i_intro_pat' p.
 
 Ltac2 i_intro_constr (x:constr) :=
-  (failwith (i_start_proof) "couldn't start proof in intro_constr");
+  failwith (i_start_proof) "couldn't start proof in intro_constr";
   (or
     (fun () => refine '(@tac_impl_intro _ _ $x _ _ _ _ _ _ _ _) >
      [() | () | ()
@@ -93,8 +98,7 @@ Ltac2 i_fresh_fun () :=
            convert_concl_no_check (@envs_entails pr1 (@Envs pr2 p s c1) q))
            (Ltac1.of_constr pr1) (Ltac1.of_constr pr2) (Ltac1.of_constr p) (Ltac1.of_constr s) (Ltac1.of_constr c) (Ltac1.of_constr q));
      constr:(IAnon $c)
-  end.
-
+end.
 
 Ltac2 i_intro_n (n : unit -> constr) :=
   lazy_match! goal with
@@ -102,10 +106,10 @@ Ltac2 i_intro_n (n : unit -> constr) :=
   | [|- _ ] =>
     i_start_proof ();
     lazy_match! goal with
-    | [|- @envs_entails _ _ (@bi_wand _ _ _)] =>
-        i_intro_constr (n ())
-    | [|- @envs_entails _ _ (@bi_impl _ _ _)] =>
-        i_intro_constr (n ())
+    | [|- @envs_entails _ _ (_ -∗_)] =>
+      i_intro_constr (n ())
+    | [|- @envs_entails _ _ (_ → _)] =>
+      i_intro_constr (n ())
     end
 end.
 
@@ -145,7 +149,6 @@ Ltac2 i_split_l (hs : constr) := i_split_l_named hs.
 
 Ltac2 i_split_r_pure (hs : constr) :=
   failwith (i_start_proof) ("couldn't start proof in i_split_r");
-  (*let g := i_get_ctx() in*)
   refine '(tac_sep_split _ Right $hs _ _ _ _ _) >
   [ () | ()
   | i_solve_tc ()
