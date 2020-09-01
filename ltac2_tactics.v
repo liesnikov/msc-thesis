@@ -95,7 +95,7 @@ Ltac2 i_fresh_fun () :=
    | [|- @envs_entails ?pr1 (@Envs ?pr2 ?p ?s ?c) ?q] =>
     (ltac1:(pr1 pr2 p s c q |-
            let c1 := (eval vm_compute in (Pos.succ c)) in
-           convert_concl_no_check (@envs_entails pr1 (@Envs pr2 p s c1) q))
+           change_no_check (@envs_entails pr1 (@Envs pr2 p s c1) q))
            (Ltac1.of_constr pr1) (Ltac1.of_constr pr2) (Ltac1.of_constr p) (Ltac1.of_constr s) (Ltac1.of_constr c) (Ltac1.of_constr q));
      constr:(IAnon $c)
 end.

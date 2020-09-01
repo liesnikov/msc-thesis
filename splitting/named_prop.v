@@ -2,11 +2,18 @@ From iris.bi Require Export bi.
 From iris.bi Require Import tactics.
 From iris.proofmode Require Import base.
 From iris.algebra Require Export base.
+Export ident.
+
 Set Default Proof Using "Type".
 Import bi.
 
 Definition mrkd_ident : Type := bool * ident.
-Definition get_ident (m : mrkd_ident) := snd m.
+Definition get_ident (m : mrkd_ident) :=
+  match m with
+  | (_, i) => i
+  end.
+
+Definition negb (b : bool) := if b then false else true.
 
 Inductive env (B : Type) : Type :=
   | Enil : env B
@@ -69,22 +76,23 @@ Fixpoint env_app {A} (Γapp : env A) (Γ : env A) : option (env A) :=
   | Enil => Some Γ
   | Esnoc Γapp i x =>
      Γ' ← env_app Γapp Γ;
-     match Γ' !! (get_ident i) with None => Some (Esnoc Γ' i x) | Some _ => None end
+     match Γ' !! (get_ident i) with
+     | None => Some (Esnoc Γ' i x)
+     | Some _ => None end
   end.
 
 Fixpoint env_delete {A} (i : ident) (Γ : env A) : env A :=
   match Γ with
   | Enil => Enil
-  | Esnoc Γ (true,j) x => if ident_beq i j then Γ else Esnoc (env_delete i Γ) (true, j) x
-  | Esnoc Γ (false,j) x => Esnoc (env_delete i Γ) (false, j) x
+  | Esnoc Γ (b, j) x =>
+    if ident_beq i j then Γ else Esnoc (env_delete i Γ) (b,j) x
   end.
 
 Fixpoint env_replace {A} (i: ident) (Γi: env A) (Γ: env A) : option (env A) :=
   match Γ with
   | Enil => None
   | Esnoc Γ (b,j) x =>
-    if ident_beq i j
-    then (if b then env_app Γi Γ else None)
+    if ident_beq i j then env_app Γi Γ
     else match Γi !! j with
      | None => Γ' ← env_replace i Γi Γ; Some (Esnoc Γ' (b,j) x)
      | Some _ => None
@@ -159,10 +167,22 @@ Lemma env_replace_fresh Γ Γj Γ' i j :
   env_replace j Γj Γ = Some Γ' →
   Γj !! i = None → env_delete j Γ !! i = None → Γ' !! i = None.
 Proof. revert Γ'. induction Γ; intros; simplify; eauto using env_app_fresh. Qed.
+
+
+(* FIXME: prettify this *)
 Lemma env_replace_wf Γ Γi Γ' i :
   env_replace i Γi Γ = Some Γ' → env_wf (env_delete i Γ) → env_wf Γ'.
 Proof.
-  revert Γ'. induction Γ; intros ??; simplify; [|inversion_clear 1 | inversion_clear 1 | ]; eauto using env_app_wf, env_replace_fresh.
+  revert Γ'. induction Γ; intros ??; [done|].
+  revert H. simpl. destruct m as [b' j].
+  destruct (ident_beq) eqn: ibe.
+  - apply env_app_wf.
+  - destruct (Γi !! j) eqn: indxe; [done|].
+    destruct (env_replace) as [Γ''|] eqn: erpe; [|done].
+    cbn. injection 1. move {H} => H. subst.
+    inversion_clear 1.
+    constructor. apply (env_replace_fresh _ _ _ _ _ erpe).
+    done. done. apply IHΓ. done. done.
 Qed.
 
 Lemma env_replace_lookup Γ Γi Γ' i :
@@ -417,6 +437,8 @@ Lemma envs_lookup_sound Δ i p P :
   of_envs Δ ⊢ □?p P ∗ of_envs (envs_delete true i p Δ).
 Proof. apply envs_lookup_sound'. Qed.
 
+
+(* FIXME : finish proof *)
 Lemma envs_lookup_sound_with_constr Δ i p c P:
   envs_lookup_with_constr i Δ = Some (p, c, P) ->
   of_envs Δ ⊢ (if c then □?p P else emp) ∗ of_envs (envs_delete true i p Δ).

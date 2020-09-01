@@ -6,4 +6,5 @@ numbered_prop.v
 split_evars.v
 connection.v
 splitting_tactics.v
+splitting_ltac2_tactics.v
 test.v

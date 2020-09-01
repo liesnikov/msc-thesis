@@ -1,12 +1,8 @@
 From iris.bi Require Import bi telescopes.
 Import bi.
 From iris.proofmode Require Import base classes modality_instances.
-
 From Local Require Import named_prop.
-From Local Require Import connection.
 
-From Ltac2 Require Ltac2.
-From Local Require utils.
 
 Section bi.
 Context {PROP : bi}.
@@ -252,6 +248,27 @@ Proof.
   rewrite envs_split_sound //. by rewrite HQ1 HQ2.
 Qed.
 
+(** * Conjunction/separating conjunction elimination *)
+Lemma tac_and_destruct Δ i p j1 j2 c P P1 P2 Q :
+  envs_lookup_with_constr i Δ = Some (p, c, P) →
+  (if p then IntoAnd true P P1 P2 else IntoSep P P1 P2) →
+  match envs_simple_replace i p (Esnoc (Esnoc Enil (c,j1) P1) (c,j2) P2) Δ with
+  | None => False
+  | Some Δ' => envs_entails Δ' Q
+  end →
+  envs_entails Δ Q.
+Proof.
+  destruct (envs_simple_replace _ _ _ _) as [Δ'|] eqn:Hrep; last done.
+  rewrite envs_entails_eq. intros. rewrite envs_simple_replace_sound_with_constr //=.
+  destruct p.
+  - destruct c; last (by rewrite intuitionistically_True_emp wand_elim_r).
+    by rewrite (into_and _ P) /= right_id -(comm _ P1) wand_elim_r.
+  - destruct c; last (by rewrite wand_elim_r).
+    by rewrite /= (into_sep P) right_id -(comm _ P1) wand_elim_r.
+Qed.
+
+(* This tactic is for destruction of and (not sep) and postpones the choice of
+   the conjunct with new constraint c' *)
 Lemma tac_and_destruct_split Δ i p j1 j2 c c' P P1 P2 Q :
   envs_lookup_with_constr i Δ = Some (p, c, P) →
   (IntoAnd p P P1 P2) →
@@ -267,9 +284,9 @@ Proof.
   { rewrite of_envs_eq. apply and_elim_l. }
   move => wf. move: H HP HQ.
   destruct c.
-  - rewrite envs_lookup_with_constr_envs_lookup_true; [move {wf} => H HP HQ| done].
+  - rewrite envs_lookup_with_constr_envs_lookup_true; [move{wf} =>H HP HQ| done].
     rewrite envs_simple_replace_sound //. destruct p.
-    { rewrite (into_and _ P) HQ. destruct c'; cbn.
+    { rewrite (into_and _ P) HQ. destruct c'; simpl.
       + by rewrite and_elim_l and_True wand_elim_r.
       + by rewrite and_elim_r and_True wand_elim_r. }
     { rewrite (into_and _ P) HQ. destruct c'; cbn.
@@ -341,169 +358,3 @@ Proof.
 Qed.
 
 End bi.
-
-
-Import Ltac2.
-Import utils.Misc utils.Iriception utils.Evars.
-
-From Local Require ltac2_tactics.
-
-Ltac2 pm_reduce () :=
-  cbv [named_prop.env_spatial named_prop.env_intuitionistic named_prop.env_counter
-       named_prop.env_spatial_is_nil named_prop.env_Forall
-       named_prop.envs_app named_prop.envs_delete named_prop.envs_lookup_true
-       named_prop.envs_split
-       named_prop.env_app named_prop.env_delete named_prop.env_lookup_true
-       named_prop.env_lookup  named_prop.get_ident
-       connection.translate_envs connection.translate_env];
-  ltac2_tactics.pm_reduce (); cbn.
-
-Ltac2 pm_reflexivity () :=
-  pm_reduce (); exact eq_refl.
-
-Ltac2 pm_prettify () :=
-  ltac2_tactics.pm_prettify ().
-
-Ltac2 i_start_split_proof () :=
-  let apply_named () := refine '(from_named _ _ _) > [ pm_reduce ()] in
-  lazy_match! goal with
-  | [|- @environments.envs_entails _ _ _] => apply_named ()
-  | [|- @envs_entails _ _ _] => ()
-  | [|- ?p ] => ltac2_tactics.i_start_proof (); apply_named ()
-  end.
-
-
-Ltac2 i_fresh_fun () :=
-  i_start_split_proof ();
-  lazy_match! goal with
-   | [|- @envs_entails ?pr1 (@Envs ?pr2 ?p ?s ?c) ?q] =>
-    (ltac1:(pr1 pr2 p s c q |-
-           let c1 := (eval vm_compute in (Pos.succ c)) in
-           convert_concl_no_check (@envs_entails pr1 (@Envs pr2 p s c1) q))
-           (Ltac1.of_constr pr1) (Ltac1.of_constr pr2) (Ltac1.of_constr p) (Ltac1.of_constr s) (Ltac1.of_constr c) (Ltac1.of_constr q));
-     constr:(IAnon $c)
-end.
-
-
-Ltac2 i_solve_tc := ltac2_tactics.i_solve_tc.
-
-
-Ltac2 i_intro_pat' (x : Std.intro_pattern) :=
-  or (fun () => failwith (fun () => intros0 false [x]) "couldn't use intro")
-     (fun () =>
-      failwith i_start_split_proof "couldn't start proof in i_intro_pat";
-      lazy_match! goal with
-      | [|- @envs_entails _ _ _] =>
-        refine '(tac_forall_intro _ _ _ _ _) >
-        [ () | ()
-        | orelse i_solve_tc
-          (fun e => lazy_match! goal with
-          | [|- FromForall ?p _ : _] =>
-             Control.zero (Iriception
-                             ((Message.of_string "iIntro: cannot turn ") ++
-                              (Message.of_constr p) ++
-                              (Message.of_string " into a universal quantifier")))
-          end)
-        | pm_prettify (); intros0 false [x] ]
-      end).
-
-Ltac2 Notation "i_intro_pat" p(intropattern) := i_intro_pat' p.
-
-Ltac2 i_intro_constr (x: constr) :=
-  failwith (i_start_split_proof) "Couldn't start splitting proof in intro_constr";
-  or
-    (fun () => refine '(@tac_impl_intro _ _ $x _ _ _ _ _ _ _ _) >
-            [() | () | ()
-            | i_solve_tc ()
-            | pm_reduce (); ltac2_tactics.i_solve_tc ()
-            | i_solve_tc ()
-            | pm_reduce ();
-              lazy_match! goal with
-              | [|- False] => Control.zero (Iriception (os "i_intro " ++ oc x ++ os " not fresh"))
-              | [|- _] => ()
-               end])
-    (fun () => refine '(@tac_wand_intro _ _ $x _ _ _ _ _) >
-            [ () | ()
-            | i_solve_tc ()
-            | pm_reduce ()]).
-
-Ltac2 i_intro_intuitionistic_constr (x : constr) :=
-  failwith (i_start_split_proof)
-           "Couldn't start splitting proof in intro_constr";
-    or (fun () =>
-        refine '(tac_impl_intro_intuitionistic _ $x _ _ _ _ _ _ _) >
-        [ () | () | ()
-        | i_solve_tc () | i_solve_tc ()
-        | pm_reduce ()])
-     (fun () =>
-        refine '(tac_wand_intro_intuitionistic _ $x _ _ _ _ _ _ _ _) >
-        [ () | () | ()
-        | i_solve_tc () | i_solve_tc ()
-        | i_solve_tc () | pm_reduce ()]).
-
-
-Ltac2 rec unify_constr_true (e : constr) :=
-  lazy_match! e with
-  | andb ?b1 ?b2 => (unify0 b1 '(true)); unify_constr_true b2
-  | ?e => unify0 e '(true)
-end.
-
-Ltac2 rec unify_constr_false (e : constr) :=
-  lazy_match! e with
-  | andb ?b1 ?b2 => (unify0 b1 '(false))
-  | ?e => unify0 e '(false)
-end.
-
-Ltac2 i_exact_spatial h :=
-  let rec list_from_env e :=
-      match! e with
-      | Esnoc ?gg (?b,?j) ?pp =>
-        match (Constr.equal h j) with
-        | true => unify_constr_true b; list_from_env gg
-        | false => b :: list_from_env gg
-        end
-      | Enil => []
-      end in
-  lazy_match! goal with
-  | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] =>
-    let list_of_constr := list_from_env gs in
-    List.iter (fun b => unify_constr_false b) list_of_constr
-  end;
-  refine '(tac_assumption _ $h _ _ _ _ _ _) >
-  [() | () | pm_reflexivity ()
-  | ltac2_tactics.i_solve_tc ()
-  | pm_reduce (); ltac2_tactics.i_solve_tc ()].
-
-
-Ltac2 rec env_length (x : constr) :=
-  match! x with
-  | Enil => 0
-  | Esnoc ?x _ _ => Int.add 1 (env_length x)
-  end.
-
-Ltac2 i_split () :=
-  let n :=
-    lazy_match! goal with
-    | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] => env_length gs
-    end in
-  let rec gen_list n :=
-    match (Int.equal 0 n) with
-    | true => '(nil)
-    | false =>
-      let v := new_evar_with_cast '(bool) in
-      let tl := gen_list (Int.sub n 1) in
-      '($v :: $tl)
-    end in
-  let bs := gen_list n in
-  match! goal with
-  | [|- @envs_entails _ ?g ?q] =>
-    refine '(tac_sep_split $g $bs _ _ _ _ _) >
-    [ () | ()
-    | ltac2_tactics.i_solve_tc ()
-    | pm_reduce ();
-      lazy_match! goal with
-      | [ |- False] => iriception "couldn't split the context"
-      | [ |- _] => split > [() | ()]
-      end]
-  | [|- _] => iriception "the goal isn't bi entailment"
-  end.
