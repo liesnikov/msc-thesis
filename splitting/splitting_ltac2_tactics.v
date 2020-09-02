@@ -5,7 +5,7 @@ Set Default Proof Using "Type".
 From Local Require Import named_prop.
 From Local Require Import connection.
 
-From Ltac2 Require Import Ltac2.
+From Ltac2 Require Import Ltac2 Std.
 
 From Local Require utils.
 Import utils.Misc utils.Iriception utils.Evars.
@@ -14,14 +14,13 @@ From Local Require ltac2_tactics.
 From Local Require Import splitting_tactics.
 
 
-Require Import Ltac2.Std.
-
 (* getting them from
   Ltac2 Notation "test" s(strategy) := s.
   Ltac2 Eval (test). *)
 
 Ltac2 Type ident_ltac2 := constr.
-Ltac2 red_flags_default := { rBeta := true; rMatch := true; rFix := true; rCofix := true; rZeta := true; rDelta := true; rConst := [] }.
+Ltac2 Notation "parse_strategy" s(strategy) := s.
+Ltac2 Notation red_flags_default := parse_strategy.
 
 Ltac2 new_constraint () := new_evar_with_cast '(bool).
 
@@ -30,48 +29,76 @@ Ltac2 rec unify_with_bool (e : constr) (b : bool) :=
   lazy_match! er with
   | negb ?b0 => unify_with_bool b0 (Bool.neg b)
   | andb ?b1 ?b2 =>
-    unify_with_bool b1 b;
-    match b with
-    | true => unify_with_bool b2 true
+    unify_with_bool b1 b; match b with
+    | true => (unify_with_bool b2 true)
     | false => ()
     end
-  | orb ?b1 ?b2 =>
-    match b with
-    | false => unify_with_bool b1 false
-    | true => unify_with_bool b1 true; unify_with_bool b1 true
+  | orb ?b1 ?b2 => match b with
+    | true => (unify_with_bool b1 true; unify_with_bool b2 true)
+    | false =>  (unify_with_bool b1 false)
     end
   | ?b0 =>
-     let br := match b with true => '(true) | false => '(false) end in
+     let br := match b with true => '(true) | _ => '(false) end in
      unify0 b0 br
   end.
 
 Ltac2 rec unify_constr_true (e : constr) := unify_with_bool e true.
 
+Ltac2 rec unify_constr_false (e : constr) := unify_with_bool e false.
 
-Ltac2 rec unify_constr_false (e : constr) := unify_with_bool
+Ltac2 reduce_const () := (parse_strategy [
+  base.Pos_succ base.ascii_beq base.string_beq
+  base.positive_beq base.ident_beq
 
-Ltac2 pm_reduce () :=
-  cbv [named_prop.get_ident
-       connection.translate_envs connection.translate_env
-       named_prop.env_lookup named_prop.env_lookup_with_constr
-       named_prop.env_lookup_true
-       named_prop.env_delete
-       named_prop.env_app named_prop.env_replace
-       named_prop.env_intuitionistic named_prop.env_spatial
-       named_prop.env_counter named_prop.env_spatial_is_nil
-       named_prop.env_Forall
-       named_prop.envs_lookup named_prop.envs_lookup_with_constr
-       named_prop.envs_lookup_true
-       named_prop.envs_delete
-       named_prop.envs_snoc named_prop.envs_app
-       named_prop.envs_simple_replace named_prop.envs_replace
-       named_prop.envs_split named_prop.envs_clear_spatial
-       named_prop.envs_clear_intuitionistic named_prop.envs_incr_counter
-       named_prop.envs_split];
+  named_prop.get_ident
+  connection.translate_envs connection.translate_env
+  named_prop.env_lookup named_prop.env_lookup_with_constr
+  named_prop.env_lookup_true
+  named_prop.env_delete
+  named_prop.env_app named_prop.env_replace
+  named_prop.env_intuitionistic named_prop.env_spatial
+  named_prop.env_counter named_prop.env_spatial_is_nil
+  named_prop.env_Forall
+  named_prop.envs_lookup named_prop.envs_lookup_with_constr
+  named_prop.envs_lookup_true  named_prop.envs_delete
+  named_prop.envs_snoc named_prop.envs_app
+  named_prop.envs_simple_replace named_prop.envs_replace
+  named_prop.envs_split named_prop.envs_clear_spatial
+  named_prop.envs_clear_intuitionistic named_prop.envs_incr_counter
+  named_prop.envs_split
+
+  pm_app pm_option_bind pm_from_option pm_option_fun].(rConst)).
+
+Ltac2 reduce_force_const () := (parse_strategy [negb andb orb]).(rConst).
+
+Ltac2 pm_reduce_force (force : bool) :=
+  Std.cbv {
+      rBeta  := true;
+      rMatch := true;
+      rFix   := true;
+      rCofix := true;
+      rZeta  := true;
+      rDelta := false; (* rDelta true = delta all but rConst;
+                          rDelta false = delta only on rConst *)
+      rConst := match force with
+                | true => List.append (reduce_const ())
+                                     (reduce_force_const ())
+                | _ => reduce_const ()
+                end
+  } (default_on_concl None);
   ltac2_tactics.pm_reduce ().
 
+Ltac2 pm_reduce () := pm_reduce_force false.
+
+
+(* pm_reflexivity doesn't and shouldn't reduce negb, since we want to use it
+   for lookups with constraints *)
 Ltac2 pm_reflexivity () :=
   pm_reduce (); exact eq_refl.
+
+(* However, we need to compute when doing TC search or looking up present resources *)
+Ltac2 pm_force_reflexivity () :=
+  pm_reduce_force true ; exact eq_refl.
 
 Ltac2 pm_prettify () :=
   ltac2_tactics.pm_prettify ().
@@ -156,7 +183,8 @@ Ltac2 i_exact_spatial h :=
       match! e with
       | Esnoc ?gg (?b,?j) ?pp =>
         match (Constr.equal h j) with
-        | true => unify_constr_true b; list_from_env gg
+        | true => let _ := unify_constr_true b in
+                 list_from_env gg
         | false => b :: list_from_env gg
         end
       | Enil => []
@@ -167,14 +195,17 @@ Ltac2 i_exact_spatial h :=
     List.iter (fun b => unify_constr_false b) list_of_constr
   end;
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
-  [() | () | pm_reflexivity ()
+  [() | () | pm_force_reflexivity ()
   | i_solve_tc ()
-  | pm_reduce (); i_solve_tc ()].
+  | pm_reduce_force true; i_solve_tc ()].
 
 Ltac2 i_and_destruct (x : ident_ltac2)
                      (y : ident_ltac2)
                      (z : ident_ltac2) :=
-  refine '(tac_and_destruct _ $x _ $y $z _ _ _ _ _ _ _ _).
+  refine '(tac_and_destruct _ $x _ $y $z _ _ _ _ _ _ _ _) >
+  [ () | () | () | () | ()
+  | pm_reflexivity ()
+  | pm_reduce_force true; i_solve_tc () | pm_reduce ()].
 
 
 Ltac2 rec env_length (x : constr) :=
@@ -197,7 +228,7 @@ Ltac2 i_split () :=
       '($v :: $tl)
     end in
   let bs := gen_list n in
-  match! goal with
+  lazy_match! goal with
   | [|- @envs_entails _ ?g ?q] =>
     refine '(tac_sep_split $g $bs _ _ _ _ _) >
     [ () | ()

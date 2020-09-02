@@ -76,7 +76,7 @@ Proof.
   admit.
 Admitted.
 
-From Local Require Import splitting_tactics.
+From Local Require Import splitting_tactics splitting_ltac2_tactics.
 From Local Require connection.
 
 
@@ -88,17 +88,26 @@ Lemma test_zero (P : PROP) (Q : PROP): ⊢ Q -∗ Q.
 Proof.
   ltac2_tactics.i_start_proof ().
   refine '(connection.from_named _ _ _).
-  i_intro_constr '(INamed "qq").
+  i_intro_ident '(INamed "qq").
   i_exact_spatial '(INamed "qq").
+Qed.
+From Local Require utils.
+Import utils.Bool.
+Lemma test_one (P Q R : PROP): ⊢ (R ∗ Q) -∗ P -∗ P ∗ (Q ∗ R).
+Proof.
+  i_start_split_proof ().
+  i_intro_ident '(INamed "rq").
+  i_intro_ident '(INamed "pp").
+  i_split ().
+  Focus 2.
+  i_and_destruct '(INamed "rq") '(INamed "r") '(INamed "q").
+  i_split ().
+  i_exact_spatial '(INamed "q").
+  i_exact_spatial '(INamed "r").
+  i_exact_spatial '(INamed "pp").
 Qed.
 
-Lemma test_one (P : PROP) (Q : PROP): ⊢ Q -∗ P -∗ P ∗ Q.
+Lemma test_two (P : PROP): ⊢ □ P → P.
 Proof.
-  ltac2_tactics.i_start_proof ().
-  refine '(connection.from_named _ _ _).
-  i_intro_constr '(INamed "qq").
-  i_intro_constr '(INamed "pp").
-  i_split ().
-  i_exact_spatial '(INamed "pp").
-  i_exact_spatial '(INamed "qq").
-Qed.
+  i_start_split_proof ().
+Admitted.

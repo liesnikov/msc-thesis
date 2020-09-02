@@ -110,9 +110,12 @@ Fixpoint env_split_go {A}
   (bs : list bool) (Δ : env A) : option (env A * env A) :=
   match Δ, bs with
   | Enil, [] => Some (Enil, Enil)
-  | Esnoc Δ (b,j) x, bh :: bt =>
-    ''(Δ1,Δ2) ← env_split_go bt Δ;
-      mret (Esnoc Δ1 (bh && b, j) x, Esnoc Δ2 (negb bh && b, j) x)
+  | Esnoc Δ cj x, bh :: bt =>
+    match cj with
+    | (c, j) =>
+      ''(Δ1,Δ2) ← env_split_go bt Δ;
+      mret (Esnoc Δ1 (bh && c, j) x, Esnoc Δ2 (negb bh && c, j) x)
+    end
   | _, _ => None
   end.
 Section env.
