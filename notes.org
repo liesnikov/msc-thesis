@@ -237,6 +237,15 @@ Since you're normalizing the context, it'll be destructed immediately with const
 In general, two things are possible:
 - either prove that the type is inhabited as a side-condition
 - or play around with the context to include a restriction that the constraint is true
-* Current issues:
+* Current issues (08/2020):
 ** i_intro of coq assumption after i_start_proof fails.
+ and it shouldn't
 ** is iMatch as of now linear?
+  no, and there seems to be no way of making it linear
+* naive solver lives here:
+  [[file:~/my-dir/ed/uni/saar/prjcts/iris/stdpp/theories/tactics.v][tactics.v]]
+* 2/09 issues:
+** It's impossible to chain tactics which take constrs, since those are goal-dependent.
+So, we need to take Ltac2 identifers/strings and convert them to Coq strings (constrs) for the whole thing to work.
+Relevant issue:
+https://github.com/coq/coq/issues/7922

@@ -110,7 +110,7 @@ Module Evars.
     | _ => false
     end.
 
-  Import Bool.
+  Import Ltac2.Bool.
   Ltac2 rec has_evar (term : constr) :=
     match (Unsafe.kind term) with
     | Unsafe.Evar _ _ => true

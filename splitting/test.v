@@ -12,7 +12,6 @@ From Ltac2 Require Control.
 From Local Require Import utils.
 Import utils.Misc utils.Evars.
 
-
 Definition hey := 1.
 
 Ltac2 n () := '(_).
@@ -91,8 +90,7 @@ Proof.
   i_intro_ident '(INamed "qq").
   i_exact_spatial '(INamed "qq").
 Qed.
-From Local Require utils.
-Import utils.Bool.
+
 Lemma test_one (P Q R : PROP): ⊢ (R ∗ Q) -∗ P -∗ P ∗ (Q ∗ R).
 Proof.
   i_start_split_proof ().
@@ -107,7 +105,22 @@ Proof.
   i_exact_spatial '(INamed "pp").
 Qed.
 
-Lemma test_two (P : PROP): ⊢ □ P → P.
+Lemma test_two (P Q : PROP): (P ∧ Q) -∗ P.
 Proof.
   i_start_split_proof ().
-Admitted.
+  i_intro_ident '(INamed "pq").
+  i_and_destruct_split '(INamed "pq") '(INamed "p") '(INamed "q").
+  i_exact_spatial '(INamed "p").
+Qed.
+
+Lemma test_three (P Q : PROP): (P ∨ Q) -∗ (emp ∗ (Q ∨ P)).
+  i_start_split_proof ().
+  i_intro_ident '(INamed "pq").
+  i_split () >
+  [ i_or_destruct '(INamed "pq") '(INamed "p") '(INamed "q")
+  | i_or_destruct '(INamed "pq") '(INamed "p") '(INamed "q")].
+  Focus 3. i_right (). i_exact_spatial '(INamed "p").
+  Focus 3. i_left (). i_exact_spatial '(INamed "q").
+  i_emp_intro ().
+  i_emp_intro ().
+Qed.

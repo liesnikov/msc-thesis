@@ -40,6 +40,10 @@ Global Instance affine_env_snoc Γ i P :
 Proof. destruct i as [[] i]; rewrite /AffineEnv;
        cbn [env_to_list]; by try (constructor).
 Qed.
+Global Instance affine_env_snoc_false Γ i P :
+  AffineEnv Γ → AffineEnv (Esnoc Γ (false,i) P).
+Proof. done. Qed.
+
 
 (* If the BI is affine, no need to walk on the whole environment. *)
 Global Instance affine_env_bi `(BiAffine PROP) Γ : AffineEnv Γ | 0.

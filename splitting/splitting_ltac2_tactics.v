@@ -13,16 +13,11 @@ Import utils.Misc utils.Iriception utils.Evars.
 From Local Require ltac2_tactics.
 From Local Require Import splitting_tactics.
 
-
-(* getting them from
-  Ltac2 Notation "test" s(strategy) := s.
-  Ltac2 Eval (test). *)
-
 Ltac2 Type ident_ltac2 := constr.
+Ltac2 new_constraint () := new_evar_with_cast '(bool).
+
 Ltac2 Notation "parse_strategy" s(strategy) := s.
 Ltac2 Notation red_flags_default := parse_strategy.
-
-Ltac2 new_constraint () := new_evar_with_cast '(bool).
 
 Ltac2 rec unify_with_bool (e : constr) (b : bool) :=
   let er := Std.eval_cbn red_flags_default e in
@@ -47,6 +42,7 @@ Ltac2 rec unify_constr_true (e : constr) := unify_with_bool e true.
 Ltac2 rec unify_constr_false (e : constr) := unify_with_bool e false.
 
 Ltac2 reduce_const () := (parse_strategy [
+  fst (* for some reason doesn't get reduced on its own, even when introduced as match in tac_and_destruct_split *)
   base.Pos_succ base.ascii_beq base.string_beq
   base.positive_beq base.ident_beq
 
@@ -125,6 +121,9 @@ Ltac2 i_fresh_fun () :=
      constr:(IAnon $c)
 end.
 
+Ltac2 i_emp_intro () :=
+  refine '(tac_emp_intro _ _) > [i_solve_tc ()].
+
 Ltac2 i_intro_pat' (x : Std.intro_pattern) :=
   or (fun () => failwith (fun () => intros0 false [x]) "couldn't use intro")
      (fun () =>
@@ -199,6 +198,14 @@ Ltac2 i_exact_spatial h :=
   | i_solve_tc ()
   | pm_reduce_force true; i_solve_tc ()].
 
+
+(* Ltac2 i_exact_name (c : constr) :=
+ *  let n := constr:(INamed $c) in
+ *  i_exact_spatial n.
+ *
+ * Ltac2 Notation "i_exact" c(constr) := i_exact_name c.
+ *)
+
 Ltac2 i_and_destruct (x : ident_ltac2)
                      (y : ident_ltac2)
                      (z : ident_ltac2) :=
@@ -207,6 +214,28 @@ Ltac2 i_and_destruct (x : ident_ltac2)
   | pm_reflexivity ()
   | pm_reduce_force true; i_solve_tc () | pm_reduce ()].
 
+Ltac2 i_and_destruct_split (x : ident_ltac2)
+                           (y : ident_ltac2)
+                           (z : ident_ltac2) :=
+  let c := new_constraint () in
+  refine '(tac_and_destruct_split _ $x _ $y $z _ $c _ _ _ _ _ _ _) >
+  [ () | () | () | () | ()
+  | pm_reflexivity () | i_solve_tc () | pm_reduce () ].
+
+Ltac2 i_left () :=
+  refine '(tac_or_l _ _ _ _ _ _) > [() | () | i_solve_tc () | ()].
+
+Ltac2 i_right () :=
+  refine '(tac_or_r _ _ _ _ _ _) > [() | () | i_solve_tc () | ()].
+
+Ltac2 i_or_destruct (x : ident_ltac2)
+                    (y : ident_ltac2)
+                    (z : ident_ltac2) :=
+  refine '(tac_or_destruct _ $x _ $y $z _ _ _ _ _ _ _ _) >
+  [ () | () | () | () | ()
+  | pm_reflexivity ()
+  | i_solve_tc ()
+  | pm_reduce(); split ].
 
 Ltac2 rec env_length (x : constr) :=
   lazy_match! x with
