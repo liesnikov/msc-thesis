@@ -12,9 +12,13 @@ Import utils.Misc utils.Iriception utils.Evars.
 
 From Local Require Import splitting_tactics splitting_ltac2_tactics.
 
+
+(* Reserved Notation "⫫" (at level 10). *)
+Inductive not_false :=.
+(* where "⫫" := not_false. *)
+
 From Ltac2 Require Import Ltac2.
 From Ltac2 Require Pattern Option.
-
 From Local Require utils.
 Import utils.Iriception utils.Misc utils.Array utils.Iriception.
 
@@ -59,9 +63,30 @@ Ltac2 rec pick_match_rec
     | [] => Control.zero IMatch_failure
     | eh :: et =>
       let (id, prop) := eh in
-      Control.plus (fun () => let (bs, octx) := i_match_term kpat prop in
-                           (id, bs, octx, List.append (List.rev acc) et))
-                   (fun _ => pick_match_rec (eh :: acc) et kpat)
+      let constraint := Std.eval_red '(fst $id) in
+      let ident := Std.eval_red '(snd $id) in
+      Control.plus
+        (fun () =>
+           let (binders, ctxs) :=
+               match (Control.case (fun () => i_match_term kpat '(1, $prop))) with
+               | Err _ =>
+                 (* pattern for boolean constraint isn't a wildcard
+                    which means it might be not_false, so we should check
+                    that first *)
+                 or (fun () =>
+                       let (b,c) := i_match_term kpat '(not_false, $prop) in
+                       let is_false := Constr.equal (Std.eval_vm None constraint)
+                                                    '(false) in
+                       match is_false with
+                       | true => Control.zero (IMatch_failure)
+                       | false => (b,c)
+                       end)
+                    (fun () => i_match_term kpat '($constraint, $prop))
+               | Val _ => (* pattern for boolean constraint is a wildcard *)
+                 i_match_term kpat '($constraint, $prop)
+               end in
+             (ident, binders, ctxs, List.append (List.rev acc) et))
+          (fun _ => pick_match_rec (eh :: acc) et kpat)
     end.
 
 Ltac2 pick_match (env : (iris_id * iris_prop) list) (kpat : kinded_pattern) :=
@@ -151,18 +176,18 @@ Implicit Types P Q R : PROP.
 
 Set Ltac2 Backtrace.
 
+Notation "'⟨' c '⟩' P" := (c%bool, P%I) (at level 10, c at level 0).
+
 Lemma test_iAssumption_coq_1 P Q : Q ⊢ <affine> P -∗ Q.
 Proof.
   i_start_split_proof ().
   i_intro_ident '(INamed "q").
   i_intro_ident '(INamed "p").
   iMatch! goal with
-  | [h1 : (<affine> _)%I, h2 : _ |- ?p] => Message.print (oc h1)
+  | [h1 : ⟨not_false⟩(<affine> _), h2 : _ |- ?p] => Message.print (oc h1)
   end.
   iMatch! goal with
-  | [h1 : _, h2 : (<affine> _)%I |- ?p] => let n := Std.eval_red '(snd $h2) in
-                                         let m := Std.eval_red '(snd $h1) in
-                                         i_clear_hyp n;
-                                         i_exact_spatial m
+  | [h1 : _, h2 : ⟨_⟩(<affine> _) |- ?p] => i_clear_hyp h2;
+                                         i_exact_spatial h1
   end.
 Qed.

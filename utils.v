@@ -111,16 +111,26 @@ Module Evars.
     end.
 
   Import Ltac2.Bool.
+
   Ltac2 rec has_evar (term : constr) :=
     match (Unsafe.kind term) with
     | Unsafe.Evar _ _ => true
     | Unsafe.Cast t1 _ t2 => and (has_evar t1) (has_evar t2)
-    | Unsafe.Prod _ t1 t2 => and (has_evar t1) (has_evar t2)
-    | Unsafe.Lambda _ t1 t2 => and (has_evar t1) (has_evar t2)
-    | Unsafe.LetIn _ t1 t2 t3 => and (has_evar t1) (and (has_evar t2) (has_evar t3))
-    | Unsafe.Case _ t1 t2 at1 => false
-    | Unsafe.Fix _ _ _ at2 at2 => false
-    | Unsafe.CoFix _ _ at1 at2 => false
+    | Unsafe.Prod _ ty te => and (has_evar ty) (has_evar te)
+    | Unsafe.Lambda _ ty te => and (has_evar ty) (has_evar te)
+    | Unsafe.LetIn _ t1 t2 t3 =>
+      and (has_evar t1) (and (has_evar t2) (has_evar t3))
+    | Unsafe.Case _ t m ct =>
+      let incases := List.for_all (has_evar) (Array.to_list ct) in
+      and (has_evar m) incases
+    | Unsafe.Fix _ _ _ ty te =>
+      let intypes := (List.for_all (has_evar) (Array.to_list ty)) in
+      let interms := (List.for_all (has_evar) (Array.to_list te)) in
+      and intypes interms
+    | Unsafe.CoFix _ _ ty te =>
+      let intypes := (List.for_all (has_evar) (Array.to_list ty)) in
+      let interms := (List.for_all (has_evar) (Array.to_list te)) in
+      and intypes interms
     | Unsafe.Proj _ t => has_evar t
     | _ => false
     end.
