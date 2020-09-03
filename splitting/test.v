@@ -78,7 +78,6 @@ Admitted.
 From Local Require Import splitting_tactics splitting_ltac2_tactics.
 From Local Require connection.
 
-
 Context {PROP : bi}.
 Implicit Types P Q R : PROP.
 Set Default Proof Using "Type".
@@ -117,10 +116,9 @@ Lemma test_three (P Q : PROP): (P ∨ Q) -∗ (emp ∗ (Q ∨ P)).
   i_start_split_proof ().
   i_intro_ident '(INamed "pq").
   i_split () >
-  [ i_or_destruct '(INamed "pq") '(INamed "p") '(INamed "q")
+  [ ()
   | i_or_destruct '(INamed "pq") '(INamed "p") '(INamed "q")].
-  Focus 3. i_right (). i_exact_spatial '(INamed "p").
-  Focus 3. i_left (). i_exact_spatial '(INamed "q").
-  i_emp_intro ().
+  Focus 2. i_right (). i_exact_spatial '(INamed "p").
+  Focus 2. i_left (). i_exact_spatial '(INamed "q").
   i_emp_intro ().
 Qed.

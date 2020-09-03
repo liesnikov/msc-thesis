@@ -46,8 +46,9 @@ Ltac2 reduce_const () := (parse_strategy [
   base.Pos_succ base.ascii_beq base.string_beq
   base.positive_beq base.ident_beq
 
-  named_prop.get_ident
   connection.translate_envs connection.translate_env
+
+  named_prop.get_ident
   named_prop.env_lookup named_prop.env_lookup_with_constr
   named_prop.env_lookup_true
   named_prop.env_delete
@@ -55,6 +56,7 @@ Ltac2 reduce_const () := (parse_strategy [
   named_prop.env_intuitionistic named_prop.env_spatial
   named_prop.env_counter named_prop.env_spatial_is_nil
   named_prop.env_Forall
+
   named_prop.envs_lookup named_prop.envs_lookup_with_constr
   named_prop.envs_lookup_true  named_prop.envs_delete
   named_prop.envs_snoc named_prop.envs_app
@@ -120,6 +122,14 @@ Ltac2 i_fresh_fun () :=
            (Ltac1.of_constr pr1) (Ltac1.of_constr pr2) (Ltac1.of_constr p) (Ltac1.of_constr s) (Ltac1.of_constr c) (Ltac1.of_constr q));
      constr:(IAnon $c)
 end.
+
+
+Ltac2 i_clear_hyp (x : ident_ltac2) :=
+  refine '(tac_clear _ $x _ _ _ _ _ _ _) >
+  [ () | () | ()
+  | pm_reflexivity ()
+  | pm_reduce (); i_solve_tc ()
+  | pm_reduce ()].
 
 Ltac2 i_emp_intro () :=
   refine '(tac_emp_intro _ _) > [i_solve_tc ()].

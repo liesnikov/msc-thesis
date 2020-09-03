@@ -106,7 +106,9 @@ Lemma tac_clear Δ i p c P Q :
   envs_entails (envs_delete true i p Δ) Q →
   envs_entails Δ Q.
 Proof.
-  rewrite envs_entails_eq=> ? HT HQ. rewrite envs_lookup_sound_with_constr //. rewrite HQ. destruct p, c, HT; cbn in *; by rewrite /= ?sep_elim_r.
+  rewrite envs_entails_eq=> ? HT HQ.
+  rewrite envs_lookup_sound_with_constr //.
+  rewrite HQ. destruct p, c, HT; cbn in *; by rewrite /= ?sep_elim_r.
 Qed.
 
 (** * False *)
