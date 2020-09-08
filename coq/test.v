@@ -27,9 +27,13 @@ From iris.proofmode Require Import classes notation.
 Context {PROP : sbi}.
 Implicit Types P Q R : PROP.
 
+
+From Local Require utils.
+Import utils.Iriception utils.Misc.
 Lemma test_iAssumption_coq_1 P Q : (⊢ Q) → <affine> P -∗ Q.
 Proof.
-  do 2 (i_intro ()).
+  i_intro_pat q.
+  i_intro ().
   i_assumption_coq ().
 Qed.
 
@@ -48,7 +52,6 @@ Proof.
   i_start_proof ().
   i_intro_constr '(INamed "pq").
   i_intro_constr '(INamed "qq").
-  Set Printing All.
   i_and_destruct '(INamed "pq") '(INamed "p") '(INamed "q").
   i_split_l '(["q"; "qq"]).
   i_assumption ().

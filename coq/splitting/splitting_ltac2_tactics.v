@@ -201,7 +201,7 @@ Ltac2 i_exact_spatial h :=
   lazy_match! goal with
   | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] =>
     let list_of_constr := list_from_env gs in
-    List.iter (fun b => unify_constr_false b) list_of_constr
+    List.iter (fun b => try (unify_constr_false b)) list_of_constr
   end;
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
   [() | () | pm_force_reflexivity ()
@@ -215,6 +215,9 @@ Ltac2 i_exact_spatial h :=
  *
  * Ltac2 Notation "i_exact" c(constr) := i_exact_name c.
  *)
+
+Ltac2 i_assumption_coq
+
 
 Ltac2 i_and_destruct (x : ident_ltac2)
                      (y : ident_ltac2)

@@ -1,4 +1,4 @@
--R ../../iris/theories iris
+-R ../../../iris/theories iris
 -R .. Local
 
 named_prop.v

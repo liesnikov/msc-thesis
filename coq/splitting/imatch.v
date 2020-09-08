@@ -186,8 +186,10 @@ Proof.
   iMatch! goal with
   | [h1 : ⟨not_false⟩(<affine> _), h2 : _ |- ?p] => Message.print (oc h1)
   end.
+
   iMatch! goal with
-  | [h1 : _, h2 : ⟨_⟩(<affine> _) |- ?p] => i_clear_hyp h2;
-                                         i_exact_spatial h1
+  | [h1 : _, h2 : ⟨not_false⟩(<affine> _) |- ?p] =>
+    i_clear_hyp h2;
+    i_exact_spatial h1
   end.
 Qed.
