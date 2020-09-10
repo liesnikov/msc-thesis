@@ -126,24 +126,5 @@ Qed.
 Lemma test_four (P Q : PROP): (⊢ P) -> ⊢ P.
   i_start_split_proof ().
   i_intro_pat p.
-  Ltac2 Notation "test" s(assert) := s.
-  Ltac2 Eval (test (FromAssumption true P P) as fr).
-  let fr := fresh () in
-  lazy_match! goal with
-  | [h : (⊢ ?p) |- named_prop.envs_entails _ ?q] =>
-    Std.assert (Std.AssertType
-                  (Some (Std.IntroNaming (Std.IntroIdentifier (fr))))
-                  '(FromAssumption true $p $q)
-                  None) > [i_solve_tc ()|];
-    refine '(tac_assumption_coq _ $p $q _ _ _) >
-    [ ()
-    | ()
-    | pm_reduce (); i_solve_tc () ]
-    (* assert (FromAssumption true $p $q) as fr > [i_solve_tc ()|] *)
-    (* refine '(tac_assumption_coq _ $p $q h fr _) *)
-  end.
-  Ltac2 Eval (Control.hyp ident:(p)).
-
-  Focus 2.
-  i_intro_intuitionistic_ident '(INamed "p").
-  tac_assumption
+  i_assumption_coq ().
+Qed.

@@ -216,7 +216,22 @@ Ltac2 i_exact_spatial h :=
  * Ltac2 Notation "i_exact" c(constr) := i_exact_name c.
  *)
 
-Ltac2 i_assumption_coq
+Ltac2 i_assumption_coq () :=
+  let fr := fresh () in
+  (* using match! instead of lazy_match since it can be that there're
+     two differnt derivations in the context and we want to backtrack on
+     the unfortunate attempt *)
+  match! goal with
+  | [h : (⊢ ?p) |- envs_entails _ ?q] =>
+    Std.assert (Std.AssertType
+                  (Some (Std.IntroNaming (Std.IntroIdentifier (fr))))
+                  '(FromAssumption true $p $q)
+                  None) > [i_solve_tc ()|];
+    refine '(tac_assumption_coq _ $p $q _ _ _) >
+    [ refine (Control.hyp h)
+    | refine (Control.hyp fr)
+    | pm_reduce (); i_solve_tc ()]
+  end.
 
 
 Ltac2 i_and_destruct (x : ident_ltac2)
