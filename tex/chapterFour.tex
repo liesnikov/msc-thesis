@@ -1,0 +1,41 @@
+\chapter{Postponed splitting}
+
+\subsection{Motivation/examples}
+
+\subsection{Rules for environments with constraints}
+
+\subsubsection{Alternatives for destructing existentials}
+
+\begin{enumerate}
+\item for introduced variables
+
+\begin{itemize}
+\item proving the type is inhabited
+\item guarding the introduced variable with a proof that constraint is true
+\item conditional Maybe
+\end{itemize}
+\item for propositions
+
+\begin{itemize}
+\item conditional empty
+\item whole environemnts with proofs of constraints that constraint is equal to true quantified
+\end{itemize}
+\end{enumerate}
+\subsubsection{The need to solve constraints afterwards for modalities with action "clear"}
+
+\subsection{Design implemented}
+
+\subsection{Possible designs and comparisons, what do we need}
+
+\subsubsection{Continuation-style environments}
+
+\subsubsection{Boolean constraints with existential variables}
+
+\subsubsection{Boolean constraints resolved post-factum with equations posed as goals}
+
+\subsubsection{Different styles of environemnts?}
+
+\subsection{Ltac2 features used}
+
+"Reflection on the use of Ltac2"
+Mention that Ltac2 was complete for our puposes

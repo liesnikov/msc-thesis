@@ -1,0 +1,35 @@
+\chapter{Reimplementation of IPM in Ltac2}
+
+tutorial-style
+
+take an example and work it out in Ltac2
+
+\section{Iris Proof Mode setup}
+
+Explain what is IPM, judgements, tactics as proof rules for the judgment
+
+\subsection{Rules for regular IPM}
+
+MoSeL paper only has a handful of them, so maybe it makes sense to put all here for comparison with "splitting" ones later?
+
+\paragraph{Tactics compose}
+
+\section{IPM from implementaion persprective}
+
+How to implement tactic in IPM, how does IPM work
+
+\section{Examples of Ltac2 features are/can be used}
+
+\paragraph{Fix arities from original IPM}
+
+\paragraph{Error messages}
+
+\begin{itemize}
+\item nested exceptions, rethrowing errors, example: iintros uses idestruct
+\item there's more to do here -- I haven't touched Typeclass search yet and not sure there's much I can do in general
+\end{itemize}
+
+\section{Missing from Ltac2: notations for intropatterns, user-defined scopes?}
+
+\paragraph{Interop between Ltac1 and Ltac2?}
+i.e. iris indent-string has to go through the goal to get the result from one to another

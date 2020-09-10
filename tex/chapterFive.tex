@@ -1,0 +1,44 @@
+\chapter{iMatch}
+
+Ltac has a tactical for matching on the current proof state, which takes form of
+
+\begin{lstlisting}[language=caml]
+match goal with
+| [a : H_0, b : H_1 |- H_0] => exact a
+end
+\end{lstlisting}
+
+In this example we are matching the context to contain at least two assumptions: \verb|a:H_0| and \verb|b:H_1|.
+We also require the goal to be exactly \verb|H_0| and then we close the proof with the first assumption we matched in the context.\
+
+Iris Proof Mode can't use Coq contexts, since Coq contexts don't track hypothesis usage, which can result in a resource being used twice.
+Instead, IPM stores everything in the goal, which makes it unfit for \verb|match goal|.
+
+iMatch fills exactly that hole.
+
+\subsection{Motivation/examples}
+
+
+
+
+\subsection{Implemented thing}
+
+\subsection{Possible semantics and tradeoffs}
+
+\subsubsection{Bactracking over branches (lazy match)}
+
+\subsubsection{Backtracking over matches (current behaviour of coq match)}
+
+
+If there are two hyps: H1: P, H2: Q,
+both\\
+\texttt{| [h1:P, h2:\_ $\vdash$ \_ ] $\Rightarrow$ \ldots}\\
+and\\
+\texttt{| [h2:\_, h1:P $\vdash$ \_] $\Rightarrow$ \ldots}\\
+will succeed, which requires matching h2 with P and then backtracking
+
+\subsection{Ltac2 features missing}
+
+patterns in Ltac2
+same handling as with constr?
+unquoting patterns inside patterns, contexts in contexts?
