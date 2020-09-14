@@ -69,10 +69,14 @@ Ltac2 rec pick_match_rec
       let ident := Std.eval_red '(snd $id) in
       List.fold_left
         (fun x y () => Control.plus x y)
-        [
-         (** * First try to match just the PROP *)
+        [(** * First try to match just the PROP *)
          (fun _ => let (bins, ctxs) := i_match_term kpat prop in
-                (ident, bins, ctxs, List.append (List.rev acc) et));
+                let is_false := Constr.equal (Std.eval_vm None constraint)
+                                            '(false) in
+                match is_false with
+                | true => Control.zero (IMatch_failure)
+                | false => (ident, bins, ctxs, List.append (List.rev acc) et)
+                end);
          (** * Then try to match both the constraint and the prop *)
          (fun _ =>
             let (bins, ctxs) :=
@@ -241,6 +245,9 @@ Ltac2 i_match_one_goal pats := Control.once (fun _ => i_match_goal pats).
 Ltac2 Notation "iMatch!" "goal" "with" m(goal_matching) "end" :=
   i_match_one_goal m.
 
+Ltac2 Notation "iMultiMatch!" "goal" "with" m(goal_matching) "end" :=
+  i_match_goal m.
+
 From iris.proofmode Require Import classes notation.
 From Local Require Import ltac2_tactics.
 Context {PROP : sbi}.
@@ -256,14 +263,14 @@ Lemma test1 P Q : Q ⊢ □ (<absorb> P) -∗ Q.
 Proof.
   i_start_split_proof ().
   i_intro_ident '(INamed "q").
-  (* i_intro_ident '(INamed "p").*)
-  i_intro_intuitionistic_ident '(INamed "p").
+  i_intro_ident '(INamed "p").
+  (* i_intro_intuitionistic_ident '(INamed "p"). *)
   iLazyMatch! goal with
-  | [h2: (<absorb> _)%I, sep : ‖, h1 : <?> Q |- ?p] => Message.print (oc h2)
+  | [h1 : <?> ?p |- ?p] => Message.print (oc p)
   end.
 
   iMatch! goal with
-  | [h1 : _, h2 : <?> (<absorb> _) |- ?p] =>
+  | [h1 : _, h2 : (□ <absorb> _)%I |- ?p] =>
     i_clear_hyp h2; i_exact_spatial h1
   end.
 Qed.

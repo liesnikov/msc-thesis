@@ -188,7 +188,8 @@ Ltac2 i_and_destruct_choice h d l :=
 
 Ltac2 i_exact h :=
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
-  [() | () | pm_reflexivity ()
+  [() | ()
+  | pm_reflexivity ()
   | i_solve_tc ()
   | pm_reduce (); i_solve_tc ()].
 
