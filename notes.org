@@ -249,3 +249,20 @@ In general, two things are possible:
 So, we need to take Ltac2 identifers/strings and convert them to Coq strings (constrs) for the whole thing to work.
 Relevant issue:
 https://github.com/coq/coq/issues/7922
+How to check?
+* 11/09
+the following doesn't work, although should
+#+begin_src coq
+Ltac2 Eval(match! '(1,1) with | (_, context [_]) => () end).
+#+end_src
+* If it was possible to anitquote patterns, linearity would be reachable with a hack
+just take all patterns, put them in a list, match against list of returned hypothesis
+* Problems with =Control.hyp=
+The way its implemented prevents the following:
+take context which contains =p : A -> B=.
+#+begin_src coq
+match! (Control.hyp ident:(p)) with
+| ?a -> ?b => Message.print (Message.of_constr a)
+end
+#+end_src
+will fail since Control.hyp returns a var reference and not a literal constr.

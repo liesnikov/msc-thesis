@@ -4,41 +4,166 @@ Ltac has a tactical for matching on the current proof state, which takes form of
 
 \begin{lstlisting}[language=caml]
 match goal with
-| [a : H_0, b : H_1 |- H_0] => exact a
+| [a:H_0, b:H_1 |- H_0] => exact a
 end
 \end{lstlisting}
 
-In this example we are matching the context to contain at least two assumptions: \verb|a:H_0| and \verb|b:H_1|.
+In this example we are matching the context that's supposed to contain at least two assumptions: \verb|a:H_0| and \verb|b:H_1|.
 We also require the goal to be exactly \verb|H_0| and then we close the proof with the first assumption we matched in the context.\
 
 Iris Proof Mode can't use Coq contexts, since Coq contexts don't track hypothesis usage, which can result in a resource being used twice.
 Instead, IPM stores everything in the goal, which makes it unfit for \verb|match goal|.
 
-iMatch fills exactly that hole.
+\iMatch fills exactly that hole.
 
 \subsection{Motivation/examples}
 
+While one of the most useful usages of \iMatch would a solver for separation logic, we are going to cover it in a later chapter.
+Let us take a simpler and more intuitive example here.
+Suppose we want to extend \verb|iAssumption| tactic so that it also applies fitting wands it can find in the context.
 
+Let's call this new tactic \verb|iAssumption'|.
+Take the following context:
+\texttt{
+P, Q : PROP\\
+---------------------------------------\\
+"q" : Q\\
+"p" : Q $\wand$ P\\
+--------------------------------------$\ast$\\
+P
+}
 
+We want to discharge the goal with \verb|do 2 iAssumption'|.
 
-\subsection{Implemented thing}
+\begin{lstlisting}[language=caml]
+Ltac2 iAssumption' :=
+  iMatch! goal with
+  | [a : ?e -* ?f |- _] => iApply a
+  | [a : ?e |- ?e] => iExact a
+  end.
+\end{lstlisting}
+
+A notable thing with this tactic is not just readability, assuming one is familiar with \verb|match goal| construct.
+It's also conciseness -- a similar tactic in pure Ltac1 code has to search for a fitting hypothesis in both context manually, which in the current Iris Proof Mode implementation is taking 30 lines of code.
 
 \subsection{Possible semantics and tradeoffs}
 
-\subsubsection{Bactracking over branches (lazy match)}
+Of course, this complexity doesn't magically go anywhere, and is thus hidden inside \iMatch.
+In fact, while it might seem like iMatch is mostly about pattern-matching, this isn't true and there are several major design decisions to make that aren't related to pattern-matching.
 
-\subsubsection{Backtracking over matches (current behaviour of coq match)}
+All of them involve backtracking in one or another way.
+While it might be tempting to think about iMatch simply selecting the right hypothesis when we want it to, this isn't exactly the case.
+In reality both Ltac, Ltac2 implementation and ours, bind identifers to the first hypothesis which fit the pattern.
 
-
-If there are two hyps: H1: P, H2: Q,
+For example, if there are two hypotheses: \verb|H1:P|, \verb|H2:Q|,
 both\\
 \texttt{| [h1:P, h2:\_ $\vdash$ \_ ] $\Rightarrow$ \ldots}\\
 and\\
 \texttt{| [h2:\_, h1:P $\vdash$ \_] $\Rightarrow$ \ldots}\\
-will succeed, which requires matching h2 with P and then backtracking
+should succeed.
+But given that the implementation matches elements in the context linearly, this will result in matching \verb|h2| with \verb|H1| in the second case and then backtracking, once we fail to find another \verb|P| in the context.
+
+Another example, which utilizes the \verb|iAssumption'| is the following: assuming that logic is affine in the example above and instead of one, there are two wands available:
+
+\texttt{
+P, Q, R : PROP\\
+---------------------------------------\\
+"q" : Q\\
+"r" : Q $\wand$ R\\
+"p" : Q $\wand$ P\\
+--------------------------------------$\ast$\\
+P
+}
+
+the composite tactic \verb|do 2 iAssumption'| would still work.
+
+\subsubsection{Backtracking over matches: iLazyMatch and iMultiMatch}
+
+This is also achieved via backtracking.
+Assuming that we are unlucky and \verb|r| indeed comes earlier in the list of hypothesis than \verb|p|, it will be the first one iMatch considers.
+However, while the initial binding will succeed, applying this wand to the current goal won't, unless the conclusion of the wand matches the goal.
+Which means that code will backtrack and bind the next fitting hypothesis -- \verb|p|.
+For which the application would succeed.
+
+The variant of iMatch which doesn't backtrack on the tactics is called iLazyMatch.
+It still involves backtracking in the implementation, since hypothesis selection is done sequentially.
+But if the binding was successful, failure of the tactic provided by the user on the branch won't cause rollback.
+
+Another backtracking point can be inserted right after the matching.
+Both iMatch and iLazyMatch don't backtrack if tactics afterwards fail.
+
+Consider the following proof state:
+
+\texttt{
+P, Q, R : PROP\\
+---------------------------------------\\
+"q" : Q\\
+"r" : R $\wand$ P\\
+"p" : Q $\wand$ P\\
+--------------------------------------$\ast$\\
+P
+}
+
+With the current implementation of \verb|iAssumption'|, \verb|do 2 iAssumption'| will fail, since \verb|r| is possible to apply to the current goal, there is no resource to provide the wand with after it has been applied.
+
+However, if expose backtracking points after the match, failures in the later tactics (second \verb|iAssumption'| in our example), will cause it to backtrack and
+to choose a different hypothesis to apply, if available.
+This variant is called iMultiMatch and changing the name is literally the only change it's necessary to make to the definition of \verb|iAssumption'|.
+
+\subsubsection{Backtracking over branches}
+
+Backtracking to a different branch happens in two cases, though second one is really visible to the user.
+
+The first one is more of implementation detail and morally is simply ``right branch selection'' based on the pattern.
+Implementations would try to match all branches linearly and will switch branches only when encountering an impossible pattern.
+The reason we stress this here is that implementation-wise this relies on the same \verb|Control.plus| machinery as other things here.
+
+The second one is a bit more interesting as this is really the same behavior that differentiates iMatch from iLazyMatch, which we covered above.
+\todo{More explanation here?}
+
+\subsubsection{Backtracking over name binding}
+
+The last place where backtracking appears is name conflict resolution.
+Take the following snippet:
+
+\begin{lstlisting}[language=caml]
+iMatch! goal with
+| [a : ?e -* ?f, b : ?e |- _] => ...
+end.
+\end{lstlisting}
+
+It is non-linear in variable \verb|e|, which is resolved in the following way:
+Since the implementation is still matching hypotheses in a linear way, it first matches wand \verb|a| with type \verb|Q $\wand$ P|.
+Thus producing binders \verb|e $\mapsto$ Q| and \verb|f $\mapsto$ P|.
+When it tries to match the second hypothesis, it doesn't yet have any restrictions, so it will match anything for b, not necessarily \verb|Q|.
+But afterwards it will resolve name conflicts, checking whether constrs binded to the same names are convertible.
+
+This feature isn't yet implemented in iMatch due to Ltac2 limitations.
+
+\subsection{Implemented thing}
+
+As mentioned above, there are three variants of iMatch implemented:
+\begin{enumerate}
+\item iLazyMatch
+\item iMatch
+\item iMultiMatch
+\end{enumerate}
+
+None of them supports non-linear patterns yet.
+
+However, we do support different contexts.
+It's possible to match hypothesis from both Coq context and IPM context.
+User can also specify, where they want IPM resources to come from with separator.
+
+\todo{more here}
 
 \subsection{Ltac2 features missing}
 
-patterns in Ltac2
-same handling as with constr?
-unquoting patterns inside patterns, contexts in contexts?
+More thorough handling of patterns.
+\begin{itemize}
+\item Pattern parser (\verb|pattern:(_)| as with \verb|constr:(1)|).
+\item For non-linear patterns we need at least pattern antiquotation.
+\item To detect wildcards in a nice way it would be good to have \verb|Pattern.Unsafe|.
+\end{itemize}
+
+\todo{more, with examples}

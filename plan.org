@@ -36,7 +36,7 @@ MoSeL paper only has a handful of them, so maybe it makes sense to put all here 
 - there's more to do here -- I haven't touched Typeclass search yet and not sure there's much I can do in general
 ** Missing from Ltac2: notations for intropatterns, user-defined scopes?
 ** Interop between Ltac1 and Ltac2?
-i.e. iris indent-string has to go through the goal to get the result from one to another
+i.e. iris indent-string has to go through the goal to get the result from one to another 
 * Postponed splitting
 ** Motivation/examples
 ** Rules for environments with constraints
