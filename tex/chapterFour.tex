@@ -1,6 +1,23 @@
 \chapter{Postponed splitting}
 
+Consider the following rule in separation logic\\
+
+\infer{\Gamma_1, \Gamma_2 \vdash \phi_1 \ast \phi_2}
+      {\Gamma_1 \vdash \phi_1 &
+       \Gamma_2 \vdash \phi_2}
+
+From derivation perspective this rule is perfectly fine, since when one writes a derivation, one knows perfectly well what $\Gamma_1$ and $\Delta_2$ are supposed to be in advance.
+
+However, when the perspective is switched and one seeks to find the proof of $\Gamma \vdash \phi_1 \ast \phi_2$, a problem arises:
+It's not immediately clear how to split the context $\Gamma$ into $\Gamma_1, \Gamma_2$, so that both $\Gamma_1 \vdash \phi_1$ and $\Gamma_2 \vdash \phi_2$ are provable.
+
+Since propositions in separation logic are frequently thought as resources, this is an instance of ``resource distribution'' problem.
+
+We seek to automate some parts of this problem drawing inspiration from \cite{Harland_Pym_2003}.
+
 \subsection{Motivation/examples}
+
+
 
 \subsection{Rules for environments with constraints}
 
