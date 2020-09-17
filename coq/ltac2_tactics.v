@@ -234,4 +234,4 @@ Ltac2 i_assumption () :=
            |find '(false) gs q
            |i_assumption_coq ()
            |Control.zero (Iriception (oc q ++ os " not found"))]
-  end.
+end.

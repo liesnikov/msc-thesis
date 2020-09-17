@@ -266,3 +266,16 @@ match! (Control.hyp ident:(p)) with
 end
 #+end_src
 will fail since Control.hyp returns a var reference and not a literal constr.
+* Control.once is equivalent to
+#+begin_src coq
+Ltac2 my_once t :=
+  match (Control.case t) with
+  | Val v => let (x, rr) := v in x
+  | Err exn => Control.zero exn
+  end.
+
+Ltac2 Eval (
+let v () := Control.plus (fun () => 1)
+                         (fun  e => Control.zero (Not_found))
+in my_once v).
+#+end_src

@@ -4,13 +4,13 @@ Set Default Proof Using "Type".
 
 From Local Require Import named_prop.
 From Local Require Import connection.
+From Local Require Import splitting_tactics splitting_ltac2_tactics.
 
 From Ltac2 Require Import Ltac2 Std.
 
 From Local Require utils.
 Import utils.Misc utils.Iriception utils.Evars.
 
-From Local Require Import splitting_tactics splitting_ltac2_tactics.
 
 
 (* Reserved Notation "⫫" (at level 10). *)
@@ -249,7 +249,7 @@ Ltac2 Notation "iMultiMatch!" "goal" "with" m(goal_matching) "end" :=
   i_match_goal m.
 
 From iris.proofmode Require Import classes notation.
-From Local Require Import ltac2_tactics.
+(* From Local Require Import ltac2_tactics.*)
 Context {PROP : sbi}.
 Implicit Types P Q R : PROP.
 
@@ -263,14 +263,14 @@ Lemma test1 P Q : Q ⊢ □ (<absorb> P) -∗ Q.
 Proof.
   i_start_split_proof ().
   i_intro_ident '(INamed "q").
-  i_intro_ident '(INamed "p").
-  (* i_intro_intuitionistic_ident '(INamed "p"). *)
+  (* i_intro_ident '(INamed "p"). *)
+  i_intro_intuitionistic_ident '(INamed "p").
   iLazyMatch! goal with
-  | [h1 : <?> ?p |- ?p] => Message.print (oc p)
+  | [h1 : <?> ?p |- _] => Message.print (oc p)
   end.
 
   iMatch! goal with
-  | [h1 : _, h2 : (□ <absorb> _)%I |- ?p] =>
-    i_clear_hyp h2; i_exact_spatial h1
+  | [h1 : _, h2 : (<absorb> _)%I |- ?p] =>
+    i_exact h1
   end.
 Qed.

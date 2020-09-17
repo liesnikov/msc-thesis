@@ -5,7 +5,7 @@ Set Default Proof Using "Type".
 From Local Require Import named_prop.
 From Local Require Import connection.
 
-From Ltac2 Require Import Ltac2 Std.
+From Ltac2 Require Import Ltac2.
 
 From Local Require utils.
 Import utils.Misc utils.Iriception utils.Evars.
@@ -13,11 +13,17 @@ Import utils.Misc utils.Iriception utils.Evars.
 From Local Require ltac2_tactics.
 From Local Require Import splitting_tactics.
 
-Ltac2 Type ident_ltac2 := constr.
+Ltac2 Type ident_ltac2 := Init.constr.
 Ltac2 new_constraint () := new_evar_with_cast '(bool).
 
 Ltac2 Notation "parse_strategy" s(strategy) := s.
 Ltac2 Notation red_flags_default := parse_strategy.
+
+Ltac2 assert_as_id (c : constr) (i : ident):=
+  Std.assert (Std.AssertType
+               (Some (Std.IntroNaming (Std.IntroIdentifier i)))
+               c
+               None).
 
 Ltac2 rec unify_with_bool (e : constr) (b : bool) :=
   let er := Std.eval_cbn red_flags_default e in
@@ -65,20 +71,20 @@ Ltac2 reduce_const () := (parse_strategy [
   named_prop.envs_clear_intuitionistic named_prop.envs_incr_counter
   named_prop.envs_split
 
-  pm_app pm_option_bind pm_from_option pm_option_fun].(rConst)).
+  pm_app pm_option_bind pm_from_option pm_option_fun].(Std.rConst)).
 
-Ltac2 reduce_force_const () := (parse_strategy [negb andb orb]).(rConst).
+Ltac2 reduce_force_const () := (parse_strategy [negb andb orb]).(Std.rConst).
 
-Ltac2 pm_reduce_force (force : bool) :=
+Ltac2 pm_reduce_force' (force : bool) :=
   Std.cbv {
-      rBeta  := true;
-      rMatch := true;
-      rFix   := true;
-      rCofix := true;
-      rZeta  := true;
-      rDelta := false; (* rDelta true = delta all but rConst;
+      Std.rBeta  := true;
+      Std.rMatch := true;
+      Std.rFix   := true;
+      Std.rCofix := true;
+      Std.rZeta  := true;
+      Std.rDelta := false; (* rDelta true = delta all but rConst;
                           rDelta false = delta only on rConst *)
-      rConst := match force with
+      Std.rConst := match force with
                 | true => List.append (reduce_const ())
                                      (reduce_force_const ())
                 | _ => reduce_const ()
@@ -86,7 +92,8 @@ Ltac2 pm_reduce_force (force : bool) :=
   } (default_on_concl None);
   ltac2_tactics.pm_reduce ().
 
-Ltac2 pm_reduce () := pm_reduce_force false.
+Ltac2 pm_reduce_force () := pm_reduce_force' true.
+Ltac2 pm_reduce () := pm_reduce_force' false.
 
 
 (* pm_reflexivity doesn't and shouldn't reduce negb, since we want to use it
@@ -96,7 +103,7 @@ Ltac2 pm_reflexivity () :=
 
 (* However, we need to compute when doing TC search or looking up present resources *)
 Ltac2 pm_force_reflexivity () :=
-  pm_reduce_force true ; exact eq_refl.
+  pm_reduce_force (); exact eq_refl.
 
 Ltac2 pm_prettify () :=
   ltac2_tactics.pm_prettify ().
@@ -187,27 +194,50 @@ Ltac2 i_intro_intuitionistic_ident (x : ident_ltac2) :=
         | i_solve_tc () | i_solve_tc ()
         | i_solve_tc () | pm_reduce ()]).
 
+Ltac2 rec list_from_env e :=
+  match! e with
+  | Esnoc ?gg (?b,?j) ?pp =>
+    (b,j) :: list_from_env gg
+  | Enil => []
+  end.
+
+Ltac2 select_hypothesis f e :=
+  let fst xy := match xy with (x,_) => x end in
+  let snd xy := match xy with (_,y) => y end in
+  lazy_match! e with
+  | (@Envs _ ?gp ?gs _) =>
+    let l := list_from_env gs in
+    let (hh, rest) := List.partition (fun x => f (snd x)) l in
+    let _ := List.iter unify_constr_true (List.map fst hh) in
+    let _ := List.iter unify_constr_false (List.map fst rest) in
+    ()
+  end.
+
 Ltac2 i_exact_spatial h :=
-  let rec list_from_env e :=
-      match! e with
-      | Esnoc ?gg (?b,?j) ?pp =>
-        match (Constr.equal h j) with
-        | true => let _ := unify_constr_true b in
-                 list_from_env gg
-        | false => b :: list_from_env gg
-        end
-      | Enil => []
-      end in
   lazy_match! goal with
-  | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] =>
-    let list_of_constr := list_from_env gs in
-    List.iter (fun b => try (unify_constr_false b)) list_of_constr
+  | [|- @envs_entails _ ?e _] =>
+    select_hypothesis (fun x => Constr.equal x h) e
   end;
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
-  [() | () | pm_force_reflexivity ()
+  [ () | ()
+  | pm_force_reflexivity ()
   | i_solve_tc ()
-  | pm_reduce_force true; i_solve_tc ()].
+  | pm_reduce_force (); i_solve_tc ()].
 
+Ltac2 i_exact_intuitionistic h :=
+  lazy_match! goal with
+  | [|- @envs_entails _ ?e _] =>
+    select_hypothesis (fun x => false) e
+  end;
+  refine '(tac_assumption _ $h _ _ _ _ _ _) >
+  [ () | ()
+  | pm_force_reflexivity ()
+  | i_solve_tc ()
+  | pm_reduce_force (); i_solve_tc ()].
+
+Ltac2 i_exact h :=
+  or (fun () => i_exact_intuitionistic h)
+     (fun () => i_exact_spatial h).
 
 (* Ltac2 i_exact_name (c : constr) :=
  *  let n := constr:(INamed $c) in
@@ -223,16 +253,42 @@ Ltac2 i_assumption_coq () :=
      the unfortunate attempt *)
   match! goal with
   | [h : (⊢ ?p) |- envs_entails _ ?q] =>
-    Std.assert (Std.AssertType
-                  (Some (Std.IntroNaming (Std.IntroIdentifier (fr))))
-                  '(FromAssumption true $p $q)
-                  None) > [i_solve_tc ()|];
+    assert_as_id '(FromAssumption true $p $q) fr > [i_solve_tc ()|];
     refine '(tac_assumption_coq _ $p $q _ _ _) >
     [ refine (Control.hyp h)
     | refine (Control.hyp fr)
     | pm_reduce (); i_solve_tc ()]
   end.
 
+Ltac2 i_assumption () :=
+  let h := fresh () in
+  let rec find p g q :=
+    lazy_match! g with
+    | Esnoc ?gg (_,?j) ?pp =>
+      first [ (*assert (FromAssumption $p $pp $q) as $h > [i_solve_tc ()|];*)
+              match p with
+              | false => i_exact_spatial j
+              | true => i_exact_intuitionistic j
+              end
+            | assert_as_id '($pp = False%I) h > [reflexivity];
+              let (pf,bf) := match p with
+              | true => ('(true), (fun x => Constr.equal x j))
+              | false => ('(false), (fun x => false))
+              end in
+              select_hypothesis bf g;
+              refine '(tac_false_destruct _ $j $pf $pp _ _ _) >
+              [ pm_force_reflexivity ()
+              | refine (Control.hyp h)]
+            | find p gg q]
+    end
+  in
+  lazy_match! goal with
+  | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] =>
+     first [find true gp q
+           |find false gs q
+           |i_assumption_coq ()
+           |Control.zero (Iriception (oc q ++ os " not found"))]
+end.
 
 Ltac2 i_and_destruct (x : ident_ltac2)
                      (y : ident_ltac2)
@@ -240,7 +296,8 @@ Ltac2 i_and_destruct (x : ident_ltac2)
   refine '(tac_and_destruct _ $x _ $y $z _ _ _ _ _ _ _ _) >
   [ () | () | () | () | ()
   | pm_reflexivity ()
-  | pm_reduce_force true; i_solve_tc () | pm_reduce ()].
+  | pm_reduce_force (); i_solve_tc ()
+  | pm_reduce ()].
 
 Ltac2 i_and_destruct_split (x : ident_ltac2)
                            (y : ident_ltac2)
@@ -248,7 +305,9 @@ Ltac2 i_and_destruct_split (x : ident_ltac2)
   let c := new_constraint () in
   refine '(tac_and_destruct_split _ $x _ $y $z _ $c _ _ _ _ _ _ _) >
   [ () | () | () | () | ()
-  | pm_reflexivity () | i_solve_tc () | pm_reduce () ].
+  | pm_reflexivity ()
+  | i_solve_tc ()
+  | pm_reduce () ].
 
 Ltac2 i_left () :=
   refine '(tac_or_l _ _ _ _ _ _) > [() | () | i_solve_tc () | ()].
