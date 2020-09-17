@@ -16,7 +16,7 @@ Instead, IPM stores everything in the goal, which makes it unfit for \verb|match
 
 \iMatch fills exactly that hole.
 
-\subsection{Motivation/examples}
+\section{Motivation/examples}
 
 While one of the most useful usages of \iMatch would a solver for separation logic, we are going to cover it in a later chapter.
 Let us take a simpler and more intuitive example here.
@@ -46,7 +46,7 @@ Ltac2 iAssumption' :=
 A notable thing with this tactic is not just readability, assuming one is familiar with \verb|match goal| construct.
 It's also conciseness -- a similar tactic in pure Ltac1 code has to search for a fitting hypothesis in both context manually, which in the current Iris Proof Mode implementation is taking 30 lines of code.
 
-\subsection{Possible semantics and tradeoffs}
+\section{Possible semantics and tradeoffs}
 
 Of course, this complexity doesn't magically go anywhere, and is thus hidden inside \iMatch.
 In fact, while it might seem like iMatch is mostly about pattern-matching, this isn't true and there are several major design decisions to make that aren't related to pattern-matching.
@@ -77,7 +77,7 @@ P
 
 the composite tactic \verb|do 2 iAssumption'| would still work.
 
-\subsubsection{Backtracking over matches: iLazyMatch and iMultiMatch}
+\subsection{Backtracking over matches: iLazyMatch and iMultiMatch}
 
 This is also achieved via backtracking.
 Assuming that we are unlucky and \verb|r| indeed comes earlier in the list of hypothesis than \verb|p|, it will be the first one iMatch considers.
@@ -110,7 +110,7 @@ However, if expose backtracking points after the match, failures in the later ta
 to choose a different hypothesis to apply, if available.
 This variant is called iMultiMatch and changing the name is literally the only change it's necessary to make to the definition of \verb|iAssumption'|.
 
-\subsubsection{Backtracking over branches}
+\subsection{Backtracking over branches}
 
 Backtracking to a different branch happens in two cases, though second one is really visible to the user.
 
@@ -121,7 +121,7 @@ The reason we stress this here is that implementation-wise this relies on the sa
 The second one is a bit more interesting as this is really the same behavior that differentiates iMatch from iLazyMatch, which we covered above.
 \todo{More explanation here?}
 
-\subsubsection{Backtracking over name binding}
+\subsection{Backtracking over name binding}
 
 The last place where backtracking appears is name conflict resolution.
 Take the following snippet:
@@ -140,7 +140,7 @@ But afterwards it will resolve name conflicts, checking whether constrs binded t
 
 This feature isn't yet implemented in iMatch due to Ltac2 limitations.
 
-\subsection{Implemented thing}
+\section{Implemented thing}
 
 As mentioned above, there are three variants of iMatch implemented:
 \begin{enumerate}
@@ -157,7 +157,7 @@ User can also specify, where they want IPM resources to come from with separator
 
 \todo{more here}
 
-\subsection{Ltac2 features missing}
+\section{Ltac2 features missing}
 
 More thorough handling of patterns.
 \begin{itemize}

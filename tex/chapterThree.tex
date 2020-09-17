@@ -8,15 +8,68 @@ take an example and work it out in Ltac2
 
 Explain what is IPM, judgements, tactics as proof rules for the judgment
 
+
 \subsection{Rules for regular IPM}
 
-MoSeL paper only has a handful of them, so maybe it makes sense to put all here for comparison with "splitting" ones later?
+\todo{MoSeL paper only has a handful of them, so maybe it makes sense to put all here for comparison with "splitting" ones later?}
+
+\begin{itemize}
+\item Start proof
+\item Context maninputation
+  \begin{itemize}
+  \item iRename
+  \item iClear
+  \item iEval
+  \end{itemize}
+\item Assumptions
+  \begin{itemize}
+  \item iExact
+  \item iAssumption
+  \end{itemize}
+\item Intuitionistic/Spatail/Pure transitions
+  \begin{itemize}
+  \item iIntuitionistic
+  \item iSpatial
+  \item iPure
+  \item iEmpIntro
+  \item iPureIntro
+  \end{itemize}
+\item iFrame
+\item Intro of wand/implication
+\item Revert
+\item Specialize and Pose
+\item Apply
+\item Existential
+  \begin{itemize}
+  \item Intro
+  \item Destruct
+  \end{itemize}
+\item Modalities
+\item iDestruct
+\item iIntros
+\item Induction
+\item Löb
+\item Assert
+\item Rewrite
+\end{itemize}
 
 \paragraph{Tactics compose}
 
 \section{IPM from implementaion persprective}
 
-How to implement tactic in IPM, how does IPM work
+Example to use: iAssumption?
+\begin{itemize}
+\item Typeclasses\\
+  \verb|Affine|, \verb|AffineEnv|
+\item Coq tactics\\
+  \verb|tac_assumption|\\
+  Requires typeclasses -- \verb|FromAssumption true P Q|,\\
+  \verb|TCOr (Absorbing Q) (AffineEnv (env_spatial Δ))|
+\item Ltac(1/2) tactics\\
+  Uses iAssumptionCoq, so some composability.
+\end{itemize}
+\todo{How to implement tactic in IPM, how does IPM work}
+
 
 \section{Examples of Ltac2 features are/can be used}
 

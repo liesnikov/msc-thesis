@@ -40,6 +40,9 @@ i.e. iris indent-string has to go through the goal to get the result from one to
 * Postponed splitting
 ** Motivation/examples
 ** Rules for environments with constraints
+
+** Design implemented
+** Possible designs and comparisons, what do we need
 *** Alternatives for destructing existentials
 **** for introduced variables
 - proving the type is inhabited
@@ -49,12 +52,11 @@ i.e. iris indent-string has to go through the goal to get the result from one to
 - conditional empty
 - whole environemnts with proofs of constraints that constraint is equal to true quantified
 *** The need to solve constraints afterwards for modalities with action "clear"
-** Design implemented
-** Possible designs and comparisons, what do we need
-*** Continuation-style environments
-*** Boolean constraints with existential variables
-*** Boolean constraints resolved post-factum with equations posed as goals
-*** Different styles of environemnts?
+*** Environments
+**** Continuation-style environments
+**** Boolean constraints with existential variables
+**** Boolean constraints resolved post-factum with equations posed as goals
+**** Different styles of environemnts?
 ** Ltac2 features used
 "Reflection on the use of Ltac2"
 Mention that Ltac2 was complete for our puposes

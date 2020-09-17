@@ -1,10 +1,10 @@
 \chapter{Postponed splitting}
 
-Consider the following rule in separation logic\\
+Consider the following rule in separation logic
 
-\infer{\Gamma_1, \Gamma_2 \vdash \phi_1 \ast \phi_2}
+$$\infer{\Gamma_1, \Gamma_2 \vdash \phi_1 \ast \phi_2}
       {\Gamma_1 \vdash \phi_1 &
-       \Gamma_2 \vdash \phi_2}
+       \Gamma_2 \vdash \phi_2}$$
 
 From derivation perspective this rule is perfectly fine, since when one writes a derivation, one knows perfectly well what $\Gamma_1$ and $\Delta_2$ are supposed to be in advance.
 
@@ -13,15 +13,296 @@ It's not immediately clear how to split the context $\Gamma$ into $\Gamma_1, \Ga
 
 Since propositions in separation logic are frequently thought as resources, this is an instance of ``resource distribution'' problem.
 
-We seek to automate some parts of this problem drawing inspiration from \cite{Harland_Pym_2003}.
+We seek to automate some parts of this problem drawing inspiration from \citet{Harland_Pym_2003}.
 
-\subsection{Motivation/examples}
+\section{Motivation/examples}
 
+Since separating conjunction is one of the fundamental connectives, the ability to postpone decision wchih resources go where is frequently useful.
 
+Naturally, the usability of this grows with the complexity of a decision which user has to make upfront.
+Still, let's consider small illustrative example of where we would want to use it.
 
-\subsection{Rules for environments with constraints}
+Take the following statement:
+$(A \wand B) \ast (C \wand D) \ast A \ast C \vdash B \ast D$
 
-\subsubsection{Alternatives for destructing existentials}
+For a human it is pretty clear what the derivation should be after a moment's consideration.
+But for machine it's not immediately clear how to distribute resources, so instead we can postpone this decision and simply say that resources are distributed disjointly.
+$$
+\infer{(A \wand B) \ast (C \wand D) \ast A \ast C \vdash B \ast D}
+      {(A \wand B)[c_0] \ast (C \wand D)[c_1] \ast A[c_2] \ast C[c_3] \vdash B
+       &
+       (A \wand B)[\neg c_0] \ast (C \wand D)[\neg c_1] \ast A[\neg c_2] \ast C[\neg c_3] \vdash D}
+$$
+
+Then we utilize wand application on the left-hand side in both sequents.
+
+Let's take a closer look at the left one:
+
+$$
+\infer{(A \wand B)[c_0] \ast (C \wand D)[c_1] \ast
+        A[c_2] \ast C[c_3] \vdash B}
+      {(C \wand D)[c'_1 \& c_1] \ast
+       A[c'_2 \& c_2] \ast C[c'_3 \& c_3] \vdash A
+       &
+       B[c_0] \ast (C \wand D)[\neg c'_1 \& c_1] \ast
+       A[\neg c'_1 \& c_2] \ast C[\neg c'_3 \& c_3] \vdash B}
+$$
+
+From the left  we can say that $c'_2 \& c_2$ has to be $\true$, hence both $c'_2$ and $c_2$ must be $\true$.
+Moreover, $c'_1 \& c_1$ and $c'_3 \& c_3$ must be $\false$, but on its own it's not saying much about the values.
+
+If we take a look at the right sequent, we can also unify $c_0$ with $\true$ and
+$\neg c'_1 \& c_1$, $\neg c'_3 \& c_3$ with $\false$.
+And from the left sequent we know that $\neg c'_1 \& c_2$ is $\false$, since the first conjunct is $\false$.
+
+The resulting system of equations allows us to conclude that $c_1$ and $c_3$ are false and values of $c'_1$ and $c'_3$ are arbitrary.
+
+Thus, we have a total constraint assignment, which means as soon as we're done with the left derivation it's clear what resources should go to the right sequent.
+
+\section{Rules for environments with constraints}
+
+$e$ is a constraint.
+$V$ is a vector of constraints
+\todo{notation explanation here}
+
+Let's start with just rules for separation logic in the same style as presented in \citet{Harland_Pym_2003}
+
+\subsection{Axiom}
+
+$$\infer{\phi[e], \Delta \vdash \phi}
+      {e = \true &
+       \forall e \in \expr(\Delta). e = 0}$$
+
+This rule correspond to the following axiom in the usual setting:
+$$\infer{\phi \vdash \phi}{}$$
+
+\subsection{Separating conjunction}
+
+The crucial rule here is one for separating conjunction:\\
+Instead of the usual rule
+$$\infer{\Gamma_1, \Gamma_2 \vdash \phi_1 \ast \phi_2}
+      {\Gamma_1 \vdash \phi_1 &
+       \Gamma_2 \vdash \phi_2}$$
+
+we write the following one:
+$$\infer{\Gamma \vdash \phi_1 \ast \phi_2}
+      {\Gamma[V] \vdash \phi_1 &
+       \Gamma[\overline{V}] \vdash \phi_2}$$
+
+where $\overline{V}$ is an element-wise negated vector of constraints $V$, so
+that elements which appear in $\Gamma[V]$ are guaranteed not to be in $\Gamma[\overline{V}]$.
+
+\subsection{Separating implication}
+
+For separating implication the rule practically stays the same, though.
+
+For regular BI logic the rule looks as follows:
+$$
+\infer{\Gamma \vdash \phi \wand \psi}
+      {\Gamma , \phi \vdash \psi}
+$$
+
+And with constraints introduced:
+$$
+\infer{\Gamma \vdash \phi \wand \psi}
+      {\Gamma , \phi[\true] \vdash \psi}
+$$
+
+Of course, morally it's the same rule since a resource being in the context with constraint $\true$ is precisely the resource being in the context in the usual setting.
+
+While introduction created new constraints, albeit simple ones, elimination forces their resolution.
+
+$$
+\infer[ c = \true ]
+      {\Gamma, (\phi \wand \psi)[c] \vdash \rho}
+      {\Gamma[V] \vdash \phi &
+       \Gamma[\overline{V}], \psi[c] \vdash \rho}
+$$
+
+Morally, this rules is saying ``in order to use a wand which might be in the context, ensure that it is indeed there and provide resources it needs''.
+
+\subsection{Conjunction}
+
+The only other primitive rule that creates new constraints is (non-separating) conjunction elimination.
+This is also where we differ from \citet{Harland_Pym_2003}
+
+Without constraints the rule is saying the following:
+
+$$
+\infer[ i \in \{1,2\} ]
+      {\Delta, \phi_1 \wedge \phi_2 \vdash \psi}
+      {\Delta, \phi_i \vdash \psi}
+$$
+
+Essentially forcing the prover to commit to one of the conjuncts.
+
+With them we can not only postopone the choice, but also (unlinke in \cite{Harland_Pym_2003}) manipulate resources, without forcing them to be present.
+
+$$
+\infer{\Delta, (\phi_1 \wedge \phi_2)[c] \vdash \psi}
+      {\Delta, \phi_1[c' \& c], \phi_1[\neg c' \& c] \vdash \psi}
+$$
+
+\subsection{Existential quantifier}
+
+We aslo encounter first major design decision:\\
+Given an exitential with constraints in the context, destruction leaks the element from the proof into the context.
+Which might lead to problems, if the element allows us to derive something on its own.
+
+For example, one can't simply destruct $(\exists (p : \bot), P x)[c]$, to get a proof of $\bot$ in the ambient logic and $(P x)[c]$ in BI\@.
+This is because from this would allow using \emph{ex falso} rule no matter what the constraint evaluates to.
+
+\citet{Harland_Pym_2003} don't encounter this problem, since they take the idea of principal formuals as their guiding principle: ``the principal formula of each rule must be assigned the value of 1'' (we use $\true$ instead of 1).
+
+We also make use of the mantra in this instance for simplification:
+
+$$
+\infer[c = \true]
+      {\Delta, (\exists x : X, P x)[c] \vdash \phi}
+      {x : X &
+       \Delta, (P x)[c] \vdash \phi}
+$$
+
+However, there are several options, which we will discuss later~\ref{sec:design_decisions_existential}.
+
+\subsection{Rules for IPM}
+
+\begin{itemize}
+
+\item Affinity
+  $$
+  \infer{\Affine{[]}}{}
+  $$
+
+  \begin{equation*}
+  \infer{\Affine{ECons\ \Gamma\ (i,\_)\ P}}
+        {\Affine{\Gamma} &
+         \Affine{P}
+       }
+  \quad
+  \infer{\Affine{ECons\ \Gamma\ (i,\, \false)\ P}}
+        {\Affine{\Gamma}}
+  \end{equation*}
+\item Context manipulation
+  \begin{itemize}
+  \item iRename
+  \item iClear
+    $$
+    \infer{\Gamma ; P[\true], \Delta \Vdash Q}
+          {\Gamma ; \Delta \Vdash Q &
+           \Affine{P} \vee \Absorbing{Q}}
+    $$
+    $$
+    \infer{\Gamma ; P[\false], \Delta \Vdash Q}
+          {\Gamma ; \Delta \Vdash Q}
+    $$
+  \item iEval
+    $$
+    \infer{\Gamma ; \Delta \Vdash Q}
+          {\Gamma ; \Delta \Vdash Q' &
+           Q' \vdash Q
+          }
+    $$
+  \end{itemize}
+\item Assumptions
+  $$
+  \infer{\Gamma; \Delta \Vdash P}
+        {P[\true] \in \Gamma &
+         \Absorbing{P} \vee \Affine{\Delta}}
+  $$
+
+ $$
+  \infer{\Gamma; \Delta \Vdash P}
+        {P[\true] \in \Delta &
+         \Absorbing{P} \vee \Affine{\Delta \backslash P}}
+ $$
+
+  Ex falso
+  $$
+  \infer{\Gamma; \Delta \Vdash P}
+        {\Gamma; \Delta \Vdash \bot}
+  $$
+\item Intuitionistic/Spatail/Pure transitions
+  \begin{itemize}
+  \item iIntuitionistic
+   %$$
+   % \infer{\Gamma ; \Delta \Vdash R}
+   %       {P[c] \in \Gamma &
+   %        \pers P \vdash \pers Q^{(\text{IntoPersistent}\ \true\ P\ Q)} &
+   %        \Gamma [P / Q]; \Delta \Vdash R
+   %      }
+   %$$
+    $$
+    \infer{\Gamma ; \Delta \Vdash R}
+          {P[c] \in \Delta &
+           P \vdash \pers Q^{(\text{IntoPersistent}\ \false\ P\ Q)} &
+           \Gamma, Q; \Delta \backslash P \Vdash R
+         }
+    $$
+  \item iSpatial
+    $$
+    \infer{\Gamma ; \Delta \Vdash R}
+          {P[c] \in \Gamma &
+           \affine P \vdash Q^{(\text{FromAffinely}\ P\ Q)} &
+           \Gamma \backslash P; \Delta, Q \Vdash R
+         }
+    $$
+  \item iPure
+    $$
+    \infer{\Gamma ; \Delta \Vdash R}
+          {\pure{\phi}[\true] \in \Gamma &
+           \phi \imp \Gamma \backslash (\pure{\phi}); \Delta \Vdash R
+         }
+    $$
+    $$
+    \infer{\Gamma ; \Delta \Vdash R}
+          {\pure{\phi}[\true] \in \Delta &
+           \Affine{P} \vee \Absorbing{R} &
+           \phi \imp \Gamma; \Delta \backslash (\pure{\phi}) \Vdash R
+         }
+    $$
+  \item iEmpIntro
+    $$
+    \infer{\Gamma ; \Delta \Vdash \emp}
+          {\Affine{\Delta}}
+    $$
+  \item iPureIntro
+    \begin{equation}
+    \infer{\Gamma ; \Delta \Vdash \pure{\phi}}
+          {\phi}
+    \quad
+    \infer{\Gamma ; \Delta \Vdash \affine \pure{\phi}}
+          {\phi & &
+           \Affine{\Delta}
+          }
+    \end{equation}
+  \end{itemize}
+\item iFrame
+\item Intro of wand/implication
+\item Revert
+\item Specialize and Pose
+\item Apply
+\item Existential
+  \begin{itemize}
+  \item Intro
+  \item Destruct
+  \end{itemize}
+\item Modalities
+\item iDestruct
+\item iIntros
+\item Induction
+\item Löb
+\item Assert
+\item Rewrite
+\end{itemize}
+
+\section{Design implemented}
+
+\section{Possible designs and comparisons, what do we need}
+
+\subsection{Alternatives for destructing existentials}
+\label{sec:design_decisions_existential}
+
 
 \begin{enumerate}
 \item for introduced variables
@@ -38,21 +319,20 @@ We seek to automate some parts of this problem drawing inspiration from \cite{Ha
 \item whole environemnts with proofs of constraints that constraint is equal to true quantified
 \end{itemize}
 \end{enumerate}
-\subsubsection{The need to solve constraints afterwards for modalities with action "clear"}
 
-\subsection{Design implemented}
+\subsection{The need to solve constraints afterwards for modalities with action "clear"}
 
-\subsection{Possible designs and comparisons, what do we need}
+\subsection{Environments}
 
-\subsubsection{Continuation-style environments}
+\paragraph{Continuation-style environments}
 
-\subsubsection{Boolean constraints with existential variables}
+\paragraph{Boolean constraints with existential variables}
 
-\subsubsection{Boolean constraints resolved post-factum with equations posed as goals}
+\paragraph{Boolean constraints resolved post-factum with equations posed as goals}
 
-\subsubsection{Different styles of environemnts?}
+\paragraph{Different styles of environemnts?}
 
-\subsection{Ltac2 features used}
+\section{Ltac2 features used}
 
 "Reflection on the use of Ltac2"
-Mention that Ltac2 was complete for our puposes
+Mention that Ltac2 was complete for our purposes

@@ -21,6 +21,7 @@
 \usetikzlibrary{arrows}
 \usetikzlibrary{fit}
 \usetikzlibrary{positioning}
+\usepackage[breaklinks, draft=false, pdfusetitle, backref=page]{hyperref}
 \usepackage[amsmath,hyperref,thmmarks]{ntheorem}
 \usepackage{parskip}
 \usepackage{scrextend}
@@ -28,7 +29,7 @@
 \usepackage[nottoc]{tocbibind}
 \usepackage{caption}
 \usepackage{coqtheorem}
-
+\usepackage{lstcoq}
 
 % For the font
 \setmainfont{CMU Serif}
@@ -47,11 +48,7 @@
 \usepackage{natbib}
 \bibpunct{[}{]}{,}{n}{,}{;}
 
-%\usepackage[breaklinks, draft=false, pdfusetitle]{hyperref}
-
 \input{Macros.tex}
-
-\usepackage{lstcoq}
 
 \input{Environments.tex}
 
