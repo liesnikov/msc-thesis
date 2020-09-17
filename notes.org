@@ -255,7 +255,7 @@ the following doesn't work, although should
 #+begin_src coq
 Ltac2 Eval(match! '(1,1) with | (_, context [_]) => () end).
 #+end_src
-* If it was possible to anitquote patterns, linearity would be reachable with a hack
+* If it was possible to anitquote patterns, non-linearity would be reachable with a hack
 just take all patterns, put them in a list, match against list of returned hypothesis
 * Problems with =Control.hyp=
 The way its implemented prevents the following:
