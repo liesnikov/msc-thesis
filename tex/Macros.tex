@@ -53,8 +53,14 @@ $\square$% % the end-of-proof mark
 
 \newcommand\Affine[1]{\ensuremath{\text{Affine}(#1)}}
 \newcommand\Absorbing[1]{\ensuremath{\text{Absorbing}(#1)}}
+\newcommand\Persistent[1]{\ensuremath{\text{Persistent}(#1)}}
 
+\newcommand\pure[1]{\ensuremath{\ulcorner #1 \urcorner}}
 \newcommand\affine{\ensuremath{\langle\text{affine}\rangle}}
 \newcommand\pers{\ensuremath{\langle\text{pers}\rangle}}
 \newcommand\intuit{\ensuremath{\midlgwhtsquare}}
-\newcommand\pure[1]{\ensuremath{\ulcorner #1 \urcorner}}
+
+\newcommand\entails[3]{\ensuremath{#1 ; #2 \Vdash #3}}
+\newcommand\IntuD{\ensuremath{\Gamma}}
+\newcommand\SpatD{\ensuremath{\Delta}}
+\newcommand\entailsD[1]{\ensuremath{\IntuD ; \SpatD \Vdash #1}}

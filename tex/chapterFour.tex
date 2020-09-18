@@ -188,107 +188,156 @@ However, there are several options, which we will discuss later~\ref{sec:design_
   \item iRename
   \item iClear
     $$
-    \infer{\Gamma ; P[\true], \Delta \Vdash Q}
-          {\Gamma ; \Delta \Vdash Q &
+    \infer{\entails {\IntuD} {P[\true], \SpatD} {Q}}
+          {\entailsD Q &
            \Affine{P} \vee \Absorbing{Q}}
     $$
     $$
-    \infer{\Gamma ; P[\false], \Delta \Vdash Q}
-          {\Gamma ; \Delta \Vdash Q}
+    \infer{\entails {\IntuD} {P[\false], \SpatD} {Q}}
+          {\entailsD Q}
     $$
   \item iEval
     $$
-    \infer{\Gamma ; \Delta \Vdash Q}
-          {\Gamma ; \Delta \Vdash Q' &
+    \infer{\entailsD Q}
+          {\entailsD Q' &
            Q' \vdash Q
           }
     $$
   \end{itemize}
 \item Assumptions
   $$
-  \infer{\Gamma; \Delta \Vdash P}
-        {P[\true] \in \Gamma &
-         \Absorbing{P} \vee \Affine{\Delta}}
+  \infer{\entailsD P}
+        {P[\true] \in \IntuD &
+         \Absorbing{P} \vee \Affine{\SpatD}}
   $$
 
  $$
-  \infer{\Gamma; \Delta \Vdash P}
-        {P[\true] \in \Delta &
-         \Absorbing{P} \vee \Affine{\Delta \backslash P}}
+  \infer{\entailsD P}
+        {P[\true] \in \SpatD &
+         \Absorbing{P} \vee \Affine{\SpatD \backslash P}}
  $$
 
   Ex falso
   $$
-  \infer{\Gamma; \Delta \Vdash P}
-        {\Gamma; \Delta \Vdash \bot}
+  \infer{\entailsD P}
+        {\entailsD \bot}
   $$
 \item Intuitionistic/Spatail/Pure transitions
   \begin{itemize}
   \item iIntuitionistic
    %$$
-   % \infer{\Gamma ; \Delta \Vdash R}
-   %       {P[c] \in \Gamma &
+   % \infer{\entailsD R}
+   %       {P[c] \in \IntuD &
    %        \pers P \vdash \pers Q^{(\text{IntoPersistent}\ \true\ P\ Q)} &
-   %        \Gamma [P / Q]; \Delta \Vdash R
+   %        \entails {\IntuD [P / Q]} {\SpatD} {R}
    %      }
    %$$
     $$
-    \infer{\Gamma ; \Delta \Vdash R}
-          {P[c] \in \Delta &
+    \infer{\entailsD R}
+          {P[c] \in \SpatD &
            P \vdash \pers Q^{(\text{IntoPersistent}\ \false\ P\ Q)} &
-           \Gamma, Q; \Delta \backslash P \Vdash R
+           \entails {\IntuD, Q} {\SpatD \backslash P} {R}
          }
     $$
   \item iSpatial
     $$
-    \infer{\Gamma ; \Delta \Vdash R}
-          {P[c] \in \Gamma &
+    \infer{\entailsD R}
+          {P[c] \in \IntuD &
            \affine P \vdash Q^{(\text{FromAffinely}\ P\ Q)} &
-           \Gamma \backslash P; \Delta, Q \Vdash R
+           \entails {\IntuD \backslash P} {\SpatD, Q} {R}
          }
     $$
   \item iPure
     $$
-    \infer{\Gamma ; \Delta \Vdash R}
-          {\pure{\phi}[\true] \in \Gamma &
-           \phi \imp \Gamma \backslash (\pure{\phi}); \Delta \Vdash R
+    \infer{\entailsD R}
+          {\pure{\phi}[\true] \in \IntuD &
+           \phi \imp \entails {\IntuD \backslash (\pure{\phi})} {\SpatD} {R}
          }
     $$
     $$
-    \infer{\Gamma ; \Delta \Vdash R}
-          {\pure{\phi}[\true] \in \Delta &
+    \infer{\entailsD R}
+          {\pure{\phi}[\true] \in \SpatD &
            \Affine{P} \vee \Absorbing{R} &
-           \phi \imp \Gamma; \Delta \backslash (\pure{\phi}) \Vdash R
+           \phi \imp \entails {\IntuD} {\SpatD \backslash (\pure{\phi})} {R}
          }
     $$
   \item iEmpIntro
     $$
-    \infer{\Gamma ; \Delta \Vdash \emp}
-          {\Affine{\Delta}}
+    \infer{\entailsD \emp}
+          {\Affine{\SpatD}}
     $$
   \item iPureIntro
     \begin{equation}
-    \infer{\Gamma ; \Delta \Vdash \pure{\phi}}
+    \infer{\entailsD {\pure \phi}}
           {\phi}
     \quad
-    \infer{\Gamma ; \Delta \Vdash \affine \pure{\phi}}
+    \infer{\entailsD {\affine \pure \phi }}
           {\phi & &
-           \Affine{\Delta}
+           \Affine{\SpatD}
           }
     \end{equation}
   \end{itemize}
 \item iFrame
 \item Intro of wand/implication
+  $$
+  \infer{\entailsD P \wand Q}
+        {\entails {\IntuD} {\SpatD , P[\true]} {Q}}
+  $$
+
+  \begin{equation*}
+  \infer{\entailsD P \imp Q}
+        {\SpatD = [] &
+          \entails {\IntuD} {\SpatD , \affine P[\true]} {Q} &
+        }
+   \quad
+  \infer{\entailsD P \imp Q}
+        {\Persistent P &
+         \entails {\IntuD} {\SpatD , \affine P[\true]} {Q} &
+        }
+  \end{equation*}
 \item Revert
 \item Specialize and Pose
+  $$
+  \infer{\entailsD Q}
+        {(P \wand R)[c_1] \in \SpatD &
+         P[c_2] \in \SpatD &
+         \entails{\IntuD}{\SpatD [(P \wand R)[c_1] /
+                                  (P \wand R)[\neg c \& c_1]]
+                                 [P[c_2] / P [\neg c \& c_2]],
+                                 R[c \& c_1 \& c_2]}}
+  $$
 \item Apply
+  $$
+  \infer{\entailsD Q}
+        {(P \wand Q)[\true] \in \SpatD &
+         \entails \IntuD {\SpatD \backslash (P \wand Q)} {P}}
+  $$
 \item Existential
   \begin{itemize}
   \item Intro
+    $$
+    \infer{\entailsD \exists x, P x}
+          {\exists x, \entailsD (P x)}
+    $$
   \item Destruct
+    $$
+    \infer{\entailsD Q}
+          {(\exists x, P x)[\true] \in \SpatD &
+           \forall x, \entails \IntuD {\SpatD [(\exists x, P x) / P x]} Q}
+    $$
   \end{itemize}
 \item Modalities
 \item iDestruct
+  $$
+  \infer{\entailsD Q}
+        {(P \wedge R)[c] \in \SpatD &
+         \entails {\IntuD} {\SpatD \backslash (P \wedge R), P[c' \& c], R [\neg c' \& c]} Q}
+  $$
+  $$
+  \infer{\entailsD Q}
+        {(P \ast R)[c] \in \SpatD &
+         \entails {\IntuD} {\SpatD \backslash (P \ast R), P[c], R [c]} Q}
+  $$
 \item iIntros
 \item Induction
 \item Löb
