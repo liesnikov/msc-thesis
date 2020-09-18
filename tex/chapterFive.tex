@@ -2,27 +2,26 @@
 
 Ltac has a tactical for matching on the current proof state, which takes form of
 
-\begin{lstlisting}
+\begin{coq}
 match goal with
 | [a:H_0, b:H_1 |- H_0] => x
 end
-\end{lstlisting}
-
-In this example we are matching the context that's supposed to contain at least two assumptions: \lstinline|a:H_0| and \lstinline|b:H_1|.
-We also require the goal to be exactly \lstinline|H_0| and then we close the proof with the first assumption we matched in the context.\
+\end{coq}
+In this example we are matching the context that's supposed to contain at least two assumptions: \coqe|a:H_0| and \coqe|b:H_1|.
+We also require the goal to be exactly \coqe|H_0| and then we close the proof with the first assumption we matched in the context.\
 
 Iris Proof Mode can't use Coq contexts, since Coq contexts don't track hypothesis usage, which can result in a resource being used twice.
-Instead, IPM stores everything in the goal, which makes it unfit for \lstinline|match goal|.
+Instead, IPM stores everything in the goal, which makes it unfit for \coqe|match goal|.
 
 \iMatch fills exactly that hole.
 
 \section{Motivation/examples}
 
-While one of the most useful usages of \lstinline{iMatch} would a solver for separation logic, we are going to cover it in a later chapter.
+While one of the most useful usages of \coqe{iMatch} would a solver for separation logic, we are going to cover it in a later chapter.
 Let us take a simpler and more intuitive example here.
-Suppose we want to extend \lstinline{iAssumption} tactic so that it also applies fitting wands it can find in the context.
+Suppose we want to extend \coqe{iAssumption} tactic so that it also applies fitting wands it can find in the context.
 
-Let's call this new tactic \lstinline{iAssumption'}.
+Let's call this new tactic \coqe{iAssumption'}.
 Take the following context:\\
 \texttt{
 P, Q : PROP\\
@@ -33,19 +32,19 @@ P, Q : PROP\\
 P
 }
 
-We want to discharge the goal with \lstinline|do 2 iAssumption'|.
+We want to discharge the goal with \coqe|do 2 iAssumption'|.
 
 \begin{minipage}{\linewidth}
-\begin{lstlisting}
+\begin{coq}
 Ltac2 iAssumption' :=
   iMatch! goal with
   | [a : ?e -* ?f |- _] => iApply a
   | [a : ?e |- ?e] => iExact a
   end.
-\end{lstlisting}
+\end{coq}
 \end{minipage}
 
-A notable thing with this tactic is not just readability, assuming one is familiar with \lstinline|match goal| construct.
+A notable thing with this tactic is not just readability, assuming one is familiar with \coqe|match goal| construct.
 It's also conciseness -- a similar tactic in pure Ltac1 code has to search for a fitting hypothesis in both context manually, which in the current Iris Proof Mode implementation is taking 30 lines of code.
 
 \section{Possible semantics and tradeoffs}
@@ -57,23 +56,23 @@ All of them involve backtracking in one or another way.
 While it might be tempting to think about iMatch simply selecting the right hypothesis when we want it to, this isn't exactly the case.
 In reality both Ltac, Ltac2 implementation and ours, bind identifers to the first hypothesis which fit the pattern.
 
-For example, if there are two hypotheses: \lstinline|H1:P|, \lstinline|H2:Q|,
+For example, if there are two hypotheses: \coqe|H1:P|, \coqe|H2:Q|,
 both
-\begin{lstlisting}
+\begin{coq}
   iMatch! goal with
   | [h1:P, h2:_ |- _ ] => ...
   end
-\end{lstlisting}
+\end{coq}
 and
-\begin{lstlisting}
+\begin{coq}
   iMatch! goal with
   | [h2:_, h1:P |- _ ] => ...
   end
-\end{lstlisting}
+\end{coq}
 should succeed.
-But given that the implementation matches elements in the context linearly, this will result in matching \lstinline|h2| with \lstinline|H1| in the second case and then backtracking, once we fail to find another \lstinline|P| in the context.
+But given that the implementation matches elements in the context linearly, this will result in matching \coqe|h2| with \coqe|H1| in the second case and then backtracking, once we fail to find another \coqe|P| in the context.
 
-Another example, which utilizes the \lstinline|iAssumption'| is the following: assuming that logic is affine in the example above and instead of one, there are two wands available:
+Another example, which utilizes the \coqe|iAssumption'| is the following: assuming that logic is affine in the example above and instead of one, there are two wands available:
 
 \texttt{
 P, Q, R : PROP\\
@@ -85,14 +84,14 @@ P, Q, R : PROP\\
 P
 }
 
-the composite tactic \lstinline|do 2 iAssumption'| would still work.
+the composite tactic \coqe|do 2 iAssumption'| would still work.
 
 \subsection{Backtracking over matches: iLazyMatch and iMultiMatch}
 
 This is also achieved via backtracking.
-Assuming that we are unlucky and \lstinline|r| indeed comes earlier in the list of hypothesis than \lstinline|p|, it will be the first one iMatch considers.
+Assuming that we are unlucky and \coqe|r| indeed comes earlier in the list of hypothesis than \coqe|p|, it will be the first one iMatch considers.
 However, while the initial binding will succeed, applying this wand to the current goal won't, unless the conclusion of the wand matches the goal.
-Which means that code will backtrack and bind the next fitting hypothesis -- \lstinline|p|.
+Which means that code will backtrack and bind the next fitting hypothesis -- \coqe|p|.
 For which the application would succeed.
 
 The variant of iMatch which doesn't backtrack on the tactics is called iLazyMatch.
@@ -114,11 +113,11 @@ P, Q, R : PROP\\
 P
 }
 
-With the current implementation of \lstinline|iAssumption'|, \lstinline|do 2 iAssumption'| will fail, since \lstinline|r| is possible to apply to the current goal, there is no resource to provide the wand with after it has been applied.
+With the current implementation of \coqe|iAssumption'|, \coqe|do 2 iAssumption'| will fail, since \coqe|r| is possible to apply to the current goal, there is no resource to provide the wand with after it has been applied.
 
-However, if expose backtracking points after the match, failures in the later tactics (second \lstinline|iAssumption'| in our example), will cause it to backtrack and
+However, if expose backtracking points after the match, failures in the later tactics (second \coqe|iAssumption'| in our example), will cause it to backtrack and
 to choose a different hypothesis to apply, if available.
-This variant is called iMultiMatch and changing the name is literally the only change it's necessary to make to the definition of \lstinline|iAssumption'|.
+This variant is called iMultiMatch and changing the name is literally the only change it's necessary to make to the definition of \coqe|iAssumption'|.
 
 \subsection{Backtracking over branches}
 
@@ -126,7 +125,7 @@ Backtracking to a different branch happens in two cases, though second one is re
 
 The first one is more of implementation detail and morally is simply ``right branch selection'' based on the pattern.
 Implementations would try to match all branches linearly and will switch branches only when encountering an impossible pattern.
-The reason we stress this here is that implementation-wise this relies on the same \lstinline|Control.plus| machinery as other things here.
+The reason we stress this here is that implementation-wise this relies on the same \coqe|Control.plus| machinery as other things here.
 
 The second one is a bit more interesting as this is really the same behavior that differentiates iMatch from iLazyMatch, which we covered above.
 \todo{More explanation here?}
@@ -136,16 +135,16 @@ The second one is a bit more interesting as this is really the same behavior tha
 The last place where backtracking appears is name conflict resolution.
 Take the following snippet:
 
-\begin{lstlisting}
+\begin{coq}
 iMatch! goal with
 | [a : ?e -* ?f, b : ?e |- _] => ...
 end.
-\end{lstlisting}
+\end{coq}
 
-It is non-linear in variable \lstinline|e|, which is resolved in the following way:
-Since the implementation is still matching hypotheses in a linear way, it first matches wand \lstinline|a| with type \lstinline|Q -* P|.
-Thus producing binders \lstinline|e $\mapsto$ Q| and \lstinline|f $\mapsto$ P|.
-When it tries to match the second hypothesis, it doesn't yet have any restrictions, so it will match anything for b, not necessarily \lstinline|Q|.
+It is non-linear in variable \coqe|e|, which is resolved in the following way:
+Since the implementation is still matching hypotheses in a linear way, it first matches wand \coqe|a| with type \coqe|Q -* P|.
+Thus producing binders \coqe|e $\mapsto$ Q| and \coqe|f $\mapsto$ P|.
+When it tries to match the second hypothesis, it doesn't yet have any restrictions, so it will match anything for b, not necessarily \coqe|Q|.
 But afterwards it will resolve name conflicts, checking whether constrs binded to the same names are convertible.
 
 This feature isn't yet implemented in iMatch due to Ltac2 limitations.
@@ -171,9 +170,9 @@ User can also specify, where they want IPM resources to come from with separator
 
 More thorough handling of patterns.
 \begin{itemize}
-\item Pattern quotations (\lstinline|pattern:(_)| as with \lstinline|constr:(1)|).
+\item Pattern quotations (\coqe|pattern:(_)| as with \coqe|constr:(1)|).
 \item For non-linear patterns we need at least pattern antiquotation.
-\item To detect wildcards in a nice way it would be good to have \lstinline|Pattern.Unsafe|.
+\item To detect wildcards in a nice way it would be good to have \coqe|Pattern.Unsafe|.
 \end{itemize}
 
 \todo{more, with examples}
