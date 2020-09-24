@@ -19,7 +19,7 @@ Module Misc.
 
   Ltac2 ident_of_string s :=
     match Ident.of_string s with
-    | None => Control.zero (Tactic_failure None)
+    | None => Control.zero (No_value)
     | Some t => t
     end.
 End Misc.

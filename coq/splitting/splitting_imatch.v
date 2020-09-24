@@ -136,7 +136,7 @@ Ltac2 split_pat_list_with_sep plist :=
             let (a,b,c) := abc in
             go (Third (rh :: a, b, c)) restl
           end in
-        (* match against bogus term to find out whether the pattern is wildcard *)
+        (* match against bogus term to find out whether the pattern is a wildcard *)
         match (Control.case (fun () => i_match_term rh bogus)) with
         | Val _ =>
           (* The pattern is a wildcard, so it's not sep *)
@@ -144,7 +144,7 @@ Ltac2 split_pat_list_with_sep plist :=
         | Err _ =>
           (* The pattern is not a wildcard *)
           or (fun () =>
-                i_match_term rh '(sep);
+                let _ := i_match_term rh '(sep) in
                 (* if we get here, then previous expr didn't fail,
                    so the rh pattern _is_ sep
                    then we drop it and start a new partition in acc *)
@@ -156,6 +156,8 @@ Ltac2 split_pat_list_with_sep plist :=
              (fun e => isnt_sep ())
         end
       end in
+  (* the list has to be reversed since we start partitions from the right
+     [coq env || intuitionistic env || spatial env] *)
   go (First []) (List.rev plist).
 
 Ltac2 i_match_ihyps
@@ -168,8 +170,10 @@ Ltac2 i_match_ihyps
      let (ids, bins, ctxs) :=
          match (split_pat_list_with_sep pats) with
          | First pats =>
+           (* there is just one partition, match all hypotheses *)
            i_match_ihyps_list pats (List.append penvl senvl)
          | Second split_pats =>
+           (* two partitions, match intuitionistic and spatial envs separately *)
            let (ppats, spats) := split_pats in
            let (ids1, bins1, ctxs1) :=
              i_match_ihyps_list ppats penvl in
@@ -179,6 +183,7 @@ Ltac2 i_match_ihyps
             List.append bins1 bins2,
             List.append ctxs1 (None :: ctxs2))
          | Third lll =>
+           (* three partitions, match coq env, intuitionistic and spatial envs *)
            iriception "Not implemented"
          end in
      let bins' := List.flat_map (fun x => to_list x) bins in
@@ -199,7 +204,7 @@ Ltac2 i_match_igoal conclpat concl :=
       (bind, context)
     end.
 
-Ltac2 i_matches_goal phyps pconcl :=
+Ltac2 i_matches_patterns_goal phyps pconcl :=
   lazy_match! goal with
   | [|- envs_entails (Envs ?p ?s ?c) ?q] =>
     let (hids, hsubst, hctx) := i_match_ihyps phyps p s in
@@ -218,7 +223,7 @@ Ltac2 i_lazy_match_goal pats :=
     let (pat, f) := p in
     let (phyps, pconcl) := pat in
     let cur _ :=
-          let (hids, hctx, subst, cctx) := i_matches_goal phyps pconcl in
+          let (hids, hctx, subst, cctx) := i_matches_patterns_goal phyps pconcl in
           fun () => f hids hctx subst cctx
     in Control.plus cur next
   end in
@@ -228,14 +233,14 @@ Ltac2 Notation "iLazyMatch!" "goal" "with" m(goal_matching) "end" :=
   i_lazy_match_goal m.
 
 Ltac2 i_match_goal pats :=
-  let rec interp m := match m with
+  let rec interp ps := match ps with
   | [] => Control.zero Match_failure
-  | p :: mt =>
-    let next _ := interp mt in
-    let (pat, f) := p in
+  | ph :: pt =>
+    let next _ := interp pt in
+    let (pat, f) := ph in
     let (phyps, pconcl) := pat in
     let cur _ :=
-        let (hids, hctx, subst, cctx) := i_matches_goal phyps pconcl in
+        let (hids, hctx, subst, cctx) := i_matches_patterns_goal phyps pconcl in
         f hids hctx subst cctx
     in Control.plus cur next
   end in
@@ -248,29 +253,6 @@ Ltac2 Notation "iMatch!" "goal" "with" m(goal_matching) "end" :=
 Ltac2 Notation "iMultiMatch!" "goal" "with" m(goal_matching) "end" :=
   i_match_goal m.
 
-From iris.proofmode Require Import classes notation.
-(* From Local Require Import ltac2_tactics.*)
-Context {PROP : sbi}.
-Implicit Types P Q R : PROP.
-
-Set Ltac2 Backtrace.
-
 Notation "'<' c '>' P" := (c%bool, P%I) (at level 10, c at level 0, only parsing).
 Notation "'<?>' P" := (not_false, P%I) (at level 10, only parsing).
 Notation "‖" := sep (only parsing).
-
-Lemma test1 P Q : Q ⊢ □ (<absorb> P) -∗ Q.
-Proof.
-  i_start_split_proof ().
-  i_intro_ident '(INamed "q").
-  (* i_intro_ident '(INamed "p"). *)
-  i_intro_intuitionistic_ident '(INamed "p").
-  iLazyMatch! goal with
-  | [h1 : <?> ?p |- _] => Message.print (oc p)
-  end.
-
-  iMatch! goal with
-  | [h1 : _, h2 : (<absorb> _)%I |- ?p] =>
-    i_exact h1
-  end.
-Qed.
