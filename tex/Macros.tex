@@ -15,8 +15,8 @@
 \newcommand{\bnfor}{~|~} %|
 \newcommand{\qedsq}{\hfill\ensuremath{_\blacksquare}}
 
-\newcommand{\true}{\ensuremath{\textsf{true}}}
-\newcommand{\false}{\ensuremath{\textsf{false}}}
+\newcommand{\true}{\textsf{true}}
+\newcommand{\false}{\textsf{false}}
 
 \newcommand{\blankpage}{\newpage
 \thispagestyle{empty}
@@ -47,7 +47,7 @@ $\square$% % the end-of-proof mark
 
 \newcommand\wand{\ensuremath{\mathrel{-\mkern-6mu*}}}
 \newcommand\emp{\ensuremath{\textsf{emp}}}
-\newcommand\iMatch{iMatch}
+\newcommand\iMatch{\coqe{iMatch}}
 
 \newcommand\expr{\ensuremath{\text{exp}}}
 
@@ -58,7 +58,7 @@ $\square$% % the end-of-proof mark
 \newcommand\pure[1]{\ensuremath{\ulcorner #1 \urcorner}}
 \newcommand\affine{\ensuremath{\langle\text{affine}\rangle}}
 \newcommand\pers{\ensuremath{\langle\text{pers}\rangle}}
-\newcommand\intuit{\ensuremath{\midlgwhtsquare}}
+\newcommand\intuit{\mathop{\Box}}
 
 \newcommand\entails[3]{\ensuremath{#1 ; #2 \Vdash #3}}
 \newcommand\IntuD{\ensuremath{\Gamma}}
