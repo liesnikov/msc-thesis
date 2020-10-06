@@ -178,7 +178,7 @@ H : {?b} exists y, P y |- Q
 y: b = true -> Y
 -----------------
 forall p : b = true
-if b then P y else emp 
+if b then P y else emp
 -----------------| iDestruct H
 Q
 
@@ -204,7 +204,7 @@ A, B
   rules: wand, star, forall, exists, disj, conj, later, always
 ** implement more tactics
 ** writing goals / challenges solved/encountered
-* Meeting of 21/07 results
+* Meeting of <2020-07-21 вт> results
 ** WRITE STUFF UP!
 Meeting next week on the structure of the thesis
 Preliminary structure
@@ -237,27 +237,19 @@ Since you're normalizing the context, it'll be destructed immediately with const
 In general, two things are possible:
 - either prove that the type is inhabited as a side-condition
 - or play around with the context to include a restriction that the constraint is true
-* Current issues (08/2020):
-** i_intro of coq assumption after i_start_proof fails.
+* Current issues <2020-08-01 сб>:
+** DONE i_intro of coq assumption after i_start_proof fails.
  and it shouldn't
-** is iMatch as of now linear?
+** DONE WONTFIX is iMatch as of now linear?
   no, and there seems to be no way of making it linear
 * naive solver lives here:
   [[file:~/my-dir/ed/uni/saar/prjcts/iris/stdpp/theories/tactics.v][tactics.v]]
-* 2/09 issues:
-** It's impossible to chain tactics which take constrs, since those are goal-dependent.
-So, we need to take Ltac2 identifers/strings and convert them to Coq strings (constrs) for the whole thing to work.
-Relevant issue:
-https://github.com/coq/coq/issues/7922
-How to check?
-* 11/09
-the following doesn't work, although should
+* Ltac2 issues
+** the following doesn't work, although should
 #+begin_src coq
 Ltac2 Eval(match! '(1,1) with | (_, context [_]) => () end).
 #+end_src
-* If it was possible to anitquote patterns, non-linearity would be reachable with a hack
-just take all patterns, put them in a list, match against list of returned hypothesis
-* Problems with =Control.hyp=
+** Problems with =Control.hyp=
 The way its implemented prevents the following:
 take context which contains =p : A -> B=.
 #+begin_src coq
@@ -266,6 +258,8 @@ match! (Control.hyp ident:(p)) with
 end
 #+end_src
 will fail since Control.hyp returns a var reference and not a literal constr.
+** If it was possible to anitquote patterns, non-linearity would be reachable with a hack
+just take all patterns, put them in a list, match against list of returned hypothesis
 * Control.once is equivalent to
 #+begin_src coq
 Ltac2 my_once t :=
@@ -279,3 +273,22 @@ let v () := Control.plus (fun () => 1)
                          (fun  e => Control.zero (Not_found))
 in my_once v).
 #+end_src
+* Problems with postponed splitting:
+** TODO after forcing a constraint to be false, it will reappear after split
+**problem**: before split, a constraint is false, but split introduces an evar, so the constraint doesn't evaluate to false and thus will _reappear_
+**solution**: clean up hypotheses before splitting by checking which ones evaluate to false
+*** this will also appear if user splits =(a /\ b)<false>=
+try checking whether it evaluates to false before running tactic?
+** TODO <2020-09-09 ср> It's impossible to chain tactics which take constrs, since those are goal-dependent.
+So, we need to take Ltac2 identifers/strings and convert them to Coq strings (constrs) for the whole thing to work.
+Relevant issue:
+https://github.com/coq/coq/issues/7922
+How to check?
+* Ltac2
+what kinds of things can you write in this language
+tour
+
+Mtac2 tautology
+
+* IPM tutorial
+iDestruct
