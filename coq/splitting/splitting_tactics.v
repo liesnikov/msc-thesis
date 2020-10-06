@@ -98,6 +98,9 @@ Proof.
   by rewrite wand_elim_r.
 Qed.
 
+(** *TODO: remove resources with false constraints*)
+(* Lemma tac_clear_false Δ Γ *)
+
 Lemma tac_clear Δ i p c P Q :
   envs_lookup_with_constr i Δ = Some (p,c,P) →
   (if p then TCTrue else TCOr (TCOr (Affine P) (Absorbing Q))
@@ -362,5 +365,27 @@ Proof.
   destruct (envs_simple_replace _ _ _ _) as [Δ'|] eqn:Hrep; last done.
   rewrite envs_simple_replace_singleton_sound' //; simpl. by rewrite wand_elim_r.
 Qed.
+
+(** *TODO: lemma for specialization *)
+Lemma tac_specialize_with_constr Δ i p j q k c1 c2 c P1 P2 R Q:
+  envs_lookup_with_constr i Δ = Some (p, c1, P1) ->
+  match envs_simple_replace i p (Esnoc Enil ((negb c) && c1, i) P1) Δ with
+  | Some Δ' =>
+    envs_lookup_with_constr j Δ' = Some (q, c2, R) ->
+    IntoWand q p R P1 P2 ->
+    match envs_simple_replace j q (Esnoc Enil ((negb c) && c2, j) R) Δ' with
+    | Some Δ'' =>
+      match envs_app (p && q) (Esnoc Enil (c && c1 && c2, k) P2) Δ'' with
+      | Some Δ''' => envs_entails Δ''' Q
+      | None => False
+      end
+    | None => False
+    end
+  | None => False
+  end -> envs_entails Δ Q.
+Proof.
+  rewrite envs_entails_eq => ? H. rewrite envs_lookup_sound_with_constr //.
+  destruct (envs_simple_replace i _ _ _) as [Δ'|] eqn: H1; last done.
+Abort.
 
 End bi.

@@ -327,12 +327,39 @@ Definition envs_lookup_true {PROP} (i : ident) (Δ : envs PROP) : option (bool *
   | None => P ← env_lookup_true i Γs; Some (false, P)
   end.
 
+(* for clearing false hyps *)
+Fixpoint envs_lookup_pred {PROP} (i : ident) (Δ : envs PROP) : Prop :=
+  match (envs_lookup_with_constr i Δ) with
+  | Some _ => True
+  | None => False
+  end.
+
+Fixpoint envs_lookup_list_pred {PROP} (il : list ident) (Δ : envs PROP) : Prop :=
+  match il with
+  | [] => True
+  | ih :: it =>
+    match (envs_lookup_with_constr ih Δ) with
+    | Some _ => envs_lookup_list_pred it Δ
+    | None => False
+    end
+  end.
+
 Definition envs_delete {PROP} (remove_intuitionistic : bool)
     (i : ident) (p : bool) (Δ : envs PROP) : envs PROP :=
   let (Γp,Γs,n) := Δ in
   match p with
   | true => Envs (if remove_intuitionistic then env_delete i Γp else Γp) Γs n
   | false => Envs Γp (env_delete i Γs) n
+  end.
+
+(* for clearing false hyps *)
+Fixpoint envs_delete_list {PROP}
+  (il : list (ident * bool)) (Δ : envs PROP) : envs PROP :=
+  match il with
+  | [] => Δ
+  | (ih, cb) :: it =>
+    let Δ' := envs_delete_list it Δ in
+    envs_delete true ih cb Δ'
   end.
 
 
@@ -402,13 +429,13 @@ Proof.
   destruct (env_intuitionistic0 !! i) eqn: Hi.
   - apply env_lookup_env_lookup_with_constr in Hi.
     destruct Hi as [e ->]. naive_solver.
-  - destruct env_lookup_with_constr as [[c P]| ->] eqn: Heqi. {
+  - destruct env_lookup_with_constr as [[c P]|] eqn: Heqi. {
       pattern c in Heqi.
       apply ex_intro, env_lookup_env_lookup_with_constr in Heqi. congruence. }
     destruct (env_spatial0 !! i) eqn: Hs.
     + cbn. apply env_lookup_env_lookup_with_constr in Hs.
       destruct Hs as [e ->]. naive_solver.
-    + destruct (env_lookup_with_constr i env_spatial0) as [[c P]| ->] eqn: Heqs. {
+    + destruct (env_lookup_with_constr i env_spatial0) as [[c P]|] eqn: Heqs. {
         pattern c in Heqs.
         apply ex_intro, env_lookup_env_lookup_with_constr in Heqs. congruence.
       }
@@ -422,7 +449,7 @@ Proof.
   destruct (Δi !!! i) eqn: Hi. {
     apply (env_lookup_with_constr_env_lookup_true _ _ _) in Hi.
     rewrite Hi; naive_solver. }
-  destruct (env_lookup_with_constr i Δi) as [[[|] P]| ->] eqn: Heqi.
+  destruct (env_lookup_with_constr i Δi) as [[[|] P]|] eqn: Heqi.
   - apply env_lookup_with_constr_env_lookup_true in Heqi; by try congruence.
   - pattern false in Heqi.
     apply ex_intro, env_lookup_env_lookup_with_constr in Heqi.
@@ -431,7 +458,7 @@ Proof.
   - destruct (Δs !!! i) eqn: Hs. {
       apply (env_lookup_with_constr_env_lookup_true _ _ _) in Hs.
       rewrite Hs; naive_solver. }
-    destruct (env_lookup_with_constr i Δs) as [[[|] P]| ->] eqn: Heqs; [|naive_solver | naive_solver].
+    destruct (env_lookup_with_constr i Δs) as [[[|] P]|] eqn: Heqs; [|naive_solver | naive_solver].
     apply env_lookup_with_constr_env_lookup_true in Heqs; by try congruence.
 Qed.
 
@@ -441,7 +468,7 @@ Lemma envs_lookup_sound Δ i p P :
 Proof. apply envs_lookup_sound'. Qed.
 
 
-(* FIXME : finish proof *)
+(** *FIXME : finish proof *)
 Lemma envs_lookup_sound_with_constr Δ i p c P:
   envs_lookup_with_constr i Δ = Some (p, c, P) ->
   of_envs Δ ⊢ (if c then □?p P else emp) ∗ of_envs (envs_delete true i p Δ).
@@ -473,6 +500,33 @@ Proof.
   + admit.
 Admitted.
 
+(** *FIXME: finish proof *)
+(* for clearing false hyps *)
+Lemma envs_lookup_pred_sound Δ i p:
+  envs_lookup_pred i Δ ->
+  exists P, of_envs Δ ⊢ (□?p P) ∗ of_envs (envs_delete true i p Δ).
+Proof.
+Admitted.
+
+(** *FIXME: finish proof *)
+(* for clearing false hyps *)
+Lemma envs_lookup_list_pred_sound Δ il:
+  envs_lookup_list_pred (List.map fst il) Δ ->
+  exists Γ1 Γ2, of_envs Δ ⊢  (□ [∧] Γ1 ∗ [∗] Γ2) ∗ of_envs (envs_delete_list il Δ).
+Proof.
+  move : Δ.
+  induction il as [|[i b] it IH] => Δ H //.
+  - exists Enil, Enil. rewrite sep_emp intuitionistically_True_emp emp_sep //=.
+  - move : H. cbn [map fst envs_lookup_list_pred].
+    destruct (envs_lookup_with_constr i _) as [[[p c] P]|] eqn: Heq; [|done].
+    move => H. destruct (IH _ H) as [Γ1 [Γ2 IHs]].
+    destruct p.
+    + exists (Esnoc Γ1 (c,i) P), Γ2.
+      rewrite IHs. cbn.
+      admit.
+    + exists Γ1, (Esnoc Γ2 (c,i) P).
+      admit.
+Admitted.
 
 Lemma envs_app_sound Δ Δ' p Γ :
   envs_app p Γ Δ = Some Δ' →
