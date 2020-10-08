@@ -25,13 +25,12 @@ morekeywords=[1]{Section, Module, End, Require, Import, Export,
   Program, Infix, Theorem, Lemma, Corollary, Proposition, Fact,
   Remark, Example, Proof, Goal, Save, Qed, Defined, Hint, Resolve,
   Rewrite, View, Search, Show, Print, Printing, All, Eval, Check,
-  Projections, inside, outside, Def, MetaCoq, Run, Scheme, Ltac2},
+  Projections, inside, outside, Def, MetaCoq, Run, Scheme, Ltac, Ltac2},
 %
 % Gallina
 morekeywords=[2]{forall, exists, exists2, fun, fix, cofix, struct,
   match, with, end, as, in, return, let, if, is, then, else, for, of,
-  nosimpl, when, Sort,
-  iMatch, iLazyMatch, iMultiMatch},
+  nosimpl, when, Sort},
 %
 % Sorts
 morekeywords=[3]{Type, Prop, Set, true, false, option},
@@ -56,7 +55,8 @@ morekeywords=[6]{do, last, first, try, idtac, repeat},
 morecomment=[s]{(*}{*)},
 %
 % Ltac2
-morekeywords=[6]{lazy_match, match!, lazy_match!, constr},
+morekeywords=[6]{lazy_match!, match!, lazy_match!, constr,
+  iMatch, iLazyMatch, iMultiMatch},
 % Spaces are not displayed as a special character
 showstringspaces=false,
 %

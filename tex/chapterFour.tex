@@ -1,46 +1,51 @@
 \chapter{Postponed Splitting}
 \label{chap:postponed_splitting}
 
+Consider the following standard rule in separation logic
 
-Consider the following rule in separation logic
+\[\infer{\Gamma_1, \Gamma_2 \vdash \phi_1 \ast \phi_2}
+        {\Gamma_1 \vdash \phi_1 &
+         \Gamma_2 \vdash \phi_2} \]
 
-$$\infer{\Gamma_1, \Gamma_2 \vdash \phi_1 \ast \phi_2}
-      {\Gamma_1 \vdash \phi_1 &
-       \Gamma_2 \vdash \phi_2}$$
+When we use it as a deductive inference, we know premises and have to derive the conclusion.
+The left premise lets us infer what one part of the context in the conclusion should be and the right one -- the other.
 
-From derivation perspective this rule is perfectly fine, since when one writes a derivation, one knows perfectly well what $\Gamma_1$ and $\Delta_2$ are supposed to be in advance.
+However, when using it from proof search perspective, a problem appears.
+We know that the premises should take form of \(\Gamma_1 \vdash \phi_1\) and \(\Gamma_2 \vdash \phi_2\), where $\Gamma$s are undefined.
+And we know that the conclusion should be \(\Gamma \vdash \phi_1 \ast \phi_2\).
+But it doesn't provide us with any infromation on how to split \(\Gamma\) into \(\Gamma_1\) and \(\Gamma_2\).
 
-However, when the perspective is switched and one seeks to find the proof of $\Gamma \vdash \phi_1 \ast \phi_2$, a problem arises:
-It's not immediately clear how to split the context $\Gamma$ into $\Gamma_1, \Gamma_2$, so that both $\Gamma_1 \vdash \phi_1$ and $\Gamma_2 \vdash \phi_2$ are provable.
+Since propositions in separation logic are frequently thought as resources, this problem is called ``resource distribution'' problem in the literature.
 
-Since propositions in separation logic are frequently thought as resources, this is an instance of ``resource distribution'' problem.
+We develop a tecnhique to automate some parts of it, building on ideas from \citet{harlandResourceDistributionBooleanConstraints2003}.
 
-We seek to automate some parts of this problem drawing inspiration from \citet{Harland_Pym_2003}.
+The key element is instead of forcing the prover to distribute resources right away, postpone this decision.
+The key element of the solution is adding to each resource a Boolean  which indicates presence or absence of the resource.
 
 \section{Motivation/examples}
 
 Since separating conjunction is one of the fundamental connectives, the ability to postpone decision wchih resources go where is frequently useful.
 
-Naturally, the usability of this grows with the complexity of a decision which user has to make upfront.
+Naturally, the usability of this grows with the complexity of decision which user has to make upfront.
 Still, let's consider small illustrative example of where we would want to use it.
 
 Take the following statement:
-$(A \wand B) \ast (C \wand D) \ast A \ast C \vdash B \ast D$
+\((A \wand B) * (C \wand D) * A * C \vdash B * D\)
 
 For a human it is pretty clear what the derivation should be after a moment's consideration.
 But for machine it's not immediately clear how to distribute resources, so instead we can postpone this decision and simply say that resources are distributed disjointly.
-$$
+\[
 \infer{(A \wand B) \ast (C \wand D) \ast A \ast C \vdash B \ast D}
       {(A \wand B)[c_0] \ast (C \wand D)[c_1] \ast A[c_2] \ast C[c_3] \vdash B
        &
        (A \wand B)[\neg c_0] \ast (C \wand D)[\neg c_1] \ast A[\neg c_2] \ast C[\neg c_3] \vdash D}
-$$
+\]
 
 Then we utilize wand application on the left-hand side in both sequents.
 
 Let's take a closer look at the left one:
 
-$$
+\[
 \infer{(A \wand B)[c_0] \ast (C \wand D)[c_1] \ast
         A[c_2] \ast C[c_3] \vdash B}
       {(C \wand D)[c'_1 \& c_1] \ast
@@ -48,133 +53,184 @@ $$
        &
        B[c_0] \ast (C \wand D)[\neg c'_1 \& c_1] \ast
        A[\neg c'_1 \& c_2] \ast C[\neg c'_3 \& c_3] \vdash B}
-$$
+\]
 
-From the left  we can say that $c'_2 \& c_2$ has to be $\true$, hence both $c'_2$ and $c_2$ must be $\true$.
-Moreover, $c'_1 \& c_1$ and $c'_3 \& c_3$ must be $\false$, but on its own it's not saying much about the values.
+From the left  we can say that \(c'_2 \& c_2\) has to be \true, hence both \(c'_2\) and \(c_2\) must be \true.
+Moreover, \(c'_1 \& c_1\) and \(c'_3 \& c_3\) must be \false, but on its own it's not saying much about the values.
 
-If we take a look at the right sequent, we can also unify $c_0$ with $\true$ and
-$\neg c'_1 \& c_1$, $\neg c'_3 \& c_3$ with $\false$.
-And from the left sequent we know that $\neg c'_1 \& c_2$ is $\false$, since the first conjunct is $\false$.
+If we take a look at the right sequent, we can also unify \(c_0\) with \true and
+\(\neg c'_1 \& c_1\), \(\neg c'_3 \& c_3\) with \false.
+And from the left sequent we know that \(\neg c'_1 \& c_2\) is \false, since the first conjunct is \false.
 
-The resulting system of equations allows us to conclude that $c_1$ and $c_3$ are false and values of $c'_1$ and $c'_3$ are arbitrary.
+The resulting system of equations allows us to conclude that \(c_1\) and \(c_3\) are false and values of \(c'_1\) and \(c'_3\) are arbitrary.
 
 Thus, we have a total constraint assignment, which means as soon as we're done with the left derivation it's clear what resources should go to the right sequent.
 
 \section{Rules for environments with constraints}
 
-$e$ is a constraint.
-$V$ is a vector of constraints
+\(e\) is a Boolean expression.
+\(V\) is a vector of Boolean expressions
 \todo{notation explanation here}
 
-Let's start with just rules for separation logic in the same style as presented in \citet{Harland_Pym_2003}
+Let's start with rules for regular separation logic in the same style as presented in \citet{harlandResourceDistributionBooleanConstraints2003}
 
 \subsection{Axiom}
 
-$$\infer{\phi[e], \Delta \vdash \phi}
+\[\infer{\phi[e], \Gamma \vdash \phi}
       {e = \true &
-       \forall e \in \expr(\Delta). e = 0}$$
+       \forall e \in \expr(\Gamma). e = 0}\]
 
 This rule correspond to the following axiom in the usual setting:
-$$\infer{\phi \vdash \phi}{}$$
+\[\infer{\phi \vdash \phi}{}\]
 
 \subsection{Separating conjunction}
 
 The crucial rule here is one for separating conjunction:\\
 Instead of the usual rule
-$$\infer{\Gamma_1, \Gamma_2 \vdash \phi_1 \ast \phi_2}
+\[\infer{\Gamma_1, \Gamma_2 \vdash \phi_1 \ast \phi_2}
       {\Gamma_1 \vdash \phi_1 &
-       \Gamma_2 \vdash \phi_2}$$
+       \Gamma_2 \vdash \phi_2}\]
 
 we write the following one:
-$$\infer{\Gamma \vdash \phi_1 \ast \phi_2}
+\[\infer{\Gamma \vdash \phi_1 \ast \phi_2}
       {\Gamma[V] \vdash \phi_1 &
-       \Gamma[\overline{V}] \vdash \phi_2}$$
+       \Gamma[\overline{V}] \vdash \phi_2}\]
 
-where $\overline{V}$ is an element-wise negated vector of constraints $V$, so
-that elements which appear in $\Gamma[V]$ are guaranteed not to be in $\Gamma[\overline{V}]$.
+where \(\overline{V}\) is an element-wise negated vector of expressions \(V\), so
+that elements which appear in \(\Gamma[V]\) are guaranteed not to be in \(\Gamma[\overline{V}]\).
 
 \subsection{Separating implication}
 
 For separating implication the rule practically stays the same, though.
 
 For regular BI logic the rule looks as follows:
-$$
+\[
 \infer{\Gamma \vdash \phi \wand \psi}
       {\Gamma , \phi \vdash \psi}
-$$
+\]
 
-And with constraints introduced:
-$$
+And with Boolean expressions introduced:
+\[
 \infer{\Gamma \vdash \phi \wand \psi}
       {\Gamma , \phi[\true] \vdash \psi}
-$$
+\]
 
-Of course, morally it's the same rule since a resource being in the context with constraint $\true$ is precisely the resource being in the context in the usual setting.
+Of course, morally it's the same rule since a resource in the context with expression that evaluates to \(\true\) is precisely a resource being in the context in the usual setting.
 
-While introduction created new constraints, albeit simple ones, elimination forces their resolution.
+While introduction makes expressions grow, albeit in a simple way, elimination creates new constraints on them that force resolution.
 
-$$
+\[
 \infer[ c = \true ]
       {\Gamma, (\phi \wand \psi)[c] \vdash \rho}
       {\Gamma[V] \vdash \phi &
        \Gamma[\overline{V}], \psi[c] \vdash \rho}
-$$
+\]
 
 Morally, this rules is saying ``in order to use a wand which might be in the context, ensure that it is indeed there and provide resources it needs''.
 
 \subsection{Conjunction}
 
-The only other primitive rule that creates new constraints is (non-separating) conjunction elimination.
-This is also where we differ from \citet{Harland_Pym_2003}
+The only other primitive rule that generates new expressions is (non-separating) conjunction elimination.
+This is also where we differ from \citet{harlandResourceDistributionBooleanConstraints2003}
 
-Without constraints the rule is saying the following:
+Without Boolean expressions the rule is saying the following:
 
-$$
+\[
 \infer[ i \in \{1,2\} ]
-      {\Delta, \phi_1 \wedge \phi_2 \vdash \psi}
-      {\Delta, \phi_i \vdash \psi}
-$$
+      {\Gamma, \phi_1 \wedge \phi_2 \vdash \psi}
+      {\Gamma, \phi_i \vdash \psi}
+\]
 
-Essentially forcing the prover to commit to one of the conjuncts.
+Essentially forcing the prover to commit to one of the conjuncts immediately.
 
-With them we can not only postopone the choice, but also (unlinke in \cite{Harland_Pym_2003}) manipulate resources, without forcing them to be present.
+With them we can not only postpone the choice, but cal also (unlike in \cite{harlandResourceDistributionBooleanConstraints2003}) manipulate resources without forcing them to be ``present''.
 
-$$
-\infer{\Delta, (\phi_1 \wedge \phi_2)[c] \vdash \psi}
-      {\Delta, \phi_1[c' \& c], \phi_1[\neg c' \& c] \vdash \psi}
-$$
+\[
+\infer{\Gamma, (\phi_1 \wedge \phi_2)[c] \vdash \psi}
+      {\Gamma, \phi_1[c' \& c], \phi_1[\neg c' \& c] \vdash \psi}
+\]
 
 \subsection{Existential quantifier}
 
 We aslo encounter first major design decision:\\
-Given an exitential with constraints in the context, destruction leaks the element from the proof into the context.
+Given an existential with a Boolean expression in the context, destruction leaks the element from the proof into the context: \todo{example}.
 Which might lead to problems, if the element allows us to derive something on its own.
 
-For example, one can't simply destruct $(\exists (p : \bot), P x)[c]$, to get a proof of $\bot$ in the ambient logic and $(P x)[c]$ in BI\@.
-This is because from this would allow using \emph{ex falso} rule no matter what the constraint evaluates to.
+For example, one can't simply destruct \((\exists (p : \bot), P x)[c]\), to get a proof of \(\bot\) in the ambient logic and \((P x)[c]\) in BI\@.
+Since them the user can employ \emph{ex falso} rule and provide \coqe{p} as a proof for \(\bot\) no matter what the expression evaluates to.
 
-\citet{Harland_Pym_2003} don't encounter this problem, since they take the idea of principal formuals as their guiding principle: ``the principal formula of each rule must be assigned the value of 1'' (we use $\true$ instead of 1).
+\citet[page 5]{harlandResourceDistributionBooleanConstraints2003} don't encounter this problem, since they take the idea of principal formulas as their guiding principle: ``the principal formula of each rule must be assigned the value of 1'' (\true instead of 1 in our notation).
 
-We also make use of the mantra in this instance for simplification:
+And while in general there are ways around it, we make use of this doctrine for existentials.
 
-$$
+\[
 \infer[c = \true]
-      {\Delta, (\exists x : X, P x)[c] \vdash \phi}
+      {\Gamma, (\exists x : X, P x)[c] \vdash \phi}
       {x : X &
-       \Delta, (P x)[c] \vdash \phi}
-$$
+       \Gamma, (P x)[c] \vdash \phi}
+\]
 
-However, there are several options, which we will discuss later~\ref{sec:design_decisions_existential}.
+We will also discuss other options in the later chapter~\ref{subsec:design_decisions_existential}.
 
-\subsection{Rules for IPM}
+
+\section{Explanation of the new IPM}
+
+\subsection{From theoretical perspective}
+
+To implement these ideas in Iris Proof Mode we have to make several modifications to the original design (\ref{sec:ipm_general}).
+
+As a reminder, from theoretical point of view, Iris Proof Mode environment consists of two contexts, both of which are lists of resources.
+\(\IntuD \defeq [\dd P n]\) -- intuitionisctic context and \(\SpatD \defeq [\dd Q n]\) -- spatial context.
+Therefore, we put Iris Proof Mode entailment to be: \[\entailsD R \defeq \intuit \left(\bigwedge \IntuD\right) * \left(\Sep \SpatD\right) \vdash R\]
+Where \(\bigwedge\) and \(\Sep\) are iterated operations:
+\begin{align*}
+  & \bigwedge  [\dd P n] \defeq P_1 \wedge \dots\, \wedge P_n
+  & \bigwedge [\,] \defeq \True \\
+  & \Sep {[\dd P n]} \defeq P_1 * \dots\, * P_n
+  & \Sep {[\,]} \defeq \emp
+\end{align*}
+
+When we add constraints, the environment also has to change to accommodate them.
+We keep the structure of the environment in general, but amend the definitions of the contexts.
+Both of them now contain not just propositions, but pairs of propositions and Boolean constraints:
+\(\IntuD \defeq [(c_1,P_1),\dots,(c_n,P_n)]\) -- intuitionisctic context and \(\SpatD \defeq [(c_1,Q_1),\dots,(c_n,Q_n)]\) -- spatial context.
+
+We also change definitions of iterated \(\wedge\) and \(*\):\\
+\begin{minipage}[t]{1.1\linewidth}
+  \begin{align*}
+    & \hspace{-0.1\linewidth}
+      \bigwedge  [(c_1, P_1), \dots, (c_n, P_n)] \defeq
+      \begin{cases}
+        \bigwedge [(c_2, P_2), \dots, (c_n, P_n)],
+          {\small \text{for } c_1 = \false}\\
+        P_1 \wedge \left( \bigwedge [(c_2, P_2), \dots, (c_n, P_n)] \right),
+          {\small \text{for } c_1 = \true }
+      \end{cases}
+    & \bigwedge [\,] \defeq \True \\
+    & \hspace{-0.1\linewidth}
+      \Sep {[(c_1, P_1), \dots, (c_n, P_n)]} \defeq
+      \begin{cases}
+        \Sep {[(c_2, P_2), \dots, (c_n, P_n)]},
+          {\small \text{for } c_1 = \false} \\
+        P_1 * \Sep {[(c_2, P_2), \dots, (c_n, P_n)]},
+          {\small \text{for } c_1 = \true}
+      \end{cases}
+    & \Sep {[\,]} \defeq \emp
+  \end{align*}
+\end{minipage}
+
+So that resources with constraints evaluating to \false~simply don't appear on the left-hand side of the entailment.
+In particular, it means that as soon as all variables in constraints are assigned, resources with \false constraints don't influence derivations in any way.
+Which means we can also remove all constraints and construct a regular proof, if needed.
+This is essentially Proposition 4.10 -- Completeness of Resource Proofs of \citet[page~25]{harlandResourceDistributionBooleanConstraints2003}, but for Iris Proof Mode entailment predicate.
+
+\subsection{Rules for Iris Proof Mode}
 
 \begin{itemize}
-
 \item Affinity
-  $$
+  \[
   \infer{\Affine{[]}}{}
-  $$
+  \]
 
   \begin{equation*}
   \infer{\Affine{ECons\ \Gamma\ (i,\_)\ P}}
@@ -189,85 +245,85 @@ However, there are several options, which we will discuss later~\ref{sec:design_
   \begin{itemize}
   \item iRename
   \item iClear
-    $$
+    \[
     \infer{\entails {\IntuD} {P[\true], \SpatD} {Q}}
           {\entailsD Q &
            \Affine{P} \vee \Absorbing{Q}}
-    $$
-    $$
+    \]
+    \[
     \infer{\entails {\IntuD} {P[\false], \SpatD} {Q}}
           {\entailsD Q}
-    $$
+    \]
   \item iEval
-    $$
+    \[
     \infer{\entailsD Q}
           {\entailsD Q' &
            Q' \vdash Q
           }
-    $$
+    \]
   \end{itemize}
 \item Assumptions
-  $$
+  \[
   \infer{\entailsD P}
         {P[\true] \in \IntuD &
          \Absorbing{P} \vee \Affine{\SpatD}}
-  $$
+  \]
 
- $$
+ \[
   \infer{\entailsD P}
         {P[\true] \in \SpatD &
          \Absorbing{P} \vee \Affine{\SpatD \backslash P}}
- $$
+ \]
 
   Ex falso
-  $$
+  \[
   \infer{\entailsD P}
         {\entailsD \bot}
-  $$
+  \]
 \item Intuitionistic/Spatail/Pure transitions
   \begin{itemize}
   \item iIntuitionistic
-   %$$
+   %\[
    % \infer{\entailsD R}
    %       {P[c] \in \IntuD &
    %        \pers P \vdash \pers Q^{(\text{IntoPersistent}\ \true\ P\ Q)} &
    %        \entails {\IntuD [P / Q]} {\SpatD} {R}
    %      }
-   %$$
-    $$
+   %\]
+    \[
     \infer{\entailsD R}
           {P[c] \in \SpatD &
            P \vdash \pers Q^{(\text{IntoPersistent}\ \false\ P\ Q)} &
            \entails {\IntuD, Q} {\SpatD \backslash P} {R}
          }
-    $$
+    \]
   \item iSpatial
-    $$
+    \[
     \infer{\entailsD R}
           {P[c] \in \IntuD &
            \affine P \vdash Q^{(\text{FromAffinely}\ P\ Q)} &
            \entails {\IntuD \backslash P} {\SpatD, Q} {R}
          }
-    $$
+    \]
   \item iPure
-    $$
+    \[
     \infer{\entailsD R}
           {\pure{\phi}[\true] \in \IntuD &
            \phi \imp \entails {\IntuD \backslash (\pure{\phi})} {\SpatD} {R}
          }
-    $$
-    $$
+    \]
+    \[
     \infer{\entailsD R}
           {\pure{\phi}[\true] \in \SpatD &
            \Affine{P} \vee \Absorbing{R} &
            \phi \imp \entails {\IntuD} {\SpatD \backslash (\pure{\phi})} {R}
          }
-    $$
+    \]
   \item iEmpIntro
-    $$
+    \[
     \infer{\entailsD \emp}
           {\Affine{\SpatD}}
-    $$
+    \]
   \item iPureIntro
     \begin{equation}
     \infer{\entailsD {\pure \phi}}
@@ -281,10 +337,10 @@ However, there are several options, which we will discuss later~\ref{sec:design_
   \end{itemize}
 \item iFrame
 \item Intro of wand/implication
-  $$
+  \[
   \infer{\entailsD P \wand Q}
         {\entails {\IntuD} {\SpatD , P[\true]} {Q}}
-  $$
+  \]
 
   \begin{equation*}
   \infer{\entailsD P \imp Q}
@@ -299,7 +355,7 @@ However, there are several options, which we will discuss later~\ref{sec:design_
   \end{equation*}
 \item Revert
 \item Specialize and Pose
-  $$
+  \[
   \infer{\entailsD Q}
         {(P \wand R)[c_1] \in \SpatD &
          P[c_2] \in \SpatD &
@@ -307,39 +363,64 @@ However, there are several options, which we will discuss later~\ref{sec:design_
                                   (P \wand R)[\neg c \& c_1]]
                                  [P[c_2] / P [\neg c \& c_2]],
                                  R[c \& c_1 \& c_2]}}
-  $$
+  \]
 \item Apply
-  $$
+  \[
   \infer{\entailsD Q}
         {(P \wand Q)[\true] \in \SpatD &
          \entails \IntuD {\SpatD \backslash (P \wand Q)} {P}}
-  $$
+  \]
 \item Existential
   \begin{itemize}
   \item Intro
-    $$
+    \[
     \infer{\entailsD \exists x, P x}
           {\exists x, \entailsD (P x)}
-    $$
+    \]
   \item Destruct
-    $$
+    \[
     \infer{\entailsD Q}
           {(\exists x, P x)[\true] \in \SpatD &
            \forall x, \entails \IntuD {\SpatD [(\exists x, P x) / P x]} Q}
-    $$
+    \]
   \end{itemize}
 \item Modalities
+  \[
+  \infer{\entailsD {\later Q}}
+        {\IntuD' = \mathop{map} {(\text{remove} \later)}\, {\IntuD}  &
+         {\SpatD}' = \mathop{map} {(\text{remove} \later)}\, {\SpatD}  &
+         \entails {\IntuD'} {\SpatD'} {Q}}
+  \]
+
+  \[
+  \infer{\entailsD {\intuit Q}}
+        {\forall P[c] \in \SpatD, c \neq \false \imp \Affine P &
+         \entails \IntuD {[]} Q}
+  \]
+
+  \[
+  \infer{\entailsD {\pers Q}}
+        {\entails \IntuD {[]} Q}
+  \]
+
+  \[
+  \infer{\entailsD {\affine Q}}
+        {\forall P[c] \in \SpatD, c \neq \false \imp \Affine P &
+         \entailsD Q}
+  \]
 \item iDestruct
-  $$
+  \[
   \infer{\entailsD Q}
         {(P \wedge R)[c] \in \SpatD &
-         \entails {\IntuD} {\SpatD \backslash (P \wedge R), P[c' \& c], R [\neg c' \& c]} Q}
-  $$
-  $$
+         \entails {\IntuD}
+                  {\SpatD \backslash (P \wedge R), P[c' \& c], R [\neg c' \& c]}
+                  {Q}}
+  \]
+  \[
   \infer{\entailsD Q}
         {(P \ast R)[c] \in \SpatD &
          \entails {\IntuD} {\SpatD \backslash (P \ast R), P[c], R [c]} Q}
-  $$
+  \]
 \item iIntros
 \item Induction
 \item Löb
@@ -349,10 +430,130 @@ However, there are several options, which we will discuss later~\ref{sec:design_
 
 \section{Design implemented}
 
+\subsection{Coq implementation}
+\label{subsec:ipm_constr_coq_implementation}
+
+As with regular Iris Proof Mode, the biggest difference between theoretical presentation and Coq implementation is the presence of identifiers.
+
+As with theoretical perspective, we keep the definition of environment with two different contexts and a counter to generate fresh identifiers.
+\begin{coq}
+  Record envs (PROP : bi) := Envs {
+    env_intuitionistic : env PROP; (* the intuitionistic context \(\Gamma\) *)
+    env_spatial : env PROP; (* the spatial context \(\Pi\)*)
+    env_counter : positive (* a counter for fresh name generation *)}.
+\end{coq}
+
+What does change is the definition of the context, predicates and functions on them:
+\begin{coq}
+  Definition mrkd_ident : Type := bool * ident.
+  Inductive env (B : Type) : Type :=
+  | Enil : env B
+  | Esnoc : env B → mrkd_ident -> B -> env B.
+\end{coq}
+
+Of course, contexts themselves contain regular Boolean values as constraints, but to use resource-distribution techniques we have to utilize existential variables -- \citet[Section 2.2.1]{thecoqdevelopmentteamCoqProofAssistant2020}.
+From presentation point of view, they are used as Boolean variables in the theoretical presentation, which don't yet have any constraints on them.
+From practical point of view, we get Boolean variables that only get instantiated at some point later.
+
+There are also changes to the definition of the entailment predicate, parts of it, to be precise.
+\begin{coq}
+  Definition envs_entails {PROP} ($\Delta$ : envs PROP) (Q : PROP):
+  $\ulcorner$ envs_wf $\Delta \urcorner$ /\ $\intuit$ [$\wedge$] env_intuitionistic $\Delta$ * [*] env_spatial $\Delta$ |- Q
+\end{coq}
+
+Superficially it's the same as it was for regular Iris Proof Mode, however, implementation of almost every element is different.
+We follow theoretical presentation for definitions of \coqe{$\intuit$ [$\wedge$]} and \coqe{[*]} -- both of them evaluate expressions in the contexts and return lists folded with their respective operations.
+Note that these aren't actually computed -- forcing evaluation of those would get computation stuck, since it might depend on the values of evars, which aren't defined yet.
+
+Well-foundedness predicate is also changed.
+One might think that we need to check only the resources present for non-duplication.
+However, exactly because some of the expressions can't be computed until the assignment, it's not possible to tell apart resources which are present from those which are absent.
+Hence, we need to guarantee that no identifiers appears more than once, even if it does in a resource with expression, that evaluates to \false.
+
+\subsection{Evar managment}
+\label{subsec:evar_managment}
+
+\subsubsection{Strategies and evar instantiation}
+\label{subsubsec:strategies_and_evars}
+
+This is also where we part from the presentation in \citet{harlandResourceDistributionBooleanConstraints2003} -- they suggest generating equational constraints and decoupling solving them from the distribution problem.
+While we don't generate equations at all and apply all derived unifications from constraints that rules generate immediately.
+
+Our approach doesn't fit any of the strategies described in the paper exactly, but is closest to the ``lazy'' one.
+
+In the ``lazy'' strategy one branch is pursued till the maximum depth is reached, then constraints for the expressions are generated in form of equations.
+These are provided to a solver, which outputs and assignment \(I\) for variables present in the expression and the solution is propagated to other branches.
+
+``Eager distribution'' strategy requires exploring all branches until the very bottoms and only after that querying constraint solver with all equations.
+This is the only strategy that our approach doesn't accommodate at all, since we solve constraints immediately.
+
+Since Iris Proof Mode is accommodated by Coq, we get some flexibility for free, which isn't necessarily present in the strategies described above.
+In particular, since goals in Iris Proof Mode are Coq goals too, user can jump from one goal to another at any moment, which resembles ``intermediate'' distribution.
+
+We also provide users with an ability to impose arbitrary constraints at any given moment.
+This is useful if the constraints don't necessarily enforce presence or absence of the resource, but the user doesn't want to postpone the decision of resource distribution.
+Which makes Iris Proof Mode with constraints strictly subsume regular one.
+
+
+\subsubsection{Evar technicalities}
+\label{subsubsec:evar_technicalities}
+
+As adding Boolean expressions to the environments means changing one of the base elements in the infrastructure, this entails changes in everything upwards.
+And while some of those changes are superficial, others require consideration.
+
+Let's take a look at the original \coqe{tac_assumption} lemma, which underlies \coqe{iAssumption} tactic:
+\begin{coq}
+  Lemma tac_assumption $\Delta$ i p P Q :
+  envs_lookup i $\Delta$ = Some (p,P) →
+  FromAssumption p P Q →
+  (let $\Delta'$ := envs_delete true i p $\Delta$ in
+   if env_spatial_is_nil $\Delta'$ then TCTrue
+   else TCOr (Absorbing Q) (AffineEnv (env_spatial $\Delta'$))) →
+  envs_entails $\Delta$ Q.
+\end{coq}
+
+There are several computations here, which can be affected by presence of evars.
+First of all, it's \coqe{envs_lookup}, as now environment stores resources which might not truly be in this branch of the proof, simply ignoring expressions won't do.
+
+Hence, in the splitting mode it becomes
+\begin{coq}
+Lemma tac_assumption $\Delta$ i p P Q :
+  envs_lookup_true i $\Delta$ = Some (p,P) →
+  FromAssumption p P Q →
+  (let $\Delta'$ := envs_delete true i p $\Delta$ in
+   if env_spatial_is_nil $\Delta'$ then TCTrue
+   else TCOr (Absorbing Q) (AffineEnv (env_spatial $\Delta'$))) →
+  envs_entails $\Delta$ Q.
+\end{coq}
+
+Where we only look up resources with expressions that evaluate to \true.
+It would still make computations stuck to filter resources first, so instead we only check that the expression is \true after matching the identifiers.
+This is guaranteed to return the same result due to well-foundedness.
+
+There are two more interesting elements in the type: \coqe{env_spatial_is_nil} and \coqe{AffineEnv (env_spatial $\Delta'$)}.
+Both of them differ from their counterparts in the regular Iris Proof Mode in the same way.
+Without Boolean expressions ``context is empty'' means exactly as it reads, that the context should be an empty list.
+With them, however, we have to take into account that the context might contain resources, which have Boolean expressions evaluating to \false attached.
+Therefore, \coqe{env_spatial_is_nil} instead checks that all resources in the context indeed have expressions evaluating to \false and \coqe{AffineEnv} has an additional instance:
+\begin{coq}
+  Instance affine_env_snoc_false $\Gamma$ i P :
+  AffineEnv $\Gamma$ → AffineEnv (Esnoc $\Gamma$ ($\false$,i) P).
+\end{coq}
+
+
+\begin{itemize}
+\item Lookups
+\item Typeclasses
+\item Displaying environments
+\end{itemize}
+
+
+
+
 \section{Possible designs and comparisons, what do we need}
 
 \subsection{Alternatives for destructing existentials}
-\label{sec:design_decisions_existential}
+\label{subsec:design_decisions_existential}
 
 
 \begin{enumerate}
@@ -381,9 +582,18 @@ However, there are several options, which we will discuss later~\ref{sec:design_
 
 \paragraph{Boolean constraints resolved post-factum with equations posed as goals}
 
-\paragraph{Different styles of environemnts?}
+\paragraph{Different styles of environments?}
 
 \section{Ltac2 features used}
 
 "Reflection on the use of Ltac2"
-Mention that Ltac2 was complete for our purposes
+Mention that Ltac2 was complete for our purposes.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "thesis"
+%%% TeX-parse-self: t
+%%% TeX-auto-save: t
+%%% reftex-cite-format: 'natbib
+%%% reftex-default-bibliography: ("/home/buzzer/my-dir/ed/uni/saar/prjcts/iris/npm/tex/TacticsProofs.bib")
+%%% End:

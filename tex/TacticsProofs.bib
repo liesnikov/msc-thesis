@@ -1,0 +1,206 @@
+
+@misc{chajedLtac2Tutorial,
+  title = {An {{Ltac2}} Tutorial},
+  author = {Chajed, Tej},
+  abstract = {This tutorial aims to be pragmatic, but it is not specific to an application. The pragmatics of Ltac2 are likely to change, as the language becomes more usable. Picking an application and really trying to use Ltac2 for it is likely to uncover more tricks and bug reports necessary to make the language work.},
+  howpublished = {https://github.com/tchajed/ltac2-tutorial/blob/master/src/ltac2\_tutorial.v},
+  journal = {Github},
+  type = {Source File}
+}
+
+@article{harlandResourceDistributionBooleanConstraints2003,
+  title = {Resource-{{Distribution}} via {{Boolean Constraints}}},
+  author = {Harland, James and Pym, David},
+  year = {2003},
+  month = jan,
+  volume = {4},
+  pages = {56--90},
+  issn = {1529-3785},
+  doi = {10.1145/601775.601778},
+  abstract = {We consider the problem of searching for proofs in sequential presentations of logics with multiplicative (or intensional) connectives. Specifically, we start with the multiplicative fragment of linear logic and extend, on the one hand, to linear logic with its additives and, on the other, to the additives of the logic of bunched implications (BI). We give an algebraic method for calculating the distribution of the side-formul\ae{} in multiplicative rules which allows the occurrence or non-occurrence of a formula on a branch of a proof to be determined once sufficient information is available. Each formula in the conclusion of such a rule is assigned a Boolean expression. As a search proceeds, a set of Boolean constraint equations is generated. We show that a solution to such a set of equations determines a proof corresponding to the given search. We explain a range of strategies, from the lazy to the eager, for solving sets of constraint equations. We indicate how to apply our methods systematically to large family of relevant systems.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Harland/undefined/Harland - Resource-distribution via Boolean Constraints.pdf;/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Harland/undefined/Harland - Resource-distribution via Boolean Constraints2.pdf},
+  journal = {ACM Trans. Comput. Logic},
+  keywords = {Algebras,Boolean constraints,proof-search,relevant logics,sequent calculus,substructural logics},
+  number = {1}
+}
+
+@article{kiselyovBacktrackingInterleavingTerminating2005,
+  title = {Backtracking, Interleaving, and Terminating Monad Transformers: (Functional Pearl)},
+  shorttitle = {Backtracking, Interleaving, and Terminating Monad Transformers},
+  author = {Kiselyov, Oleg and Shan, Chung-chieh and Friedman, Daniel P. and Sabry, Amr},
+  year = {2005},
+  month = sep,
+  volume = {40},
+  pages = {192--203},
+  issn = {0362-1340},
+  doi = {10.1145/1090189.1086390},
+  abstract = {We design and implement a library for adding backtracking computations to any Haskell monad. Inspired by logic programming, our library provides, in addition to the operations required by the MonadPlus interface, constructs for fair disjunctions, fair conjunctions, conditionals, pruning, and an expressive top-level interface. Implementing these additional constructs is easy in models of backtracking based on streams, but not known to be possible in continuation-based models. We show that all these additional constructs can be generically and monadically realized using a single primitive msplit. We present two implementations of the library: one using success and failure continuations; and the other using control operators for manipulating delimited continuations.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Kiselyov et al/2005/Kiselyov et al. - 2005 - Backtracking, interleaving, and terminating monad .pdf},
+  journal = {ACM SIGPLAN Notices},
+  keywords = {continuations,control delimiters,Haskell,logic programming,Prolog,streams},
+  number = {9}
+}
+
+@article{krebbersMoSeLGeneralExtensible2018,
+  title = {{{MoSeL}}: A General, Extensible Modal Framework for Interactive Proofs in Separation Logic},
+  shorttitle = {{{MoSeL}}},
+  author = {Krebbers, Robbert and Jourdan, Jacques-Henri and Jung, Ralf and Tassarotti, Joseph and Kaiser, Jan-Oliver and Timany, Amin and Chargu{\'e}raud, Arthur and Dreyer, Derek},
+  year = {2018},
+  month = jul,
+  volume = {2},
+  pages = {1--30},
+  issn = {24751421},
+  doi = {10.1145/3236772},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Krebbers et al/2018/Krebbers et al. - 2018 - MoSeL a general, extensible modal framework for i.pdf},
+  journal = {Proceedings of the ACM on Programming Languages},
+  language = {en},
+  number = {ICFP}
+}
+
+@misc{ListTDoneRight,
+  title = {{{ListT}} Done Right - {{HaskellWiki}}},
+  abstract = {The Haskell hierarchical libraries implement a ListT monad transformer. There are, however, some problems with that implementation.     ListT imposes unnecessary strictness.     ListT isn't really a monad transformer, ie. ListT m isn't always a monad for a monad m. See the \#Examples below for demonstrations of these problems.},
+  file = {/home/buzzer/.local/share/Zotero/storage/6JJBPKFA/ListT_done_right.html},
+  howpublished = {https://wiki.haskell.org/ListT\_done\_right},
+  journal = {HaskellWiki},
+  type = {Wiki}
+}
+
+@incollection{mccreightPracticalTacticsSeparation2009,
+  title = {Practical {{Tactics}} for {{Separation Logic}}},
+  booktitle = {Theorem {{Proving}} in {{Higher Order Logics}}},
+  author = {McCreight, Andrew},
+  editor = {Berghofer, Stefan and Nipkow, Tobias and Urban, Christian and Wenzel, Makarius},
+  year = {2009},
+  volume = {5674},
+  pages = {343--358},
+  publisher = {{Springer Berlin Heidelberg}},
+  address = {{Berlin, Heidelberg}},
+  doi = {10.1007/978-3-642-03359-9_24},
+  abstract = {We present a comprehensive set of tactics that make it practical to use separation logic in a proof assistant. These tactics enable the verification of partial correctness properties of complex pointer-intensive programs. Our goal is to make separation logic as easy to use as the standard logic of a proof assistant. We have developed tactics for the simplification, rearranging, splitting, matching and rewriting of separation logic assertions as well as the discharging of a program verification condition using a separation logic description of the machine state. We have implemented our tactics in the Coq proof assistant, applying them to a deep embedding of Cminor, a C-like intermediate language used by Leroy's verified CompCert compiler. We have used our tactics to verify the safety and completeness of a Cheney copying garbage collector written in Cminor. Our ideas should be applicable to other substructural logics and imperative languages.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/McCreight/2009/McCreight - 2009 - Practical Tactics for Separation Logic.pdf},
+  isbn = {978-3-642-03358-2 978-3-642-03359-9},
+  language = {en}
+}
+
+@incollection{ohearnLocalReasoningPrograms2001,
+  title = {Local {{Reasoning}} about {{Programs}} That {{Alter Data Structures}}},
+  booktitle = {Computer {{Science Logic}}},
+  author = {O'Hearn, Peter and Reynolds, John and Yang, Hongseok},
+  editor = {Goos, Gerhard and Hartmanis, Juris and {van Leeuwen}, Jan and Fribourg, Laurent},
+  year = {2001},
+  volume = {2142},
+  pages = {1--19},
+  publisher = {{Springer Berlin Heidelberg}},
+  address = {{Berlin, Heidelberg}},
+  doi = {10.1007/3-540-44802-0_1},
+  abstract = {We describe an extension of Hoare's logic for reasoning about programs that alter data structures. We consider a low-level storage model based on a heap with associated lookup, update, allocation and deallocation operations, and unrestricted address arithmetic. The assertion language is based on a possible worlds model of the logic of bunched implications, and includes spatial conjunction and implication connectives alongside those of classical logic. Heap operations are axiomatized using what we call the ``small axioms'', each of which mentions only those cells accessed by a particular command. Through these and a number of examples we show that the formalism supports local reasoning: A specification and proof can concentrate on only those cells in memory that a program accesses.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/O’Hearn et al/2001/O’Hearn et al. - 2001 - Local Reasoning about Programs that Alter Data Str.pdf},
+  isbn = {978-3-540-42554-0 978-3-540-44802-0},
+  language = {en}
+}
+
+@misc{pedrotCoqHoTTminuteTickingClockwork2016,
+  title = {{{CoqHoTT}}-Minute : {{Ticking}} like a {{Clockwork}}: The {{New Coq Tactics}}},
+  author = {P{\'e}drot, Pierre-Marie},
+  year = {2016},
+  month = feb,
+  abstract = {This post describes the new tactic engine designed by Arnaud Spiwack which has replaced the old implementation beginning from Coq 8.5. To replace this work in its context, we first recall the history of tactics in Coq, both from the point of view of the user and the developer. There will be more OCaml code than Coq code, so please bear with me. Hopefully this will clarify things up for people outside of the c\'enacle of Coq developers, and provide hindsights into the current design choices.},
+  file = {/home/buzzer/.local/share/Zotero/storage/L9QMVCYB/coq-tactic-engine.html},
+  journal = {CoqHoTT-minute},
+  language = {en}
+}
+
+@misc{pedrotLtac2016,
+  title = {Towards {{Ltac}} 2.0},
+  author = {P{\'e}drot, Pierre-Marie},
+  year = {2016},
+  month = jun,
+  file = {/home/buzzer/.local/share/Zotero/storage/BILXA737/deepspec-06-16.pdf}
+}
+
+@inproceedings{pedrotLtac2TacticalWarfare2019,
+  title = {Ltac2: {{Tactical Warfare}}},
+  booktitle = {The {{Fifth International Workshop}} on {{Coq}} for {{Programming Languages}} /},
+  author = {P{\'e}drot, Pierre-Marie},
+  year = {2019},
+  pages = {3},
+  address = {{Cascais, Portugal}},
+  abstract = {We present Ltac2, a proposal for the replacement of the Ltac tactic language that is shipped with Coq as the default interface to build up proofs interactively. Ltac2 is primarily motivated by two antagonistic desires, namely extending the expressivity and regularity of the historical tactic language of Coq while maintaining a strong backward compatibility. We thereafter give a bird's eye view of the features and semantics of the current state of Ltac2.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pédrot/2019/Pédrot - 2019 - Ltac2 Tactical Warfare.pdf},
+  language = {en}
+}
+
+@misc{pedrotLtacInternals2016,
+  title = {Ltac {{Internals}}},
+  author = {P{\'e}drot, Pierre-Marie},
+  year = {2016},
+  month = mar,
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pédrot/2016/Pédrot - 2016 - Ltac Internals.pdf},
+  language = {en}
+}
+
+@book{pymSemanticsProofTheory2002a,
+  title = {The {{Semantics}} and {{Proof Theory}} of the {{Logic}} of {{Bunched Implications}}},
+  author = {Pym, David J.},
+  editor = {Gabbay, Dov M. and Barwise, Jon},
+  year = {2002},
+  volume = {26},
+  publisher = {{Springer Netherlands}},
+  address = {{Dordrecht}},
+  doi = {10.1007/978-94-017-0091-7},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pym/2002/Pym - 2002 - The Semantics and Proof Theory of the Logic of Bun.pdf},
+  isbn = {978-90-481-6072-3 978-94-017-0091-7},
+  series = {Applied {{Logic Series}}}
+}
+
+@inproceedings{reynoldsSeparationLogicLogic2002,
+  title = {Separation Logic: A Logic for Shared Mutable Data Structures},
+  shorttitle = {Separation Logic},
+  booktitle = {Proceedings 17th {{Annual IEEE Symposium}} on {{Logic}} in {{Computer Science}}},
+  author = {Reynolds, J.C.},
+  year = {2002},
+  pages = {55--74},
+  publisher = {{IEEE Comput. Soc}},
+  address = {{Copenhagen, Denmark}},
+  doi = {10.1109/LICS.2002.1029817},
+  abstract = {In joint work with Peter O'Hearn and others, based on early ideas of Burstall, we have developed an extension of Hoare logic that permits reasoning about low-level imperative programs that use shared mutable data structure.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Reynolds/2002/Reynolds - 2002 - Separation logic a logic for shared mutable data .pdf},
+  isbn = {978-0-7695-1483-3},
+  language = {en}
+}
+
+@article{robbertInteractiveProofsHigherorder2017,
+  title = {Interactive Proofs in Higher-Order Concurrent Separation Logic},
+  author = {Krebbers, Robbert and Lars, Birkedal and Amin, Timany},
+  year = {2017},
+  pages = {205--217},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Krebbers et al/2017/Krebbers et al. - 2017 - Interactive proofs in higher-order concurrent sepa.pdf},
+  journal = {Proceedings of the 44th ACM SIGPLAN Symposium on Principles of Programming Languages}
+}
+
+@inproceedings{spiwackAbstractTypeConstructing2010,
+  title = {An Abstract Type for Constructing Tactics in {{Coq}}},
+  booktitle = {Proof {{Search}} in {{Type Theory}}},
+  author = {Spiwack, Arnaud},
+  year = {2010},
+  month = jul,
+  abstract = {The Coq proof assistant is a large development, a lot of which happens to be more or less dependent on the type of tactics. To be able to perform tweaks in this type more easily in the future, we propose an API for building tactics which doesn't need to expose the type of tactics and yet has a fairly small amount of primitives. This API accompanies an entirely new implementation of the core tactic engine of Coq which aims at handling more gracefully existential variables (aka. metavariables) in proofs - like in more recent proof assistants like Matita and Agda2. We shall, then, leverage this newly acquired independence of the concrete type of tactics from the API to add backtracking abilities.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Spiwack/2010/Spiwack - 2010 - An abstract type for constructing tactics in Coq.pdf},
+  language = {en}
+}
+
+@misc{thecoqdevelopmentteamCoqProofAssistant2020,
+  title = {The {{Coq Proof Assistant}}, Version 8.12.0},
+  author = {{The Coq Development Team}},
+  year = {2020},
+  month = jul,
+  doi = {10.5281/zenodo.4021912},
+  abstract = {Coq is a formal proof management system. It provides a formal language to write mathematical definitions, executable algorithms and theorems together with an environment for semi-interactive development of machine-checked proofs. Typical applications include the certification of properties of programming languages (e.g. the CompCert compiler certification project, the Verified Software Toolchain for verification of C programs, or the Iris framework for concurrent separation logic), the formalization of mathematics (e.g. the full formalization of the Feit-Thompson theorem, or homotopy type theory), and teaching. Coq version 8.12 integrates many usability improvements, in particular with respect to notations, scopes and implicit arguments, along with many bug fixes and major improvements to the reference manual. The main changes include: New binder notation for non-maximal implicit arguments using [ ] allowing to set and see the implicit status of arguments immediately. New notation Inductive I A | x : s := ... to distinguish the uniform from the non-uniform parameters in inductive definitions. More robust and expressive treatment of implicit inductive parameters in inductive declarations. Improvements in the treatment of implicit arguments and partially applied constants in notations, parsing of hexadecimal number notation and better handling of scopes and coercions for printing. A correct and efficient coercion coherence checking algorithm, avoiding spurious or duplicate warnings. An improved Search command which accepts complex queries. Note that this takes precedence over the now deprecated ssreflect search. Many additions and improvements of the standard library. Improvements to the reference manual include a more logical organization of chapters along with updated syntax descriptions that match Coq's grammar in most but not all chapters. Additionally, the omega tactic is deprecated in this version of Coq, and we recommend users to switch to lia in new proof scripts (see also the warning message in the corresponding chapter). See the Changes in 8.12+beta1 section and following sections for the detailed list of changes, including potentially breaking changes marked with Changed. Coq's documentation is available at https://coq.github.io/doc/v8.12/refman (reference manual), and https://coq.github.io/doc/v8.12/stdlib (documentation of the standard library). Developer documentation of the ML API is available at https://coq.github.io/doc/v8.12/api. Maxime D\'en\`es, Emilio Jes\'us Gallego Arias, Ga\"etan Gilbert, Michael Soegtrop and Th\'eo Zimmermann worked on maintaining and improving the continuous integration system and package building infrastructure. Erik Martin-Dorel has maintained the Coq Docker images that are used in many Coq projects for continuous integration. The OPAM repository for Coq packages has been maintained by Guillaume Claret, Karl Palmskog, Matthieu Sozeau and Enrico Tassi with contributions from many users. A list of packages is available at https://coq.inria.fr/opam/www/. Previously, most components of Coq had a single principal maintainer. This was changed in 8.12 (\#11295) so that every component now has a team of maintainers, who are in charge of reviewing and merging incoming pull requests. This gave us a chance to significantly expand the pool of maintainters and provide faster feedback to contributors. Special thanks to all our maintainers! Our current 31 maintainers are Yves Bertot, Fr\'ed\'eric Besson, Tej Chajed, Cyril Cohen, Pierre Corbineau, Pierre Courtieu, Maxime D\'en\`es, Jim Fehrle, Julien Forest, Emilio Jes\'us Gallego Arias, Ga\"etan Gilbert, Georges Gonthier, Benjamin Gr\'egoire, Jason Gross, Hugo Herbelin, Vincent Laporte, Assia Mahboubi, Kenji Maillard, Guillaume Melquiond, Pierre-Marie P\'edrot, Cl\'ement Pit-Claudel, Kazuhiko Sakaguchi, Vincent Semeria, Michael Soegtrop, Arnaud Spiwack, Matthieu Sozeau, Enrico Tassi, Laurent Th\'ery, Anton Trunov, Li-yao Xia, Th\'eo Zimmermann The 59 contributors to this version are Abhishek Anand, Yves Bertot, Fr\'ed\'eric Besson, Lasse Blaauwbroek, Simon Boulier, Quentin Carbonneaux, Tej Chajed, Arthur Chargu\'eraud, Cyril Cohen, Pierre Courtieu, Matthew Dempsky, Maxime D\'en\`es, Andres Erbsen, Erika (@rrika), Nikita Eshkeev, Jim Fehrle, @formalize, Emilio Jes\'us Gallego Arias, Paolo G. Giarrusso, Ga\"etan Gilbert, Jason Gross, Samuel Gruetter, Attila G\'asp\'ar, Hugo Herbelin, Jan-Oliver Kaiser, Robbert Krebbers, Vincent Laporte, Olivier Laurent, Xavier Leroy, Thomas Letan, Yishuai Li, Kenji Maillard, Erik Martin-Dorel, Guillaume Melquiond, Ike Mulder, Guillaume Munch-Maccagnoni, Antonio Nikishaev, Karl Palmskog, Pierre-Marie P\'edrot, Cl\'ement Pit-Claudel, Ramkumar Ramachandra, Lars Rasmusson, Daniel de Rauglaudre, Talia Ringer, Pierre Roux, Kazuhiko Sakaguchi, Vincent Semeria, @scinart, Kartik Singhal, Michael Soegtrop, Matthieu Sozeau, Enrico Tassi, Laurent Th\'ery, Ralf Treinen, Anton Trunov, Bernhard M. Wiedemann, Li-yao Xia, Nickolai Zeldovich and Th\'eo Zimmermann. Many power users helped to improve the design of this new version via the GitHub issue and pull request system, the Coq development mailing list coqdev@inria.fr, the coq-club@inria.fr mailing list, the Discourse forum and the new Coq Zulip chat (thanks to Cyril Cohen for organizing the move from Gitter). Version 8.12's development spanned 6 months from the release of Coq 8.11.0. Emilio Jesus Gallego Arias and Th\'eo Zimmermann are the release managers of Coq 8.12. This release is the result of \textasciitilde 500 PRs merged, closing \textasciitilde 100 issues.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/The Coq Development Team/2020/The Coq Development Team - 2020 - The Coq Proof Assistant, version 8.12.0.pdf},
+  howpublished = {Zenodo},
+  keywords = {formal proofs,mathematical software,proof assistant},
+  language = {eng}
+}
+
+

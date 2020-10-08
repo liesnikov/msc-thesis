@@ -1,10 +1,15 @@
+
 \chapter{Reimplementation of IPM in Ltac2}
+\label{chap:reimplementation_ipm}
+
+
 
 tutorial-style
-
 take an example and work it out in Ltac2
 
 \section{Iris Proof Mode setup}
+\label{sec:ipm_general}
+
 
 Explain what is IPM, judgements, tactics as proof rules for the judgment
 
@@ -56,15 +61,17 @@ Explain what is IPM, judgements, tactics as proof rules for the judgment
 \paragraph{Tactics compose}
 
 \section{IPM from implementaion persprective}
+\label{sec:ipm_implementation}
+
 
 Example to use: iAssumption?
 \begin{itemize}
 \item Typeclasses\\
   \verb|Affine|, \verb|AffineEnv|
 \item Coq tactics\\
-  \verb|tac_assumption|\\
-  Requires typeclasses -- \verb|FromAssumption true P Q|,\\
-  \verb|TCOr (Absorbing Q) (AffineEnv (env_spatial Δ))|
+  \coqe{tac_assumption}\\
+  Requires typeclasses -- \coqe{FromAssumption true P Q},\\
+  \coqe{TCOr (Absorbing Q) (AffineEnv (env_spatial \(\Delta\)))}
 \item Ltac(1/2) tactics\\
   Uses iAssumptionCoq, so some composability.
 \end{itemize}
@@ -85,4 +92,13 @@ Example to use: iAssumption?
 \section{Missing from Ltac2: notations for intropatterns, user-defined scopes?}
 
 \paragraph{Interop between Ltac1 and Ltac2?}
-i.e. iris indent-string has to go through the goal to get the result from one to another
+i.e.\ iris indent-string has to go through the goal to get the result from one to another
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "thesis"
+%%% TeX-parse-self: t
+%%% TeX-auto-save: t
+%%% reftex-cite-format: 'natbib
+%%% reftex-default-bibliography: ("/home/buzzer/my-dir/ed/uni/saar/prjcts/iris/npm/tex/TacticsProofs.bib")
+%%% End:

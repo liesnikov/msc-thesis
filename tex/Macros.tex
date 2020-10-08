@@ -3,7 +3,9 @@
 \newcommand{\imp}{\mathbin{\rightarrow}~}
 \newcommand{\Imp}{\mathbin{\Rightarrow}~}
 \renewcommand{\iff}{\mathbin{\leftrightarrow}}
-\newcommand{\defeq}{\mathrel{\mathop:=}}
+\newcommand*{\defeq}{\mathrel{\vcenter{\baselineskip0.5ex \lineskiplimit0pt
+                     \hbox{\scriptsize.}\hbox{\scriptsize.}}}%
+                     =}
 
 \newcommand{\dd}[2]{\ensuremath{#1_1,\dots,#1_{#2}}}  % x_1,...,x_n
 \newcommand{\ddd}[2]{\ensuremath{#1_1\dots\,#1_{#2}}}  % x_1...x_n
@@ -16,6 +18,7 @@
 \newcommand{\qedsq}{\hfill\ensuremath{_\blacksquare}}
 
 \newcommand{\true}{\textsf{true}}
+\newcommand{\True}{\textsf{True}}
 \newcommand{\false}{\textsf{false}}
 
 \newcommand{\blankpage}{\newpage
@@ -44,7 +47,8 @@ $\square$% % the end-of-proof mark
 \par}} % build paragraph
 
 % Separation logicky notation
-
+% mostly from iris/tex/iris.sty
+% \newcommand*{\Sep}[1][]{\scalerel*{\ast}{\sum}\ifthenelse{\isempty{#1}}{}{_{#1}\;}}
 \newcommand\wand{\ensuremath{\mathrel{-\mkern-6mu*}}}
 \newcommand\emp{\ensuremath{\textsf{emp}}}
 \newcommand\iMatch{\coqe{iMatch}}
@@ -56,11 +60,12 @@ $\square$% % the end-of-proof mark
 \newcommand\Persistent[1]{\ensuremath{\text{Persistent}(#1)}}
 
 \newcommand\pure[1]{\ensuremath{\ulcorner #1 \urcorner}}
-\newcommand\affine{\ensuremath{\langle\text{affine}\rangle}}
-\newcommand\pers{\ensuremath{\langle\text{pers}\rangle}}
-\newcommand\intuit{\mathop{\Box}}
+\newcommand{\affine}{\ensuremath{\langle\text{affine}\rangle}}
+\newcommand{\pers}{\ensuremath{\langle\text{pers}\rangle}}
+\newcommand{\intuit}{\always}
+% \newcommand{\later}{\mathop{{\triangleright}}}
 
 \newcommand\entails[3]{\ensuremath{#1 ; #2 \Vdash #3}}
 \newcommand\IntuD{\ensuremath{\Gamma}}
-\newcommand\SpatD{\ensuremath{\Delta}}
+\newcommand\SpatD{\ensuremath{\Pi}}
 \newcommand\entailsD[1]{\ensuremath{\IntuD ; \SpatD \Vdash #1}}

@@ -2,29 +2,29 @@
 \label{chap:imatch}
 
 
-Ltac has a tactical for matching on the current proof state, which takes form of
-
+Ltac has a tactical for matching on the current proof state, which looks as follows:
 \begin{coq}
 match goal with
 | [a:P, b:Q |- P] => exact a
 end
 \end{coq}
-In this example we are matching the context that's supposed to contain at least two assumptions: \coqe{a:P} and \coqe{b:Q}.
-We also require the goal to be exactly \coqe{Q} and then we close the proof with the first assumption we matched in the context.\
+In this example we are matching the context that's supposed to contain at least two assumptions: \coqe{P} and \coqe{Q}.
+We also require the goal to be exactly \coqe{Q} and then close the proof with the first assumption matched in the context.
 
-Iris Proof Mode can't use Coq contexts, since Coq contexts don't track hypothesis usage, which can result in a resource being used twice.
-Instead, IPM stores everything in the goal, which makes it unfit for \coqe{match goal}.
+Iris Proof Mode doesn't use Coq contexts, since they don't track hypothesis usage, which can result in resources being used multiple times or thrown away.
+Instead, IPM stores whole proof state in the goal, thus limiting usability \coqe{match goal} significantly.
 
-\coqe{iMatch} fills exactly that hole.
+\coqe{iMatch} is precisely a substitute for \coqe{match goal} for Iris Proof Mode.
 
 \section{Motivation/examples}
 
-While one of the most useful usages of \coqe{iMatch} would a solver for separation logic, we are going to cover it in a later chapter.
-Let us take a simpler and more intuitive example here.
+While one of the most useful examples of usage for \coqe{iMatch} would be a solver for separation logic, we are going to cover it in a later chapter~\ref{chap:solver}.
+Let us then take a simpler and more intuitive example here.
 Suppose we want to extend \coqe{iAssumption} tactic so that it also applies suitable wands it can find in the context.
 
 Let's call this new tactic \coqe{iAssumption'}.
-Take the following proof state:\\
+This would allow us to discharge goals like the following with \coqe{repeat iAssumption'}.\\
+
 \begin{minipage}{\linewidth}
 \texttt{P, Q : PROP\\
 ---------------------------------------\\
@@ -35,7 +35,6 @@ P
 }
 \end{minipage}
 
-We want to discharge the goal with \coqe{do 2 iAssumption'}.
 
 \begin{minipage}{\linewidth}
 \begin{coq}
@@ -47,41 +46,45 @@ Ltac2 iAssumption' :=
 \end{coq}
 \end{minipage}
 
-Thus, \coqe{iAssumption'} will match proof state in two cases:
+\coqe{iAssumption'} will succed in matching proof state in two cases:
 \begin{enumerate}
 \item if context (either intuitionistic or spatial) contains a wand with conclusion that is the same as the goal
 \item if context (again, either of them) contains an assumption which matches the goal exactly
 \end{enumerate}
 
-If neither of those conditions is true, it's going to fail with an \texttt{Match failure} exception.
+If neither of those conditions is true, it's going to fail with a {\color{red} \texttt{Match\_failure}} exception.
 
 A notable thing with this tactic is not just readability, assuming one is familiar with \coqe{match goal} construct.
 It's also conciseness -- a similar tactic in pure Ltac1 code has to search for a fitting hypothesis in both contexts manually, which in the current Iris Proof Mode implementation is taking 30 lines of code.
 
 \section{Implemented thing}
 
-Naturally, complexity that Ltac1 code had to deal with isn't going anywhere.
+Naturally, complexity that Ltac1 code has to deal with isn't going anywhere.
 Rather, it is abstracted into \coqe{iMatch}.
-In this section we how exactly \coqe{iMatch} differs from the original \coqe{match goal} and describe implementation details.
+In this section we describe how exactly \coqe{iMatch} differs from the original \coqe{match goal} and discuss implementation details.
 
 \subsection{Comparison with \texttt{match goal}}
 
 While we try to preserve \coqe{match goal} behavior for user convenience, there are several notable differences:
 \begin{itemize}
-\item as Iris Proof Mode state has several contexts (three namely), compared to regular Coq proof state.
+\item As noted above, Iris Proof Mode state has several contexts (three, namely), compared to regular Coq proof state.
   We give provide an ability to access all of them.
-\begin{coq}
-iMatch! goal with
-| [a:P, b:Q |- _] => ...
-| [a:P, _:$\Vert$, b:Q |- _] => ...
-| [x: nat, _:$\Vert$, a:P, _:$\Vert$, b:Q |- _] => ...
-end
-\end{coq}
-  The first branch of the example above matches two hypotheses, disregarding where they come from, be it intuitionistic or spatial context.\\
-  The second branch introduces a separator, \coqe{_:$\Vert$}, which makes \coqe{iMatch} consider only intuitionistic hypotheses for the first pattern \coqe{a:P} and only spatial ones for the second pattern \coqe{b:Q}.\\
-  The third branch introduces yet another separator, so that patterns to the left of the first \coqe{_:$\Vert$} are matched from Coq context, and successive patterns are matched to intuitionistic and spatial hypotheses respectively.
+  \begin{figure}[H]
+  \begin{coq}
+       iMatch! goal with
+       | [a:P, b:Q |- _] => ...
+       | [a:P, _:$\Vert$, b:Q |- _] => ...
+       | [x: nat, _:$\Vert$, a:P, _:$\Vert$, b:Q |- _] => ...
+       end
+   \end{coq}
+   \caption{Context matching example}
+   \label{fig:example:contex_matching}
+  \end{figure}
+  The first branch of the example~\ref{fig:example:contex_matching} matches two hypotheses, regardless of where they come from, be it intuitionistic or spatial context.\\
+  The second branch introduces a separator, \coqe{_:$\Vert$}, which makes \coqe{iMatch} consider only intuitionistic hypotheses for the patterns on the left of it (\coqe{a:P}) and only spatial ones for the patterns on the right (\coqe{b:Q}).\\
+  The third branch introduces yet another separator, so that patterns to the left of the first \coqe{_:$\Vert$} are matched from the Coq context, and successive patterns are matched from intuitionistic and spatial hypotheses respectively.
 
-\item \coqe{iMatch} supports entailemnts amended with constraints, as introduced in the previous chapter~\ref{chap:postponed_splitting}.
+\item \coqe{iMatch} supports entailemnts with constraints, as introduced in the previous chapter~\ref{chap:postponed_splitting}.
 \begin{coq}
 iMatch! goal with
 | [a:P |- _] => ...
@@ -89,15 +92,16 @@ iMatch! goal with
 | [a:<?c>P |- _] => ...
 | [a:<true>P |- _ ] => ...
 \end{coq}
-  The first two options are equivalent and match only hypotheses, which constraints don't evaluate to false.\\
-  The third one binds the constraint to \coqe{c} in case user wants to force its unification with either $\true$ or $\false$ manually.\\
-  The last one only matches hypotheses which are guaranteed to be present in the context, as opposed to ones which might or might not end up in this branch of the proof.
-  This generalizes to arbitrary constraints, though where such generality might be useful is not entirely clear.
+  The first two options are equivalent and match only hypotheses with constraints which don't evaluate to \false\\
+  The third one binds the constraint to \coqe{c} in case user wants to minuplate it or force its unification with either $\true$ or $\false$ manually.\\
+  The last one only matches hypotheses which are guaranteed to be present in the context, as opposed to ones which might or might not be in this branch of the proof after splitting the context.
+  This generalizes to arbitrary constraints, so a user can also write \coqe{<?c1 \& ?c2>}.
+  Though where such generality might be useful is not entirely clear.
 \item \coqe{match goal} patterns allow user to match one hypothesis only once, which is a sensible default.
-  However, in Iris Proof Mode user has to deal with intuitionistic contexts.
-  These are defined to contain only affine and persistent resources.
-  The latter allows user to duplicate them.\\
-  Thus, we provide a Coq flag to allow users to match the same hypothesis from persistent context multiple times and duplicate matched resources on the fly.
+  However, in Iris Proof Mode a user has to deal with intuitionistic contexts.
+  These are defined to contain resources, which are both affine and persistent.
+  The latter allows the user to duplicate them.\\
+  Thus, we provide a Coq flag to allow them to match the same hypothesis from persistent context multiple times and duplicate matched resources on the fly.
   \todo{implement}
 
 \begin{minipage}{\linewidth}
@@ -119,26 +123,24 @@ end
 
 
 \subsection{Implementation details}
-\label{sec:implementation_details}
+\label{subsec:implementation_details}
 
-Ltac2 computation model includes an ambient monad, which is a state, list (non-binary choice) and exception handling simultaneously.
-However, for high-level description we will only really need lazy list monad \coqe{M}.
+Ltac2 computation model includes an ambient monad, which is a state, list (non-binary choice) and captures exceptions simultaneously.
+However, for a high-level description of implementation having only a list monad \coqe{M} suffices.
 To this end, we take \coqe{(Control.zero : forall a, M a)} to be an empty list.
 And \coqe{(Control.plus : forall a, M a -> M a -> M a)} to be \coqe{append} operator for lists.
 
-For simplicity, let's also assume that patterns can't contain contexts, e.g. \coqe{context a [I]}.
-They don't add much in terms of conceptual complexity and the only change would be to pass them around too.
+For simplicity, let's also assume that patterns can't contain contexts, e.g. \coqe{pattern:(context a [I])}.
+They don't add much in terms of conceptual complexity and the only change would be to pass results of their matches around too.
 
-From Ltac2 we take a function \coqe{Patter.match}, \coqe{match goal} and notation (scope, in Ltac2 terms) for goal pattern-matching.
-The latter allows us to reuse the same syntax as \coqe{match goal}:
-
+From Ltac2 we take a function \coqe{Pattern.match}, \coqe{match! goal} and notation (a scope, in Ltac2 terms) for goal pattern-matching.
+The latter allows us to reuse the same syntax as \coqe{match! goal}:
 \begin{coq}
 Ltac2 Notation "iMatch!" "goal" "with" m(goal_matching) "end" :=
   i_match_one_goal m.
 \end{coq}
-
 This provides \coqe{i_match_one_goal} with a list of branch-matching tuples.
-Each such pattern consists of a list of patterns for hypotheses, pattern for the goal and substitution function that computes the value of the right-hand side of the branch when provided with values that matching binds.
+Every such pattern consists of a list of patterns for hypotheses, a pattern for the goal and a substitution function that computes value of the right-hand side of the branch when provided with values that patterns bind.
 
 \begin{coq}
 Ltac2 i_match_goal pats :=
@@ -156,18 +158,15 @@ Ltac2 i_match_goal pats :=
   interp pats.
 \end{coq}
 
-After taking apart one branch, we bind \coqe{rest} to the rest of the computation (other branches) and compute returned value on this branch.
+After taking apart one branch \coqe{ph}, we bind \coqe{rest} to the rest of the computation (matches other branches) and compute returned value on this branch.
 
-In case \coqe{i_match_patterns_goal} can't match current proof state with this branch's patterns (\coqe{i_match_patterns_goal phyps pconcl}) or branch right-hand side fails (\coqe{f hids subst}), \coqe{cur} will be set to \coqe{Control.zero}.
-
-And since \coqe{f} is given to us by Ltac2 machinery, we only have \coqe{i_match_patterns_goal} to worry about.
+And since \coqe{f} is given to us by the Ltac2 machinery, we are only left with \coqe{i_match_patterns_goal} to worry about.
 
 We will describe the rest of the implementation on a higher level now.
 
-
 Inside \coqe{i_match_patterns_goal}, current proof state is matched and Iris Proof Mode contexts and goal are extracted from it.
-We then compute all possible pairings of hypotheses and patterns via \coqe{Pattern.match} and return them as a monadic value.
-We also match current IPM goal with goal pattern, take direct product of these two monadic values and merge substitution maps.
+We then compute all possible pairings of hypotheses and patterns with help of \coqe{Pattern.match} and return them as alternatives inside monad \coqe{M}.
+We also match current IPM goal with goal pattern \coqe{pconcl}, take a direct product of these two monadic values and merge substitution maps.
 Essentially, if \coqe{i_match_patterns_goal} returns a non-zero result, the last part of the computation above takes form of
 \todo{rewrite this}
 \begin{coq}
@@ -185,10 +184,19 @@ Control.plus
 
 Which from a user perspective simply means that there might be several alternative bindings of hypotheses to identifers inside the match.
 
-However, with current API it's impossible to implement non-linear patterns.
-Which renders our previous implementation of \coqe{iAssumption'} unfit.
+In case \coqe{i_match_patterns_goal} can't match current proof state with this branch's patterns (\coqe{i_match_patterns_goal phyps pconcl}) or branch right-hand side fails (\coqe{f hids subst}), \coqe{cur} will be set to \coqe{fun () => Control.zero}.
+This results in a following redex:
+\begin{coq}
+let cur := fun () => Control.zero
+in Control.plus cur rest
+\end{coq}
+Which in its own turn evaluates to \coqe{rest}, so switching to a different branch from a user perspective.
 
-Instead, we don't require hypotheses to match the goal in any way and simply try apply each of them.
+However, there is a limitation to this implementation.
+With current API it's impossible to implement non-linear patterns.
+Which, for example, renders our previous implementation of \coqe{iAssumption'} incorrect.
+
+Instead, it's possible to not require hypotheses to match the goal in any way and simply try applying each of them.
 This degrades performance, but keeps the conciseness.
 \begin{minipage}{\linewidth}
 \begin{coq}
@@ -204,10 +212,10 @@ Ltac2 iAssumption'' :=
 
 While it might seem like iMatch is mostly about pattern-matching, there are several major design decisions to make that aren't related to pattern-matching at all and are mostly about backtracking.
 
-While it might be tempting to think about iMatch simply selecting the right hypothesis when we want it to, this isn't exactly the case.
-In reality both Ltac, Ltac2 implementation, and ours, bind identifers to the first hypothesis which fit the pattern.
+It might be tempting to think about iMatch simply selecting the right hypothesis when a user wants it to, this isn't exactly what's happening.
+In reality Ltac, Ltac2 implementation, and ours, matches patterns will all fitting hypotheses sequentially, starting with the first one.
 
-Naively, one would suppose then that if there are two hypotheses: \coqe{H1:P}, \coqe{H2:Q}, only one of the following two snippets would succeed.
+Which, intuitively, would make one think that if there are two hypotheses: \coqe{H1:P}, \coqe{H2:Q}, only one of the following two snippets would succeed.
 \begin{coq}
   iMatch! goal with
   | [h1:P, h2:_ |- _ ] => ...
@@ -219,7 +227,7 @@ Naively, one would suppose then that if there are two hypotheses: \coqe{H1:P}, \
   end
 \end{coq}
 
-In reality, while the first one goes through immediately, the second one will only succeed ``on a second attempt'', via backtracking.
+But while the first one goes through immediately, the second one will only succeed ``on a second attempt'', via backtracking.
 
 %The code will initially match \coqe{h2} with \coqe{H1}, and then, finding nothing to match \coqe{h1} with, backtrack to find a different hypothesis for \coqe{h2}.
 %Succeeding, of course, with \coqe{H2:Q} and then matching \coqe{h1} with the only other hypothesis available --  \coqe{H1:P}.
@@ -274,7 +282,7 @@ to choose a different hypothesis to apply, if available.
 This variant is called \coqe{iMultiMatch} and the name is literally the only change it's necessary to make to the definition of \coqe{iAssumption''}.
 
 In terms of implementation of \coqe{iMatch}, erasure of backtracking points is precisely what happens:
-In terms of section~\ref{sec:implementation_details}, \coqe{i_match_one_goal p := Control.once (i_match_goal p)}.
+In terms of section~\ref{subsec:implementation_details}, \coqe{i_match_one_goal p := Control.once (i_match_goal p)}.
 
 \subsection{Backtracking over branches}
 
@@ -316,3 +324,11 @@ More thorough handling of patterns.
 \end{itemize}
 
 \todo{more, with examples}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "thesis"
+%%% TeX-parse-self: t
+%%% TeX-auto-save: t
+%%% reftex-cite-format: 'natbib
+%%% reftex-default-bibliography: ("/home/buzzer/my-dir/ed/uni/saar/prjcts/iris/npm/tex/TacticsProofs.bib")
+%%% End:
