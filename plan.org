@@ -40,7 +40,6 @@ i.e. iris indent-string has to go through the goal to get the result from one to
 * Postponed splitting
 ** Motivation/examples
 ** Rules for environments with constraints
-
 ** Design implemented
 ** Possible designs and comparisons, what do we need
 *** Alternatives for destructing existentials

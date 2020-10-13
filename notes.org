@@ -260,7 +260,9 @@ end
 will fail since Control.hyp returns a var reference and not a literal constr.
 ** If it was possible to anitquote patterns, non-linearity would be reachable with a hack
 just take all patterns, put them in a list, match against list of returned hypothesis
+** =notypeclasses refine= is not present in Ltac2, not sure where it causes problems
 * Control.once is equivalent to
+
 #+begin_src coq
 Ltac2 my_once t :=
   match (Control.case t) with
@@ -288,7 +290,7 @@ How to check?
 what kinds of things can you write in this language
 tour
 
-Mtac2 tautology
+Mtac2 tautology solver as an example of Ltac2 function
 
 * IPM tutorial
 iDestruct

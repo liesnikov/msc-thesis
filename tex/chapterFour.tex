@@ -151,6 +151,7 @@ With them we can not only postpone the choice, but cal also (unlike in \cite{har
 \]
 
 \subsection{Existential quantifier}
+\label{subsec:exist-quant}
 
 We aslo encounter first major design decision:\\
 Given an existential with a Boolean expression in the context, destruction leaks the element from the proof into the context: \todo{example}.
@@ -161,7 +162,7 @@ Since them the user can employ \emph{ex falso} rule and provide \coqe{p} as a pr
 
 \citet[page 5]{harlandResourceDistributionBooleanConstraints2003} don't encounter this problem, since they take the idea of principal formulas as their guiding principle: ``the principal formula of each rule must be assigned the value of 1'' (\true instead of 1 in our notation).
 
-And while in general there are ways around it, we make use of this doctrine for existentials.
+We make use of this principle for existentials.
 
 \[
 \infer[c = \true]
@@ -226,6 +227,8 @@ This is essentially Proposition 4.10 -- Completeness of Resource Proofs of \cite
 
 \subsection{Rules for Iris Proof Mode}
 
+\todo{write explanation of the interesting rules}
+
 \begin{itemize}
 \item Affinity
   \[
@@ -263,6 +266,7 @@ This is essentially Proposition 4.10 -- Completeness of Resource Proofs of \cite
     \]
   \end{itemize}
 \item Assumptions
+  These force unification
   \[
   \infer{\entailsD P}
         {P[\true] \in \IntuD &
@@ -292,17 +296,16 @@ This is essentially Proposition 4.10 -- Completeness of Resource Proofs of \cite
    %\]
     \[
     \infer{\entailsD R}
-          {P[c] \in \SpatD &
-           P \vdash \pers Q^{(\text{IntoPersistent}\ \false\ P\ Q)} &
-           \entails {\IntuD, Q} {\SpatD \backslash P} {R}
+          {(\pers P)[c] \in \SpatD &
+%           P \vdash \pers Q^{(\text{IntoPersistent}\ \false\ P\ Q)} &
+           \entails {\IntuD, P} {\SpatD \backslash (\pers P)} {R}
          }
     \]
   \item iSpatial
     \[
     \infer{\entailsD R}
-          {P[c] \in \IntuD &
-           \affine P \vdash Q^{(\text{FromAffinely}\ P\ Q)} &
-           \entails {\IntuD \backslash P} {\SpatD, Q} {R}
+          {(\affine P)[c] \in \IntuD &
+           \entails {\IntuD \backslash (\affine P)} {\SpatD, P} {R}
          }
     \]
   \item iPure
@@ -438,8 +441,8 @@ As with regular Iris Proof Mode, the biggest difference between theoretical pres
 As with theoretical perspective, we keep the definition of environment with two different contexts and a counter to generate fresh identifiers.
 \begin{coq}
   Record envs (PROP : bi) := Envs {
-    env_intuitionistic : env PROP; (* the intuitionistic context \(\Gamma\) *)
-    env_spatial : env PROP; (* the spatial context \(\Pi\)*)
+    env_intuitionistic : env PROP; (* the intuitionistic context Gamma *)
+    env_spatial : env PROP; (* the spatial context $\Pi$*)
     env_counter : positive (* a counter for fresh name generation *)}.
 \end{coq}
 
@@ -448,7 +451,7 @@ What does change is the definition of the context, predicates and functions on t
   Definition mrkd_ident : Type := bool * ident.
   Inductive env (B : Type) : Type :=
   | Enil : env B
-  | Esnoc : env B → mrkd_ident -> B -> env B.
+  | Esnoc : env B -> mrkd_ident -> B -> env B.
 \end{coq}
 
 Of course, contexts themselves contain regular Boolean values as constraints, but to use resource-distribution techniques we have to utilize existential variables -- \citet[Section 2.2.1]{thecoqdevelopmentteamCoqProofAssistant2020}.
@@ -504,11 +507,11 @@ And while some of those changes are superficial, others require consideration.
 Let's take a look at the original \coqe{tac_assumption} lemma, which underlies \coqe{iAssumption} tactic:
 \begin{coq}
   Lemma tac_assumption $\Delta$ i p P Q :
-  envs_lookup i $\Delta$ = Some (p,P) →
-  FromAssumption p P Q →
+  envs_lookup i $\Delta$ = Some (p,P) ->
+  FromAssumption p P Q ->
   (let $\Delta'$ := envs_delete true i p $\Delta$ in
    if env_spatial_is_nil $\Delta'$ then TCTrue
-   else TCOr (Absorbing Q) (AffineEnv (env_spatial $\Delta'$))) →
+   else TCOr (Absorbing Q) (AffineEnv (env_spatial $\Delta'$))) ->
   envs_entails $\Delta$ Q.
 \end{coq}
 
@@ -518,11 +521,11 @@ First of all, it's \coqe{envs_lookup}, as now environment stores resources which
 Hence, in the splitting mode it becomes
 \begin{coq}
 Lemma tac_assumption $\Delta$ i p P Q :
-  envs_lookup_true i $\Delta$ = Some (p,P) →
-  FromAssumption p P Q →
+  envs_lookup_true i $\Delta$ = Some (p,P) ->
+  FromAssumption p P Q ->
   (let $\Delta'$ := envs_delete true i p $\Delta$ in
    if env_spatial_is_nil $\Delta'$ then TCTrue
-   else TCOr (Absorbing Q) (AffineEnv (env_spatial $\Delta'$))) →
+   else TCOr (Absorbing Q) (AffineEnv (env_spatial $\Delta'$))) ->
   envs_entails $\Delta$ Q.
 \end{coq}
 
@@ -537,63 +540,314 @@ With them, however, we have to take into account that the context might contain 
 Therefore, \coqe{env_spatial_is_nil} instead checks that all resources in the context indeed have expressions evaluating to \false and \coqe{AffineEnv} has an additional instance:
 \begin{coq}
   Instance affine_env_snoc_false $\Gamma$ i P :
-  AffineEnv $\Gamma$ → AffineEnv (Esnoc $\Gamma$ ($\false$,i) P).
+  AffineEnv $\Gamma$ -> AffineEnv (Esnoc $\Gamma$ ($\false$,i) P).
 \end{coq}
 
+Finally, this Lemma asks for the Boolean expression associated with the proposition to already evaluate to \true.
+We have to make sure that this is indeed true before \coqe{refine tac_assumption} is called.
+This is achieved by manually unifying all expressions from the spatial context with \false, except the one selected -- \coqe{i}.
 
-\begin{itemize}
-\item Lookups
-\item Typeclasses
-\item Displaying environments
-\end{itemize}
+\paragraph{Displaying environments}
 
+We also introduce changes to the environment printing infrastructure of Iris Proof Mode.
+Reusing the same technique as the original Iris Proof Mode implementation \citet[Section 4.4]{robbertInteractiveProofsHigherorder2017}, we rely on notation machinery.
+As Splitting Iris Proof Mode subsumes regular IPM, we choose not to show Boolean expressions if they evaluate to \true.
+Also, as resources with \false expressions aren't in this branch at all, we don't display them too.
 
+All of the rules are declared as \coqe{only printing} rules, as the support have been added in version 8.6 \footnote{first appearence in the manual: \href{https://coq.inria.fr/distrib/8.6/refman/Reference-Manual014.html\#sec538}{coq.inria.fr/distrib/8.6/refman/Reference-Manual014.html}}
+%\footnote{merged pull request on github: \href{https://github.com/coq/coq/milestone/1?closed=1\#issue_194_link}{github.com/coq/coq/milestone/1}}
 
+\subsection{Solving constraints/unification procedure}
+\label{subsec:solving_constraints}
+\todo{link with other subchapters}
+\todo{move to theory part? this seems like a solving procedure on its own}
+
+We are not using a general-purpose SAT solver for two reasons.
+
+First is that we need a very specific interpretation that is in some sense ``minimal'' with respect to the assignments introduced.
+The reason for this is that we don't feed the solver with all equations at once, as already described above.
+In fact, in the proofs there is actually no notion of constraint as described in \citet{harlandResourceDistributionBooleanConstraints2003}.
+
+Expressions that appear in the proofs with the rules described above only take very specific forms: they are conjunctions of either atomic variables or negations of them.
+
+This is due to the fact that if there is a resource with expression of the form \coqe{?a && ?b} and we want to impose a constraint that forces it to evaluate to \false, both \(\setBraces {a \mapsto \false, b \mapsto \_} \) and \(\setBraces {b \mapsto \false, a\ \mapsto \_}\) technically satisfy this condition.
+However, choosing the second one corresponds to premature decision to eliminate the resource from both the current branch and its sibling.
+\todo{example here}
+
+Second is that in Coq there is no way to store proof state in any other way but in the goal or the context, which will both end up in a proof term.
+\todo{more here}
 
 \section{Possible designs and comparisons, what do we need}
+\label{sec:poss-designs-comp}
+
+There are several design decisions to be made regarding the Splitting Iris Proof Mode, in this section we describe potential alternatives for both the rules, as mentioned above \ref{subsec:exist-quant} and general approach.
 
 \subsection{Alternatives for destructing existentials}
 \label{subsec:design_decisions_existential}
 
+While discussing dependent sum elimination originally, we resorted to the \citeauthor{harlandResourceDistributionBooleanConstraints2003}'s principle on creating a constraint for the principal formula of the rule.
 
+While the principle seems natural, it prohibits manipulation of resources which user might not want to commit to.
+We successfully avoided this restriction for conjunction and will describe possible approaches in this section.
+
+The main problem of the destruction of dependent sums, which might not be present is leakage of resources into the Coq context, which doesn't track usage and can't be amended to include Boolean expressions as guards.
+
+Motivating example mentioned before goes as follows.
+Assume we can simply destruct dependent sum \coqe{(exists x, P x)[c]} to result in \coqe{(P x) [c']} in the Iris Proof Mode context, where \(c'\) is some new expression.
+
+\begin{minipage}{\linewidth}
+\texttt{P : $\forall$ x : False, PROP\\
+Q : PROP\\
+---------------------------------------\\
+---------------------------------------$\intuit$\\
+p : ($\exists$ x : False, P x)[$c_1$]\\
+q : Q\\
+---------------------------------------*\\
+Q
+}
+\end{minipage}
+
+Since we don't know whether \coqe{p} is an affine resource, the correct proof would unify \coqe{$c_1$} with \false.
+With the assumed destruction rule, we can instead prove it by destruction of \coqe{p}\\
+
+\begin{minipage}{\linewidth}
+\texttt{P : $\forall$ x : False, PROP\\
+Q : PROP\\
+x : False\\
+---------------------------------------\\
+---------------------------------------$\intuit$\\
+p : (P x)[$c^{'}_1$]\\
+q : Q\\
+---------------------------------------*\\
+Q
+}
+\end{minipage}
+And then by \coqe{exfalso} rule without ever unifying $c^{'}_1$ with \true.
+Which means that Iris Proof Mode will have no way to guarantee that p is indeed used only in this branch and not elsewhere too.
+
+We shall now describe possible designs for the destruction of dependent sum rule.
+There are two dimensions to the decision -- guarding the first component of the from the dependent sum and the second one.
+
+\begin{minipage}{\linewidth}
+\texttt{X : Type\\
+P : $\forall$ x : X, PROP\\
+Q : PROP\\
+---------------------------------------\\
+---------------------------------------$\intuit$\\
+p : ($\exists$ x : X, P x)[c]\\
+---------------------------------------*\\
+Q
+}
+\end{minipage}
+
+Let's begin with the first.
+From the erroneous derivation above we infer that the rule must incorporate some guard into the variable \(x\) in terms of the same example.
+There are at least three possibilities, not counting the rule from \citet{harlandResourceDistributionBooleanConstraints2003}.
 \begin{enumerate}
-\item for introduced variables
+\item
+  The first one is restricting the destruction of existentials to cases, where one can prove that the type of the first component is inhabited.
 
-\begin{itemize}
-\item proving the type is inhabited
-\item guarding the introduced variable with a proof that constraint is true
-\item conditional Maybe
-\end{itemize}
-\item for propositions
+  While this is restricting the scope of application of the rule, it results in the cleanliest solution for the second component -- we can simply reuse the same Boolean expression and substitute \coqe{(exists x : X, P x)[c]} with \coqe{(P x)[c]}.
+\item The second alternative is changing the type of the \coqe{x} introduced into the Coq context to \coqe{forall r : c = true, X}.
 
-\begin{itemize}
-\item conditional empty
-\item whole environemnts with proofs of constraints that constraint is equal to true quantified
-\end{itemize}
+\begin{minipage}{\linewidth}
+\texttt{X : Type\\
+P : $\forall$ x : X, PROP\\
+Q : PROP\\
+x : $\forall$ r : c = true, X\\
+---------------------------------------\\
+---------------------------------------$\intuit$\\
+p : ?P x [$c^{'}_1$]\\
+---------------------------------------*\\
+Q
+}
+\end{minipage}
+  This doesn't require any additional proof from the user, but complicates the derivation later, as we will see.
+\item The last option relies on the computational behaviour of \coqe{c} and introduces \coqe{x : if c then X else True} into the context.
+  This makes sure that the user can access \coqe{X} only after committing to \coqe{c} to be \true in this branch of the proof.
+
+\begin{minipage}{\linewidth}
+\texttt{X : Type\\
+P : $\forall$ x : X, PROP\\
+Q : PROP\\
+x : if c then X else True\\
+---------------------------------------\\
+---------------------------------------$\intuit$\\
+p : ?P x [$c^{'}_1$]\\
+---------------------------------------*\\
+Q
+}
+\end{minipage}
+Again, we will face similar problems as with the previous solution.
 \end{enumerate}
 
-\subsection{The need to solve constraints afterwards for modalities with action "clear"}
+Each one of the solutions above solves the problem with erroneous derivations.
+However, the primary reason for the user to destruct the dependent pair is usually to access the resource in the second component.
+Ideally we would want to provide \coqe{P x} with some constraint, but this is not always possible.
+
+\begin{enumerate}
+\item In fact, only the first design above allows us to use \coqe{x} without any gadget, since we do get pure \coqe{x : X} in the context, which we can then simply apply to \coqe{P}, which ultimately results in the following rule:
+  \[
+    \infer{\entails {\IntuD} {\SpatD, (\exists x : X, P x)[c]} {Q}}
+          {X \text{ is inhabited} &
+           \forall x : X , \entails {\IntuD} {\SpatD, (P x)[c]} {Q}}
+  \]
+\item The second option is to rely on the proof of equality.
+    \[
+    \infer{\entails {\IntuD} {\SpatD, (\exists x : X, P x)[c]} {Q}}
+          {\forall x' : (c = \true) \imp X , \entails {\IntuD} {\SpatD, (\forall (p : c = \true), P (x p))[c]} {Q}}
+    \]
+\item The third option is to make the resource conditionally turn into \emp.
+   \[
+    \infer{\entails {\IntuD} {\SpatD, (\exists x : X, P x)[c]} {Q}}
+          {\forall (x' : \mathop{if} c \mathop{then} X \mathop{else} True), \entails {\IntuD} {\SpatD, (x' >>= P)} {Q}}
+   \]
+   where \(x' >>= P \defeq \mathop{if} c \mathop{then} P x' \mathop{else} emp\).
+\end{enumerate}
+
+We matched respective solutions from the alternatives, but it's also possible to mix them differently.
+In particular, to match second and third options for respective parts of the dependent pair
+However, current pairing appear to be the most natural ones, so we won't be considering other alternatives.
+
+The rules presented above are sound, but they have problems in terms of usability.
+
+The only shortcoming of the first rule is the need to prove that \(X\) is inhabited, which might be unsuitable in some cases.\\
+The second and the third solution share the same weakness: while they do provide some resources after destruction, they don't give direct access to the proposition.
+Which will force a user to move more resources under the same guard, if they wish to combine other resources with the current one.
+Effectfully, these are acting as modalities, which don't provide a way to escape.
+This limitation makes them only superficially useful in the current setting.
+
+One way around this might be to embed dependency of the proposition on the constraint into the entailment predicate, changing the evaluation to apply resources to their respective constraints.
+
+We leave further investigation of the issue to future work.
+\todo{wrap up nicely}
+
+
+\subsection{Hanging obligations after introducing for modalities with action "clear"}
+\label{subsec:hanging-obligations}
+
+\todo{delete this or rewrite?}
+Some of the rules, e.g. \coqe{iAssumption} might create hanging obligations for the evars, which isn't nice.
+There's no way around this, unless we introduce explicit equalities for constraints, which have to go into the proof term.
 
 \subsection{Environments}
+\label{subsec:environments}
+
+Above we defined new environments with Boolean expressions, following the definition from \citeauthor{harlandResourceDistributionBooleanConstraints2003} and existing environments in Iris Proof Mode.
+However, this is not the only way to define them.
 
 \paragraph{Continuation-style environments}
 
-\paragraph{Boolean constraints with existential variables}
+One way to define them is to pass the decision on one branch to another one, essentially making the second goal a continuation, which takes the decision done in the first branch.
+The idea is to create a continuation function, which instantiates the second goal with the right environment:
+\begin{minipage}{\linewidth}
+\texttt{P : PROP\\
+Q : PROP\\
+---------------------------------------\\
+p : P\\
+q : Q\\
+---------------------------------------*\\
+Q * P
+}
+\end{minipage}
+
+After splitting, we would want to gain the following:
+
+\begin{minipage}{\linewidth}
+\texttt{P : PROP\\
+Q : PROP\\
+---------------------------------------\\
+$\Delta \defeq$ [...]\\
+with goal [p : P, q : Q] $\sim \Delta \vDash$ P\\
+---------------------------------------*\\
+Q
+}
+\end{minipage}
+
+For this we would want the removal operator to guarantee that resources are indeed deleted.
+
+The upside of this approach is the lack of existential variables and hence no problem like \ref{subsec:hanging-obligations}.
+
+The problem with this approach emerges when we have to remove not only variables from the Iris Proof Mode contexts, but also Coq contexts.
+A prime example of this is a dependent pair -- destruction of one moves the first element into Coq context.
+However, while naive implementation would store the continuation entailment in the goal, there is no way to embed Coq context withing a goal.
 
 \paragraph{Boolean constraints resolved post-factum with equations posed as goals}
 
+The other alternative, which is closer to the implemented solution and also solves the problem described in \ref{subsec:hanging-obligations} is posing the equations explicitly.
+
+And while the environments themselves don't change, we don't rely on the type-checking machinery to verify that resource distribution was indeed successful by posing explicit equations.
+
+This changes tactics from
+\begin{coq}
+  Lemma tac_sep_split $\Delta$ bs P Q1 Q2 :
+  FromSep P Q1 Q2 ->
+  match envs_split bs $\Delta$ with
+  | None => False
+  | Some ($\Delta_1$,$\Delta_2$) => envs_entails $\Delta_1$ Q1 /\ envs_entails $\Delta_2$ Q2
+  end -> envs_entails $\Delta$ P.
+\end{coq}
+
+To the following:
+\begin{coq}
+  Lemma tac_sep_split $\Delta$ bs1 bs2 P Q1 Q2 :
+  FromSep P Q1 Q2 ->
+  Forall2 xor bs1 bs2 ->
+  envs_entails ($\Delta$[bs1]) Q1 ->
+  envs_entails ($\Delta$[bs2]) Q2 ->
+  envs_entails $\Delta$ P.
+\end{coq}
+
+Where \coqe{$\Delta$[bs1]} is element-wise addition of new expressions to \(\Delta\) and \coqe{Forall2 xor bs1 bs2} guarantees that Boolean expressions in \coqe{bs1} and \coqe{bs2} can not both be \true or \false simultaneously element-wise.
+
+This setup would allow us to pass constraints to an external solver and not leave hanging obligations.
+
+The downside of this approach is that equations have to be in the proof terms, which slows down proof-checking.
+
 \paragraph{Different styles of environments?}
 
-\section{Ltac2 features used}
+The last design decision we want to discuss is one regarding identifiers and well-foundedness of the contexts.
 
-"Reflection on the use of Ltac2"
-Mention that Ltac2 was complete for our purposes.
+One potentially confusing aspect of the current implementation of Splitting Iris Proof Mode is that if there is a resource \coqe{p : P} in the context with a Boolean expression which evaluates to \false, a user will not be able to introduce a different proposition with the same identifier.
+This is especially confusing due to the rendering of the goals, which doesn't display such resources as \coqe{p : P} at all.
+
+There is an alternative design for environments, which aims to solve exactly this problem.
+We move from the idea of well-foundedness based on the identifiers and use internal counter instead.
+
+With the current implementation there are two constructors for identifiers: anonymous and named.
+The former includes a counter, which is less then the current counter of the environment, as seen in the section \ref{subsec:ipm_constr_coq_implementation}.
+The latter only includes a name.
+
+Well-foundedness guarantees that for any identifier looking in up will result in a single resources.
+\begin{coq}
+  Inductive env_wf {A : Type}: env A → Prop :=
+  | Enil_wf : env_wf Enil
+  | Esnoc_wf Γ i x : lookup Γ i = None → env_wf Γ → env_wf (Esnoc Γ i x).
+\end{coq}
+
+We change the definition of identifier to also include counter in the named constructors and require well-foundedness to only have a single resource for each value of the counter, but not necessarily for each string identifier (which is part of the named constructor).
+
+The upside of such approach is that the problem described above doesn't appear at all.
+
+The downside, however, is that this requires checking on Ltac2 side that identifiers of the resources currently present in the context with Boolean expressions which don't evaluate to \false are unique. \todo{better explanation here}
+
+\section{Reflection on the use of Ltac2}
+
+While Ltac2 doesn't provide standard library to work with existential variables, it proved to be flexible and expressive enough to develop one on our own without modifying OCaml source code.
+
+Here we present some details of the development.
+
+\subsection{Evar unification and constraint solving}
+\label{subsec:evar-unification-and-constr-solving}
+Describe the trick by Janno and work with evars as opposed to Ltac1.
+\todo{finish}
+
 
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "thesis"
 %%% TeX-parse-self: t
 %%% TeX-auto-save: t
-%%% reftex-cite-format: 'natbib
+%%% reftex-cite-format: natbib
 %%% reftex-default-bibliography: ("/home/buzzer/my-dir/ed/uni/saar/prjcts/iris/npm/tex/TacticsProofs.bib")
 %%% End:

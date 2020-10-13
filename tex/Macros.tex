@@ -17,9 +17,11 @@
 \newcommand{\bnfor}{~|~} %|
 \newcommand{\qedsq}{\hfill\ensuremath{_\blacksquare}}
 
-\newcommand{\true}{\textsf{true}}
-\newcommand{\True}{\textsf{True}}
-\newcommand{\false}{\textsf{false}}
+\newcommand{\true}{\textsf{true}\xspace}
+\newcommand{\false}{\textsf{false}\xspace}
+\newcommand{\andb}{\mathop{\&\&}}
+
+\newcommand{\True}{\textsf{True}\xspace}
 
 \newcommand{\blankpage}{\newpage
 \thispagestyle{empty}
@@ -50,7 +52,7 @@ $\square$% % the end-of-proof mark
 % mostly from iris/tex/iris.sty
 % \newcommand*{\Sep}[1][]{\scalerel*{\ast}{\sum}\ifthenelse{\isempty{#1}}{}{_{#1}\;}}
 \newcommand\wand{\ensuremath{\mathrel{-\mkern-6mu*}}}
-\newcommand\emp{\ensuremath{\textsf{emp}}}
+\newcommand\emp{\ensuremath{\textsf{emp}\xspace}}
 \newcommand\iMatch{\coqe{iMatch}}
 
 \newcommand\expr{\ensuremath{\text{exp}}}
