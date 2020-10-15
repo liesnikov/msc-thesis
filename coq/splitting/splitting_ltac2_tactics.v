@@ -1,8 +1,10 @@
 From iris.bi Require Export bi telescopes.
-From iris.proofmode Require Export base classes notation.
+From iris.proofmode Require Import base.
+From iris.proofmode Require Export classes notation.
 Set Default Proof Using "Type".
 
 From Local Require Import named_prop.
+From Local Require Export named_prop_notation.
 From Local Require Import connection.
 
 From Ltac2 Require Import Ltac2.
@@ -12,6 +14,10 @@ Import utils.Misc utils.Iriception utils.Evars.
 
 From Local Require ltac2_tactics.
 From Local Require Import splitting_tactics.
+
+Set Default Proof Using "Type".
+Export ident.
+
 
 Ltac2 Type ident_ltac2 := Init.constr.
 Ltac2 new_constraint () := new_evar_with_cast '(bool).
@@ -356,3 +362,55 @@ Ltac2 i_split () :=
       end]
   | [|- _] => iriception "the goal isn't bi entailment"
   end.
+
+
+Ltac2 get_modality () :=
+  let fresh_id := fresh () in
+  lazy_match! goal with
+  | [|- @envs_entails ?prop2 _ ?p ] =>
+    let prop1 := new_evar '(bi) in
+    let q := new_evar prop1 in
+    let m := new_evar '(modality $prop1 $prop2) in
+    let selA := new_evar '(Type) in
+    let sel := new_evar selA in
+    let assertion () := (Std.AssertType
+                           (Some (Std.IntroNaming (Std.IntroIdentifier fresh_id)))
+                           '(FromModal $m $sel $p $q)
+                           None) in
+    enter_h true (fun _ ast => Std.assert ast) assertion
+  end;
+  Control.focus 1 1 i_solve_tc;
+  let (_,_,v) := List.find (fun xyz => match xyz with
+                                      (x, _, _) => Ident.equal x fresh_id
+                                    end)
+                           (Control.hyps ()) in
+  Std.clear [fresh_id];
+  match! v with
+  | FromModal ?sel _ _ _ => sel
+  end.
+
+Ltac2 i_mod_intro () :=
+  let modality := get_modality () in
+  let intuitionistic_action := Std.eval_hnf '(modality_intuitionistic_action $modality) in
+  let spatial_action := Std.eval_hnf '(modality_spatial_action $modality) in
+  let _ := match! intuitionistic_action with
+  | MIEnvIsEmpty => "empty" (* TODO remove everything false from the context *)
+  | MIEnvForall ?c => "don't match"
+  | MIEnvTransform ?c => "don't match"
+  | MIEnvClear => "clear"
+  | MIEnvId => "id"
+  end in
+  let _ := match! spatial_action with
+  | MIEnvIsEmpty => "empty" (* TODO remove everything false from the context *)
+  | MIEnvForall ?c => "don't match"
+  | MIEnvTransform ?c => "don't match"
+  | MIEnvClear => "clear"
+  | MIEnvId => "id"
+  end in
+  refine '(tac_modal_intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ) >
+  [ | | | | | | |
+  | i_solve_tc () (* FromModal ?M ?sel ?P ?Q *)
+  | i_solve_tc () (* IntoModalIntuitionisticEnv *)
+  | i_solve_tc () (* IntoModalSpatialEnv *)
+  | pm_reduce (); i_solve_tc () (* if ?fi then Absorbing (...) else TCTrue *)
+  | pm_prettify ()].

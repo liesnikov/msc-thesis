@@ -1,8 +1,8 @@
 From iris.bi Require Import bi telescopes.
-Import bi.
+From iris.bi Require Import tactics.
 From iris.proofmode Require Import base classes modality_instances.
+Import bi.
 From Local Require Import named_prop.
-
 
 Section bi.
 Context {PROP : bi}.
@@ -282,7 +282,7 @@ Lemma tac_and_destruct_split Δ i p j1 j2 c c' P P1 P2 Q :
   envs_lookup_with_constr i Δ = Some (p, c, P) →
   (IntoAnd p P P1 P2) →
   match envs_simple_replace i p (Esnoc (Esnoc Enil (negb c' && c, j2) P2)
-                                       (c' && c, j1) P1) Δ with
+                                                   (     c' && c, j1) P1) Δ with
   | None => False
   | Some Δ' => envs_entails Δ' Q
   end → envs_entails Δ Q.
@@ -389,3 +389,238 @@ Proof.
 Abort.
 
 End bi.
+(** The following _private_ classes are used internally by [tac_modal_intro] /
+[iModIntro] to transform the proofmode environments when introducing a modality.
+
+The class [TransformIntuitionisticEnv M C Γin Γout] is used to transform the
+intuitionistic environment using a type class [C].
+
+Inputs:
+- [Γin] : the original environment.
+- [M] : the modality that the environment should be transformed into.
+- [C : PROP → PROP → Prop] : a type class that is used to transform the
+  individual hypotheses. The first parameter is the input and the second
+  parameter is the output.
+
+Outputs:
+- [Γout] : the resulting environment. *)
+
+Class TransformIntuitionisticEnv {PROP1 PROP2} (M : modality PROP1 PROP2)
+    (C : PROP2 → PROP1 → Prop) (Γin : env PROP2) (Γout : env PROP1) := {
+  transform_intuitionistic_env :
+    (∀ P Q, C P Q → □ P ⊢ M (□ Q)) →
+    (∀ P Q, M P ∧ M Q ⊢ M (P ∧ Q)) →
+    □ ([∧] Γin) ⊢ M (□ ([∧] Γout));
+  transform_intuitionistic_env_wf : env_wf Γin → env_wf Γout;
+  transform_intuitionistic_env_dom i : env_lookup i Γin = None → env_lookup i Γout = None;
+}.
+
+(* The class [TransformIntuitionisticEnv M C Γin Γout filtered] is used to transform
+the intuitionistic environment using a type class [C].
+
+Inputs:
+- [Γin] : the original environment.
+- [M] : the modality that the environment should be transformed into.
+- [C : PROP → PROP → Prop] : a type class that is used to transform the
+  individual hypotheses. The first parameter is the input and the second
+  parameter is the output.
+
+Outputs:
+- [Γout] : the resulting environment.
+- [filtered] : a Boolean indicating if non-affine hypotheses have been cleared. *)
+Class TransformSpatialEnv {PROP1 PROP2} (M : modality PROP1 PROP2)
+    (C : PROP2 → PROP1 → Prop) (Γin : env PROP2) (Γout : env PROP1)
+    (filtered : bool) := {
+  transform_spatial_env :
+    (∀ P Q, C P Q → P ⊢ M Q) →
+    ([∗] Γin) ⊢ M ([∗] Γout) ∗ if filtered then True else emp;
+  transform_spatial_env_wf : env_wf Γin → env_wf Γout;
+  transform_spatial_env_dom i : env_lookup i Γin = None → env_lookup i Γout = None;
+}.
+
+(* The class [IntoModalIntuitionisticEnv M Γin Γout s] is used to transform the
+intuitionistic environment with respect to the behavior needed to introduce [M] as
+given by [s : modality_intro_spec PROP1 PROP2].
+
+Inputs:
+- [Γin] : the original environment.
+- [M] : the modality that the environment should be transformed into.
+- [s] : the [modality_intro_spec] a specification of the way the hypotheses
+  should be transformed.
+
+Outputs:
+- [Γout] : the resulting environment. *)
+Inductive IntoModalIntuitionisticEnv {PROP2} : ∀ {PROP1} (M : modality PROP1 PROP2)
+    (Γin : env PROP2) (Γout : env PROP1), modality_action PROP1 PROP2 → Prop :=
+  | MIEnvIsEmpty_intuitionistic {PROP1} (M : modality PROP1 PROP2) :
+     IntoModalIntuitionisticEnv M Enil Enil MIEnvIsEmpty
+  | MIEnvForall_intuitionistic (M : modality PROP2 PROP2) (C : PROP2 → Prop) Γ :
+     TCForall C (env_to_list Γ) →
+     IntoModalIntuitionisticEnv M Γ Γ (MIEnvForall C)
+  | MIEnvTransform_intuitionistic {PROP1}
+       (M : modality PROP1 PROP2) (C : PROP2 → PROP1 → Prop) Γin Γout :
+     TransformIntuitionisticEnv M C Γin Γout →
+     IntoModalIntuitionisticEnv M Γin Γout (MIEnvTransform C)
+  | MIEnvClear_intuitionistic {PROP1 : bi} (M : modality PROP1 PROP2) Γ :
+     IntoModalIntuitionisticEnv M Γ Enil MIEnvClear
+  | MIEnvId_intuitionistic (M : modality PROP2 PROP2) Γ :
+     IntoModalIntuitionisticEnv M Γ Γ MIEnvId.
+Existing Class IntoModalIntuitionisticEnv.
+Existing Instances MIEnvIsEmpty_intuitionistic MIEnvForall_intuitionistic
+  MIEnvTransform_intuitionistic MIEnvClear_intuitionistic MIEnvId_intuitionistic.
+
+(* The class [IntoModalSpatialEnv M Γin Γout s] is used to transform the spatial
+environment with respect to the behavior needed to introduce [M] as given by
+[s : modality_intro_spec PROP1 PROP2].
+
+Inputs:
+- [Γin] : the original environment.
+- [M] : the modality that the environment should be transformed into.
+- [s] : the [modality_intro_spec] a specification of the way the hypotheses
+  should be transformed.
+
+Outputs:
+- [Γout] : the resulting environment.
+- [filtered] : a Boolean indicating if non-affine hypotheses have been cleared. *)
+Inductive IntoModalSpatialEnv {PROP2} : ∀ {PROP1} (M : modality PROP1 PROP2)
+    (Γin : env PROP2) (Γout : env PROP1), modality_action PROP1 PROP2 → bool → Prop :=
+  | MIEnvIsEmpty_spatial {PROP1} (M : modality PROP1 PROP2) :
+      IntoModalSpatialEnv M Enil Enil MIEnvIsEmpty false
+  | MIEnvForall_spatial (M : modality PROP2 PROP2) (C : PROP2 → Prop) Γ :
+     TCForall C (env_to_list Γ) →
+     IntoModalSpatialEnv M Γ Γ (MIEnvForall C) false
+  | MIEnvTransform_spatial {PROP1}
+       (M : modality PROP1 PROP2) (C : PROP2 → PROP1 → Prop) Γin Γout fi :
+     TransformSpatialEnv M C Γin Γout fi →
+     IntoModalSpatialEnv M Γin Γout (MIEnvTransform C) fi
+  | MIEnvClear_spatial {PROP1 : bi} (M : modality PROP1 PROP2) Γ :
+     IntoModalSpatialEnv M Γ Enil MIEnvClear false
+  | MIEnvId_spatial (M : modality PROP2 PROP2) Γ :
+     IntoModalSpatialEnv M Γ Γ MIEnvId false.
+Existing Class IntoModalSpatialEnv.
+Existing Instances MIEnvIsEmpty_spatial MIEnvForall_spatial
+  MIEnvTransform_spatial MIEnvClear_spatial MIEnvId_spatial.
+
+Section tac_modal_intro.
+  Context {PROP1 PROP2 : bi} (M : modality PROP1 PROP2).
+
+  Global Instance transform_intuitionistic_env_nil C : TransformIntuitionisticEnv M C Enil Enil.
+  Proof.
+    split; [|eauto using Enil_wf|done]=> /= ??.
+    rewrite !intuitionistically_True_emp -modality_emp //.
+  Qed.
+  Global Instance transform_intuitionistic_env_snoc (C : PROP2 → PROP1 → Prop) Γ Γ' i P Q :
+    C P Q →
+    TransformIntuitionisticEnv M C Γ Γ' →
+    TransformIntuitionisticEnv M C (Esnoc Γ i P) (Esnoc Γ' i Q).
+  Proof.
+    intros ? [HΓ Hwf Hdom]; split; simpl.
+    - intros HC Hand.
+      destruct i as [[] i].
+      + rewrite intuitionistically_and HC // HΓ //.
+          by rewrite Hand -intuitionistically_and.
+      + rewrite HΓ //.
+    - inversion 1; constructor; auto.
+    - intros j. destruct i as [_ i]. destruct (ident_beq _ _); naive_solver.
+  Qed.
+  Global Instance transform_intuitionistic_env_snoc_not (C : PROP2 → PROP1 → Prop) Γ Γ' i P :
+    TransformIntuitionisticEnv M C Γ Γ' →
+    TransformIntuitionisticEnv M C (Esnoc Γ i P) Γ' | 100.
+  Proof.
+    intros [HΓ Hwf Hdom]; split; simpl.
+    - intros HC Hand.
+      destruct i as [[] i].
+      + cbn. by rewrite and_elim_r HΓ.
+      + by rewrite HΓ.
+    - inversion 1; auto.
+    - intros j. destruct i as [_ i]. destruct (ident_beq _ _); naive_solver.
+  Qed.
+
+  Global Instance transform_spatial_env_nil C :
+    TransformSpatialEnv M C Enil Enil false.
+  Proof.
+    split; [|eauto using Enil_wf|done]=> /= ?. by rewrite right_id -modality_emp.
+  Qed.
+  Global Instance transform_spatial_env_snoc (C : PROP2 → PROP1 → Prop) Γ Γ' i P Q fi :
+    C P Q →
+    TransformSpatialEnv M C Γ Γ' fi →
+    TransformSpatialEnv M C (Esnoc Γ i P) (Esnoc Γ' i Q) fi.
+  Proof.
+    intros ? [HΓ Hwf Hdom]; split; simpl.
+    - intros HC. destruct i as [[] i].
+      + cbn. by rewrite {1}(HC P) // HΓ // assoc modality_sep.
+      + by rewrite HΓ // assoc modality_sep.
+    - inversion 1; constructor; auto.
+    - intros j. destruct i as [_ i]. destruct (ident_beq _ _); naive_solver.
+  Qed.
+
+  Global Instance transform_spatial_env_snoc_not
+      (C : PROP2 → PROP1 → Prop) Γ Γ' i P fi fi' :
+    TransformSpatialEnv M C Γ Γ' fi →
+    TCIf (TCEq fi false)
+      (TCIf (Affine P) (TCEq fi' false) (TCEq fi' true))
+      (TCEq fi' true) →
+    TransformSpatialEnv M C (Esnoc Γ i P) Γ' fi' | 100.
+  Proof.
+    intros [HΓ Hwf Hdom] Hif; split; simpl.
+    - intros ?. destruct i as [[] i]. cbn.
+      + rewrite HΓ //. destruct Hif as [-> [? ->| ->]| ->].
+        * by rewrite (affine P) left_id.
+        * by rewrite right_id comm (True_intro P).
+        * by rewrite comm -assoc (True_intro (_ ∗ P)%I).
+      + rewrite HΓ //. destruct Hif as [-> [? ->| ->]| ->].
+        * done.
+        * by rewrite (True_intro (emp)%I).
+        * destruct fi; by rewrite ?(True_intro (emp)%I).
+    - inversion 1; auto.
+    - intros j. destruct i as [_ i]. destruct (ident_beq _ _); naive_solver.
+  Qed.
+
+  (** The actual introduction tactic *)
+  Lemma tac_modal_intro {A} (sel : A) Γp Γs n Γp' Γs' Q Q' fi :
+    FromModal M sel Q' Q →
+    IntoModalIntuitionisticEnv M Γp Γp' (modality_intuitionistic_action M) →
+    IntoModalSpatialEnv M Γs Γs' (modality_spatial_action M) fi →
+    (if fi then Absorbing Q' else TCTrue) →
+    envs_entails (Envs Γp' Γs' n) Q → envs_entails (Envs Γp Γs n) Q'.
+  Proof.
+    rewrite envs_entails_eq /FromModal !of_envs_eq => HQ' HΓp HΓs ? HQ.
+    apply pure_elim_l=> -[???]. assert (envs_wf (Envs Γp' Γs' n)) as Hwf.
+    { split; simpl in *.
+      - destruct HΓp as [| |????? []| |]; eauto using Enil_wf.
+      - destruct HΓs as [| |?????? []| |]; eauto using Enil_wf.
+      - assert (∀ i, env_lookup i Γp = None → env_lookup i Γp' = None).
+        { destruct HΓp as [| |????? []| |]; eauto. }
+        assert (∀ i, env_lookup i Γs = None → env_lookup i Γs' = None).
+        { destruct HΓs as [| |?????? []| |]; eauto. }
+        naive_solver. }
+    assert (□ [∧] Γp ⊢ M (□ [∧] Γp'))%I as HMp.
+    { remember (modality_intuitionistic_action M).
+      destruct HΓp as [?|M C Γp ?%TCForall_Forall|? M C Γp Γp' []|? M Γp|M Γp]; simpl.
+      - rewrite {1}intuitionistically_elim_emp (modality_emp M)
+          intuitionistically_True_emp //.
+      - eauto using modality_intuitionistic_forall_big_and.
+      - eauto using modality_intuitionistic_transform,
+          modality_and_transform.
+      - by rewrite {1}intuitionistically_elim_emp (modality_emp M)
+          intuitionistically_True_emp.
+      - eauto using modality_intuitionistic_id. }
+    move: HQ'; rewrite -HQ pure_True // left_id HMp=> HQ' {HQ Hwf HMp}.
+    remember (modality_spatial_action M).
+    destruct HΓs as [?|M C Γs ?%TCForall_Forall|? M C Γs Γs' fi []|? M Γs|M Γs]; simpl.
+    - by rewrite -HQ' /= !right_id.
+    - rewrite -HQ' {1}(modality_spatial_forall_big_sep _ _ Γs) //.
+      by rewrite modality_sep.
+    - destruct fi.
+      + rewrite -(absorbing Q') /bi_absorbingly -HQ' (comm _ True%I).
+        rewrite -modality_sep -assoc. apply sep_mono_r.
+        eauto using modality_spatial_transform.
+      + rewrite -HQ' -modality_sep. apply sep_mono_r.
+        rewrite -(right_id emp%I bi_sep (M _)).
+        eauto using modality_spatial_transform.
+    - rewrite -HQ' /= right_id comm -{2}(modality_spatial_clear M) //.
+      by rewrite (True_intro ([∗] Γs)%I).
+    - rewrite -HQ' {1}(modality_spatial_id M ([∗] Γs)%I) //.
+      by rewrite -modality_sep.
+  Qed.
+End tac_modal_intro.

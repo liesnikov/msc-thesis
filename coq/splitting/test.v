@@ -1,42 +1,5 @@
-Goal True.
-Proof.
-  assert True as H.
-  Proof.
-    exact I.
-  exact H.
-Qed.
-
 From Ltac2 Require Import Ltac2.
-From Ltac2 Require Control.
 
-From Local Require Import utils.
-Import utils.Misc utils.Evars.
-
-Definition hey := 1.
-
-Ltac2 n () := '(_).
-
-Ltac2 Eval n ().
-
-Goal nat.
-  evar (t2 : nat).
-  exact t2.
-  Unshelve.
-  constructor.
-Qed.
-
-Goal nat.
-Proof.
-  evar (t2 : nat).
-  Ltac2 Eval ((Control.hyps ())).
-  Fail Ltac2 Eval (Env.get [ident_of_string "Coq.Init.Datatypes.S"]).
-  Ltac2 Eval (match! (Control.hyp (ident_of_string "t2")) with
-              | true => "hey"
-              | false => "ho"
-              | _ => "hoy"
-              end).
-  auto. Unshelve. constructor.
-Admitted.
 
 From iris.proofmode Require Import tactics intro_patterns.
 From iris.proofmode Require Import coq_tactics.
@@ -75,10 +38,9 @@ Proof.
   admit.
 Admitted.
 
+From Local Require Import tactics.
 Set Default Proof Using "Type".
-From Local Require Import splitting_tactics splitting_ltac2_tactics.
-From Local Require connection.
-From Local Require Import named_prop.
+
 Context {PROP : bi}.
 Implicit Types P Q R : PROP.
 
@@ -127,4 +89,12 @@ Lemma test_four (P Q : PROP): (⊢ P) -> ⊢ P.
   i_start_split_proof ().
   i_intro_pat p.
   i_assumption_coq ().
+Qed.
+
+Lemma test_five (P Q : PROP) : □ P ⊢ □ P.
+Proof.
+  i_start_split_proof ().
+  i_intro_intuitionistic_ident '(INamed "p").
+  i_mod_intro ().
+  i_assumption ().
 Qed.

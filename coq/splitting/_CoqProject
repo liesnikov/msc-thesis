@@ -2,10 +2,10 @@
 -R .. Local
 
 named_prop.v
-numbered_prop.v
-split_evars.v
+named_prop_notation.v
 connection.v
 splitting_tactics.v
 splitting_ltac2_tactics.v
+tactics.v
 splitting_imatch.v
 test.v

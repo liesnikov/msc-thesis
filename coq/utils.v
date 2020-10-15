@@ -100,7 +100,6 @@ Module Evars.
     let p1 := '(eq_refl $term1 : $term1 = $term2) in
     ().
 
-
   Ltac2 instantiate0 (n : ident) term :=
     unify0 term (Unsafe.make (Unsafe.Var n)).
 

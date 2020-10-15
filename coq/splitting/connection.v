@@ -1,7 +1,7 @@
 From iris.bi Require Export bi.
 From iris.proofmode Require Import base.
 From iris.proofmode Require environments.
-From Local.splitting Require named_prop numbered_prop split_evars.
+From Local.splitting Require named_prop.
 
 Section named_prop.
   Context {PROP : bi}.
@@ -75,6 +75,8 @@ Section named_prop.
   Qed.
 End named_prop.
 
+
+(* 
 Section numbered_prop.
     Lemma from_numbered {PROP : bi} (Δ1 : environments.envs PROP) (Δ2 : numbered_prop.envs PROP) Q:
     environments.env_to_list (environments.env_intuitionistic Δ1) =
@@ -125,3 +127,4 @@ Section split_prop.
         auto.
     Admitted.
 End split_prop.
+*)
