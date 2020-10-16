@@ -1,6 +1,5 @@
 From Ltac2 Require Import Ltac2.
 
-
 From iris.proofmode Require Import tactics intro_patterns.
 From iris.proofmode Require Import coq_tactics.
 From iris.proofmode Require Import base spec_patterns
@@ -57,13 +56,12 @@ Proof.
   i_start_split_proof ().
   i_intro_ident '(INamed "rq").
   i_intro_ident '(INamed "pp").
-  i_split ().
-  Focus 2.
-  i_and_destruct '(INamed "rq") '(INamed "r") '(INamed "q").
-  i_split ().
-  i_exact_spatial '(INamed "q").
-  i_exact_spatial '(INamed "r").
-  i_exact_spatial '(INamed "pp").
+  i_split (); ltac1: (revgoals).
+  - i_and_destruct '(INamed "rq") '(INamed "r") '(INamed "q").
+    i_split ().
+    + i_exact_spatial '(INamed "q").
+    + i_cleanup (); i_exact_spatial '(INamed "r").
+  - i_cleanup (). i_exact_spatial '(INamed "pp").
 Qed.
 
 Lemma test_two (P Q : PROP): (P ∧ Q) -∗ P.
@@ -97,4 +95,21 @@ Proof.
   i_intro_intuitionistic_ident '(INamed "p").
   i_mod_intro ().
   i_assumption ().
+Qed.
+
+Lemma test_six P Q : Q ⊢ □ (<absorb> P) -∗ (* P ∗*) Q.
+Proof.
+  i_start_split_proof ().
+  i_intro_ident '(INamed "q").
+  (* i_intro_ident '(INamed "p"). *)
+  i_intro_intuitionistic_ident '(INamed "p").
+  (* i_split ().*)
+  iLazyMatch! goal with
+  | [h1 : <?> ?p |- _] => Message.print (Misc.oc p)
+  end.
+
+  iMatch! goal with
+  | [h1 : _, h2 : (<absorb> _)%I |- ?p] =>
+    i_assumption ()
+  end.
 Qed.

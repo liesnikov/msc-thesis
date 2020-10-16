@@ -5,6 +5,7 @@ Set Default Proof Using "Type".
 
 From Local Require Import named_prop.
 From Local Require Export named_prop_notation.
+From Local Require Import splitting_imatch.
 From Local Require Import connection.
 
 From Ltac2 Require Import Ltac2.
@@ -112,6 +113,23 @@ Ltac2 pm_force_reflexivity () :=
   pm_reduce_force (); exact eq_refl.
 
 Ltac2 pm_prettify () :=
+  let env_expressions :=
+    failwith
+    (fun () => lazy_match! goal with
+    | [|- context [@envs_entails _ (@Envs _ ?gp ?gs _) _]] =>
+      List.map (fun xyz => match xyz with (x,_,_) => x end)
+               (List.append (env_to_list gp) (env_to_list gs))
+    end) "coulnd't take apart env" in
+  let check_if_evals (c : coq_boolean) :=
+    let ce := Std.eval_hnf c in
+    lazy_match! ce with
+    | false => true
+    | true => true
+    | _ => false
+    end in
+  List.map (fun c => (ltac1:(c |- let c1 := (eval compute in c) in
+                              change_no_check c with c1) (Ltac1.of_constr c)))
+           (List.filter check_if_evals env_expressions);
   ltac2_tactics.pm_prettify ().
 
 Ltac2 i_solve_tc := ltac2_tactics.i_solve_tc.
@@ -129,13 +147,14 @@ Ltac2 i_fresh_fun () :=
   i_start_split_proof ();
   lazy_match! goal with
    | [|- @envs_entails ?pr1 (@Envs ?pr2 ?p ?s ?c) ?q] =>
-    (ltac1:(pr1 pr2 p s c q |-
-           let c1 := (eval vm_compute in (Pos.succ c)) in
-           change_no_check (@envs_entails pr1 (@Envs pr2 p s c1) q))
-           (Ltac1.of_constr pr1) (Ltac1.of_constr pr2) (Ltac1.of_constr p) (Ltac1.of_constr s) (Ltac1.of_constr c) (Ltac1.of_constr q));
+     (let f :=
+        ltac1:(pr1 pr2 p s c q |-
+               let c1 := (eval vm_compute in (Pos.succ c)) in
+               change_no_check (@envs_entails pr1 (@Envs pr2 p s c1) q)) in
+     let lc := Ltac1.of_constr in
+     f (lc pr1) (lc pr2) (lc p) (lc s) (lc c) (lc q));
      constr:(IAnon $c)
 end.
-
 
 Ltac2 i_clear_hyp (x : ident_ltac2) :=
   refine '(tac_clear _ $x _ _ _ _ _ _ _) >
@@ -143,6 +162,39 @@ Ltac2 i_clear_hyp (x : ident_ltac2) :=
   | pm_reflexivity ()
   | pm_reduce (); i_solve_tc ()
   | pm_reduce ()].
+
+Ltac2 i_clear_false_hyp (x : ident_ltac2) :=
+  refine '(tac_clear_false _ $x _ _ _ _ _) >
+  [ () | ()
+  | pm_reflexivity ()
+  | pm_reduce ()].
+
+Ltac2 rec i_clear_false_hyps (x : ident_ltac2 list) :=
+  match x with
+  | [] => ()
+  | xh :: xs => i_clear_false_hyp xh; i_clear_false_hyps xs
+  end.
+
+Ltac2 i_cleanup () :=
+  let env :=
+    lazy_match! goal with
+    | [|- @envs_entails _ (@Envs _ ?gp ?gs _) _] =>
+      List.map (fun xyz => match xyz with (x,y,_) => (x,y) end)
+               (List.append (env_to_list gp) (env_to_list gs))
+    end in
+  let check_if_false (c : coq_boolean) :=
+    let ce := Std.eval_hnf c in
+    match! ce with
+    | false => true
+    | _ => false
+    end in
+  let to_clean :=
+      List.map
+        (fun b_i => match b_i with (b,i) => i end)
+        (List.filter
+           (fun b_i => match b_i with (b,i) => check_if_false b end)
+           env) in
+  Control.enter (fun () => pm_prettify (); i_clear_false_hyps to_clean).
 
 Ltac2 i_emp_intro () :=
   refine '(tac_emp_intro _ _) > [i_solve_tc ()].
@@ -163,7 +215,7 @@ Ltac2 i_intro_pat' (x : Std.intro_pattern) :=
                               (Message.of_constr p) ++
                               (Message.of_string " into a universal quantifier")))
            end)
-        | pm_prettify (); intros0 false [x] ]
+        | pm_prettify (); intros0 false [x]]
       end).
 
 Ltac2 Notation "i_intro_pat" p(intropattern) := i_intro_pat' p.
@@ -200,19 +252,12 @@ Ltac2 i_intro_intuitionistic_ident (x : ident_ltac2) :=
         | i_solve_tc () | i_solve_tc ()
         | i_solve_tc () | pm_reduce ()]).
 
-Ltac2 rec list_from_env e :=
-  match! e with
-  | Esnoc ?gg (?b,?j) ?pp =>
-    (b,j) :: list_from_env gg
-  | Enil => []
-  end.
-
 Ltac2 select_hypothesis f e :=
   let fst xy := match xy with (x,_) => x end in
   let snd xy := match xy with (_,y) => y end in
   lazy_match! e with
   | (@Envs _ ?gp ?gs _) =>
-    let l := list_from_env gs in
+    let l := List.map (fun xyz => match xyz with (x,y,_) => (x,y) end) (env_to_list gs) in
     let (hh, rest) := List.partition (fun x => f (snd x)) l in
     let _ := List.iter unify_constr_true (List.map fst hh) in
     let _ := List.iter unify_constr_false (List.map fst rest) in
@@ -290,10 +335,10 @@ Ltac2 i_assumption () :=
   in
   lazy_match! goal with
   | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] =>
-     first [find true gp q
-           |find false gs q
-           |i_assumption_coq ()
-           |Control.zero (Iriception (oc q ++ os " not found"))]
+     first [ find true gp q
+           | find false gs q
+           | i_assumption_coq ()
+           | Control.zero (Iriception (oc q ++ os " not found"))]
 end.
 
 Ltac2 i_and_destruct (x : ident_ltac2)
@@ -330,16 +375,10 @@ Ltac2 i_or_destruct (x : ident_ltac2)
   | i_solve_tc ()
   | pm_reduce(); split ].
 
-Ltac2 rec env_length (x : constr) :=
-  lazy_match! x with
-  | Enil => 0
-  | Esnoc ?x _ _ => Int.add 1 (env_length x)
-  end.
-
 Ltac2 i_split () :=
   let n :=
     lazy_match! goal with
-    | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] => env_length gs
+    | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] => List.length (env_to_list gs)
     end in
   let rec gen_list n :=
     match (Int.equal 0 n) with
@@ -379,12 +418,13 @@ Ltac2 get_modality () :=
                            None) in
     enter_h true (fun _ ast => Std.assert ast) assertion
   end;
-  Control.focus 1 1 i_solve_tc;
-  let (_,_,v) := List.find (fun xyz => match xyz with
-                                      (x, _, _) => Ident.equal x fresh_id
-                                    end)
-                           (Control.hyps ()) in
-  Std.clear [fresh_id];
+  Control.focus 1 1 i_solve_tc; (* enter just asserted goal and solve it with i_solve_tc *)
+  let (_,_,v) := (* get the type of just proved goal *)
+    List.find (fun xyz => match xyz with
+                         (x, _, _) => Ident.equal x fresh_id
+                       end)
+              (Control.hyps ()) in
+  Std.clear [fresh_id]; (* remove asserted goal *)
   match! v with
   | FromModal ?sel _ _ _ => sel
   end.
@@ -394,18 +434,18 @@ Ltac2 i_mod_intro () :=
   let intuitionistic_action := Std.eval_hnf '(modality_intuitionistic_action $modality) in
   let spatial_action := Std.eval_hnf '(modality_spatial_action $modality) in
   let _ := match! intuitionistic_action with
-  | MIEnvIsEmpty => "empty" (* TODO remove everything false from the context *)
-  | MIEnvForall ?c => "don't match"
-  | MIEnvTransform ?c => "don't match"
-  | MIEnvClear => "clear"
-  | MIEnvId => "id"
+  | MIEnvIsEmpty => i_cleanup ()
+  | MIEnvForall ?c => i_cleanup ()
+  | MIEnvTransform ?c => i_cleanup ()
+  | MIEnvClear => i_cleanup ()
+  | MIEnvId => ()
   end in
   let _ := match! spatial_action with
-  | MIEnvIsEmpty => "empty" (* TODO remove everything false from the context *)
-  | MIEnvForall ?c => "don't match"
-  | MIEnvTransform ?c => "don't match"
-  | MIEnvClear => "clear"
-  | MIEnvId => "id"
+  | MIEnvIsEmpty => i_cleanup ()
+  | MIEnvForall ?c => i_cleanup ()
+  | MIEnvTransform ?c => i_cleanup ()
+  | MIEnvClear => i_cleanup ()
+  | MIEnvId => ()
   end in
   refine '(tac_modal_intro _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ ) >
   [ | | | | | | |

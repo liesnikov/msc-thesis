@@ -1,16 +1,13 @@
 From iris.bi Require Export bi telescopes.
-From iris.proofmode Require Export base classes notation.
+From iris.proofmode Require Import base classes notation.
 Set Default Proof Using "Type".
 
 From Local Require Import named_prop.
-From Local Require Import connection.
-From Local Require Import splitting_tactics splitting_ltac2_tactics.
 
 From Ltac2 Require Import Ltac2 Std.
 
 From Local Require utils.
 Import utils.Misc utils.Iriception utils.Evars.
-
 
 
 (* Reserved Notation "⫫" (at level 10). *)
@@ -31,10 +28,11 @@ Ltac2 Type exn ::= [IMatch_failure].
 
 Ltac2 rec env_to_list e :=
   lazy_match! e with
-  | Esnoc ?gg ?j ?pp => (j,pp) :: env_to_list gg
+  | Esnoc ?gg (?b, ?j) ?pp => (b, j, pp) :: env_to_list gg
   | _ => []
 end.
 
+Ltac2 Type coq_boolean := constr.
 Ltac2 Type iris_id := constr.
 Ltac2 Type iris_prop := constr.
 
@@ -57,22 +55,21 @@ Ltac2 i_match_term (kpat : kinded_pattern) (term : constr) :=
   end.
 
 Ltac2 rec pick_match_rec
-      (acc : (iris_id * iris_prop) list)
-      (env : (iris_id * iris_prop) list)
+      (acc : (coq_boolean * iris_id * iris_prop) list)
+      (env : (coq_boolean * iris_id * iris_prop) list)
       (kpat : kinded_pattern)
   :=let bogus := '(1) in (* placeholder constr *)
     match env with
     | [] => Control.zero IMatch_failure
     | eh :: et =>
-      let (id, prop) := eh in
-      let constraint := Std.eval_red '(fst $id) in
-      let ident := Std.eval_red '(snd $id) in
+      let (constraint, ident, prop) := eh in
       List.fold_left
         (fun x y () => Control.plus x y)
         [(** * First try to match just the PROP *)
          (fun _ => let (bins, ctxs) := i_match_term kpat prop in
                 let is_false := Constr.equal (Std.eval_vm None constraint)
-                                            '(false) in
+                                             '(false) in
+                (* If user matches just proposition, they probably don't want false props*)
                 match is_false with
                 | true => Control.zero (IMatch_failure)
                 | false => (ident, bins, ctxs, List.append (List.rev acc) et)
@@ -84,8 +81,7 @@ Ltac2 rec pick_match_rec
                          (fun () => i_match_term kpat '($bogus, $prop))) with
                 | Err _ =>
                   (* pattern for boolean constraint isn't a wildcard
-                 which means it might be not_false,
-                 so we should check that first *)
+                     which means it might be not_false, so we should check for this first *)
                   or (fun () =>
                         let (b,c) := i_match_term kpat '(not_false, $prop) in
                         let is_false := Constr.equal (Std.eval_vm None constraint)
@@ -94,6 +90,8 @@ Ltac2 rec pick_match_rec
                         | true => Control.zero (IMatch_failure)
                         | false => (b,c)
                         end)
+                     (* pattern for boolean isn't a wildcard and isn't not_false,
+                        so we just match it *)
                      (fun () => i_match_term kpat '($constraint, $prop))
                 | Val _ =>
                   (* pattern for boolean constraint is a wildcard *)
@@ -104,12 +102,13 @@ Ltac2 rec pick_match_rec
         (fun () => Control.zero IMatch_failure) ()
     end.
 
-Ltac2 pick_match (env : (iris_id * iris_prop) list) (kpat : kinded_pattern) :=
+Ltac2 pick_match (env : (coq_boolean * iris_id * iris_prop) list)
+                 (kpat : kinded_pattern) :=
   pick_match_rec [] env kpat.
 
 Ltac2 rec i_match_ihyps_list
       (pats : kinded_patterns)
-      (env : (iris_id * iris_prop) list)
+      (env : (coq_boolean * iris_id * iris_prop) list)
   := match pats with
      | [] => ([],[],[])
      | p :: pats' =>
@@ -126,7 +125,7 @@ Ltac2 split_pat_list_with_sep plist :=
       match rest with
       | [] => acc
       | rh :: restl =>
-        let isnt_sep () := match acc with
+        let isnt_sep_cont () := match acc with
           | First a =>
             go (First (rh :: a)) restl
           | Second ab =>
@@ -140,7 +139,7 @@ Ltac2 split_pat_list_with_sep plist :=
         match (Control.case (fun () => i_match_term rh bogus)) with
         | Val _ =>
           (* The pattern is a wildcard, so it's not sep *)
-          isnt_sep ()
+          isnt_sep_cont ()
         | Err _ =>
           (* The pattern is not a wildcard *)
           or (fun () =>
@@ -153,7 +152,7 @@ Ltac2 split_pat_list_with_sep plist :=
                 | Second ab => let (a, b) := ab in go (Third ([], a, b)) restl
                 | Third abc => iriception "more than two separators in iMatch"
                 end)
-             (fun e => isnt_sep ())
+             (fun e => isnt_sep_cont ())
         end
       end in
   (* the list has to be reversed since we start partitions from the right

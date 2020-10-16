@@ -5,7 +5,7 @@ named_prop.v
 named_prop_notation.v
 connection.v
 splitting_tactics.v
+splitting_imatch.v
 splitting_ltac2_tactics.v
 tactics.v
-splitting_imatch.v
 test.v

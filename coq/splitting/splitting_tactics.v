@@ -98,8 +98,14 @@ Proof.
   by rewrite wand_elim_r.
 Qed.
 
-(** *TODO: remove resources with false constraints*)
-(* Lemma tac_clear_false Δ Γ *)
+Lemma tac_clear_false Δ i p P Q:
+  envs_lookup_with_constr i Δ = Some (p, false, P) ->
+  envs_entails (envs_delete true i p Δ) Q ->
+  envs_entails Δ Q.
+Proof.
+  rewrite envs_entails_eq => H Hs.
+  rewrite (envs_lookup_sound_with_constr _ i p false) ?left_id //=.
+Qed.
 
 Lemma tac_clear Δ i p c P Q :
   envs_lookup_with_constr i Δ = Some (p,c,P) →
