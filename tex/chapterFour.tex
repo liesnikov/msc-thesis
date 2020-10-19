@@ -11,16 +11,17 @@ When we use it as a deductive inference, we know premises and have to derive the
 The left premise lets us infer what one part of the context in the conclusion should be and the right one -- the other.
 
 However, when using it from proof search perspective, a problem appears.
-We know that the premises should take form of \(\Gamma_1 \vdash \phi_1\) and \(\Gamma_2 \vdash \phi_2\), where $\Gamma$s are undefined.
+We know that the premises should take form of \(\Gamma_1 \vdash \phi_1\) and \(\Gamma_2 \vdash \phi_2\), where $\Gamma_i$ are undefined.
 And we know that the conclusion should be \(\Gamma \vdash \phi_1 \ast \phi_2\).
 But it doesn't provide us with any infromation on how to split \(\Gamma\) into \(\Gamma_1\) and \(\Gamma_2\).
 
-Since propositions in separation logic are frequently thought as resources, this problem is called ``resource distribution'' problem in the literature.
+Since propositions in separation logic are frequently thought as resources, this problem is sometimes called ``resource distribution'' problem in the literature.
 
 We develop a tecnhique to automate some parts of it, building on ideas from \citet{harlandResourceDistributionBooleanConstraints2003}.
 
-The key element is instead of forcing the prover to distribute resources right away, postpone this decision.
-The key element of the solution is adding to each resource a Boolean  which indicates presence or absence of the resource.
+The idea to allow user to postpone the decision instead of forcing the prover to distribute resources right away.
+We also track resources so that they are not used twice by adding to each one a Boolean value.
+These values indicate presence or absence of the resource and we make sure that there is only one branch where this values is \true.
 
 \section{Motivation/examples}
 
@@ -32,20 +33,48 @@ Still, let's consider small illustrative example of where we would want to use i
 Take the following statement:
 \((A \wand B) * (C \wand D) * A * C \vdash B * D\)
 
-For a human it is pretty clear what the derivation should be after a moment's consideration.
-But for machine it's not immediately clear how to distribute resources, so instead we can postpone this decision and simply say that resources are distributed disjointly.
+After a moment's consideration, it's pretty clear for a human what the derivation should be .
+But for machine it's not, so instead we postpone this decision and simply say that resources are distributed disjointly.
+
+The splitting is done via the introduction of new variables:
+For any resource \(Q[c]\), we put \(Q[c' \& c]\) and \(Q[\neg c' \& c]\) into \(\Gamma_1\) and \(\Gamma_2\) respectively.
+The idea is that no matter what \(c\) evaluates to, \(c' \& c\) and \(\neg c' \& c\) can't be \true simultaneously, and hence -- will not be used twice.
+And if the original \(c\) evaluates to \true, then exactly one of them will be \true.
+
+\hspace{-0.1\linewidth}
+\begin{minipage}[t]{1.2\linewidth}
 \[
+\hspace{-0.1\linewidth}
 \infer{(A \wand B) \ast (C \wand D) \ast A \ast C \vdash B \ast D}
       {(A \wand B)[c_0] \ast (C \wand D)[c_1] \ast A[c_2] \ast C[c_3] \vdash B
        &
        (A \wand B)[\neg c_0] \ast (C \wand D)[\neg c_1] \ast A[\neg c_2] \ast C[\neg c_3] \vdash D}
 \]
+\end{minipage}
 
 Then we utilize wand application on the left-hand side in both sequents.
+Let's take a closer look at the left one: \((A \wand B)[c_0] \ast (C \wand D)[c_1] \ast A[c_2] \ast C[c_3] \vdash B\).
+In order to apply wand \(A \wand B\) two resources are required: the wand itself and its argument.
+And while we can deduce that the expression attached to \((A \wand B)[c_0]\) should evalute to \true, finding the antecedent isn't that simple in general.
 
-Let's take a closer look at the left one:
+To this end, we create two subgoals: one for \(A\) and another one with \(B[c_0]\) in the context with side condition that \(c_0\) should evaluate to \true.
 
 \[
+\infer[c_0 = \true]
+      {(A \wand B)[c_0] \ast (C \wand D)[c_1] \ast
+        A[c_2] \ast C[c_3] \vdash B}
+      { \Gamma_1 \vdash A
+       &
+       B[c_0] \ast \Gamma_2 \vdash B}
+\]
+
+And since in general derivation of \(A\) is not trivial, we split the rest of resources except \(A \wand B\) again: \(\Gamma_1\) will be used to derive \(A\) and \(B[c_0] \ast \Gamma_2\) will be used to derive the goal.
+
+We apply the same technique with the introduction of new variables and end up with the following goal:\\
+\hspace{-0.1\linewidth}
+\begin{minipage}[t]{1.2\linewidth}
+\[
+\hspace{-0.1\linewidth}
 \infer{(A \wand B)[c_0] \ast (C \wand D)[c_1] \ast
         A[c_2] \ast C[c_3] \vdash B}
       {(C \wand D)[c'_1 \& c_1] \ast
@@ -54,17 +83,17 @@ Let's take a closer look at the left one:
        B[c_0] \ast (C \wand D)[\neg c'_1 \& c_1] \ast
        A[\neg c'_1 \& c_2] \ast C[\neg c'_3 \& c_3] \vdash B}
 \]
+\end{minipage}
 
 From the left  we can say that \(c'_2 \& c_2\) has to be \true, hence both \(c'_2\) and \(c_2\) must be \true.
-Moreover, \(c'_1 \& c_1\) and \(c'_3 \& c_3\) must be \false, but on its own it's not saying much about the values.
+Moreover, \(c'_1 \& c_1\) and \(c'_3 \& c_3\) must be \false, but we can't deduce the values of the variables from them without other equations.
 
-If we take a look at the right sequent, we can also unify \(c_0\) with \true and
-\(\neg c'_1 \& c_1\), \(\neg c'_3 \& c_3\) with \false.
-And from the left sequent we know that \(\neg c'_1 \& c_2\) is \false, since the first conjunct is \false.
+If we take a look at the right sequent, we can also unify \(\neg c'_1 \& c_1\), \(\neg c'_3 \& c_3\) with \false, since \(c_0\) should be \true according to the side-condition above.
+Moreover, since we deduced earlier that \(c'_2\) must be \true, expression attached to \(A\) in the right sequent -- \(\neg c'_1 \& c_2\) must be \false.
 
 The resulting system of equations allows us to conclude that \(c_1\) and \(c_3\) are false and values of \(c'_1\) and \(c'_3\) are arbitrary.
 
-Thus, we have a total constraint assignment, which means as soon as we're done with the left derivation it's clear what resources should go to the right sequent.
+This gives us a total assignment: \(\setBrackets{c_1 \mapsto , c_2 \mapsto , c_3 \mapsto , c'_1 \mapsto , c'_2 \mapsto , c'_3 \mapsto \), which means as soon as we're done with the left derivation it's clear what resources should go to the right sequent.
 
 \section{Rules for environments with constraints}
 
