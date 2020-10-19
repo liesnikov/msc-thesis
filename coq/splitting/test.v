@@ -60,7 +60,7 @@ Proof.
   - i_and_destruct '(INamed "rq") '(INamed "r") '(INamed "q").
     i_split ().
     + i_exact_spatial '(INamed "q").
-    + i_cleanup (); i_exact_spatial '(INamed "r").
+    + i_cleanup (). i_exact_spatial '(INamed "r").
   - i_cleanup (). i_exact_spatial '(INamed "pp").
 Qed.
 

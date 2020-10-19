@@ -373,26 +373,51 @@ Proof.
 Qed.
 
 (** *TODO: lemma for specialization *)
-Lemma tac_specialize_with_constr Δ i p j q k c1 c2 c P1 P2 R Q:
-  envs_lookup_with_constr i Δ = Some (p, c1, P1) ->
-  match envs_simple_replace i p (Esnoc Enil ((negb c) && c1, i) P1) Δ with
-  | Some Δ' =>
-    envs_lookup_with_constr j Δ' = Some (q, c2, R) ->
-    IntoWand q p R P1 P2 ->
-    match envs_simple_replace j q (Esnoc Enil ((negb c) && c2, j) R) Δ' with
-    | Some Δ'' =>
-      match envs_app (p && q) (Esnoc Enil (c && c1 && c2, k) P2) Δ'' with
-      | Some Δ''' => envs_entails Δ''' Q
-      | None => False
-      end
-    | None => False
-    end
+Lemma tac_specialize_intuitionistic Δ i j k c1 c2 c P1 P2 R Q:
+  envs_lookup_with_constr i Δ = Some (true, c1, P1) ->
+  let Δ1 := envs_simple_subst i true ((negb c) && c1) P1 Δ in
+  envs_lookup_with_constr j Δ1 = Some (true, c2, R) ->
+  IntoWand true true R P1 P2 ->
+  let Δ2 :=  envs_simple_subst j true ((negb c) && c2) R Δ1 in
+  match envs_app false (Esnoc Enil (c && c1 && c2, k) P2) Δ2 with
+  | Some Δ3 => envs_entails Δ3 Q
   | None => False
-  end -> envs_entails Δ Q.
+  end
+  -> envs_entails Δ Q.
 Proof.
-  rewrite envs_entails_eq => ? H. rewrite envs_lookup_sound_with_constr //.
-  destruct (envs_simple_replace i _ _ _) as [Δ'|] eqn: H1; last done.
-Abort.
+  rewrite envs_entails_eq /IntoWand. intros ?? HR ?.
+  destruct (envs_app _ _ _) as [Δ''|] eqn:?; last done.
+  rewrite (envs_simple_subst_sound _ _ _ _ _ (negb c && c1) P1 H) //=.
+  rewrite (envs_simple_subst_sound _ _ _ _ _ (negb c && c2) R H0) //=.
+  rewrite envs_app_sound //=; simpl in *.
+  destruct c1 eqn:?, c eqn:?, c2 eqn:?;
+   rewrite ?emp_sep ?emp_wand ?assoc ?wand_elim_r //=.
+    + rewrite HR wand_elim_r sep_emp wand_elim_r //=.
+    + rewrite intuitionistically_elim_emp emp_sep //=.
+    + rewrite intuitionistically_elim_emp emp_sep //=.
+Qed.
+
+Lemma tac_specialize_with_constr Δ i j k c1 c2 p q P1 P2 R Q:
+  envs_lookup_with_constr i Δ = Some (p, c1, P1) ->
+  let Δ1 := envs_simple_subst i p ((negb c2) && c1) P1 Δ in
+  envs_lookup_with_constr j Δ1 = Some (q, c2, R) ->
+  IntoWand q p R P1 P2 ->
+  let Δ2 :=  envs_simple_subst j q ((negb c1) && c2) R Δ1 in
+  match envs_app false (Esnoc Enil (c1 && c2, k) P2) Δ2 with
+  | Some Δ3 => envs_entails Δ3 Q
+  | None => False
+  end
+  -> envs_entails Δ Q.
+Proof.
+  rewrite envs_entails_eq /IntoWand. intros ?? HR ?.
+  destruct (envs_app _ _ _) as [Δ''|] eqn:?; last done.
+  rewrite (envs_simple_subst_sound _ _ _ _ _ (negb c2 && c1) P1 H) //=.
+  rewrite (envs_simple_subst_sound _ _ _ _ _ (negb c1 && c2) R H0) //=.
+  destruct p, q; rewrite envs_app_sound //=; simpl in *;
+  destruct c1, c2; simpl in *;
+  rewrite ?emp_sep ?emp_wand ?assoc ?wand_elim_r //=;
+  rewrite HR sep_emp !wand_elim_r //=.
+Qed.
 
 End bi.
 (** The following _private_ classes are used internally by [tac_modal_intro] /

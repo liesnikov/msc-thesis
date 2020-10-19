@@ -99,12 +99,20 @@ Fixpoint env_replace {A} (i: ident) (Γi: env A) (Γ: env A) : option (env A) :=
      end
   end.
 
+Fixpoint env_subst {A} (i : ident) (c : bool) (y : A) (Γ : env A) : env A :=
+  match Γ with
+  | Enil => Enil
+  | Esnoc Γ (b, j) x =>
+    if ident_beq i j
+    then Esnoc Γ (c, j) y
+    else Esnoc (env_subst i c y Γ) (b, j) x
+  end.
+
 Fixpoint env_Forall {A} (f : bool -> A -> bool) (Δ : env A): bool :=
   match Δ with
   | Enil => true
   | Esnoc Γ (b, _) x => if f b x then env_Forall f Γ else false
   end.
-
 
 Fixpoint env_split_go {A}
   (bs : list bool) (Δ : env A) : option (env A * env A) :=
@@ -117,7 +125,9 @@ Fixpoint env_split_go {A}
       mret (Esnoc Δ1 (bh && c, j) x, Esnoc Δ2 (negb bh && c, j) x)
     end
   | _, _ => None
-  end.
+end.
+
+
 Section env.
 Context {A : Type}.
 Implicit Types Γ : env A.
@@ -245,6 +255,20 @@ Proof.
       destruct (IH _ _ _ Heqo j), (ident_beq _ _); done.
 Qed.
 
+Lemma env_replace_subst Γ Γ' i c P Q:
+  Γ !! i = Some P -> env_wf Γ ->
+  env_subst i c Q Γ = Γ' <->
+  env_replace i (Esnoc Enil (c, i) Q) Γ = Some Γ'.
+Proof.
+  move: i c P Q Γ'.
+  induction Γ as [|Γ IHΓ [c' j]] => i c p Q Γ' H Hwf; [done|simplify_eq /=].
+  destruct ident_beq eqn: ?, (ident_beq_reflect i j); [|congruence ..| ].
+  - inversion Hwf. subst. rewrite H2. firstorder.
+  - inversion Hwf; subst; edestruct (IHΓ) as [? ->]; try eauto.
+    destruct ident_beq eqn:Hi; [by destruct (ident_beq_reflect j i)|].
+    rewrite H0 /=; f_equal. naive_solver.
+Qed.
+
 End env.
 
 Record envs (PROP : bi) := Envs {
@@ -364,6 +388,12 @@ Definition envs_replace {PROP : bi} (i : ident) (p q : bool)
   if beq p q then envs_simple_replace i p Γ Δ
   else envs_app q Γ (envs_delete true i p Δ).
 
+Definition envs_simple_subst {PROP : bi} (i : ident) (p c : bool)
+    (P : PROP) (Δ : envs PROP) : envs PROP :=
+  let (Γp,Γs,n) := Δ in
+  if p then Envs (env_subst i c P Γp) Γs n
+       else Envs Γp (env_subst i c P Γs) n.
+
 Section envs.
 Context {PROP : bi}.
 Implicit Types Γ Γp Γs : env PROP.
@@ -380,8 +410,6 @@ Proof.
     + now contradict H.
     + apply IHΔ, H.
 Qed.
-
-
 
 Lemma envs_lookup_sound' Δ rp i p P :
   envs_lookup_true i Δ = Some (p,P) →
@@ -525,7 +553,7 @@ Proof.
       rewrite big_opL_app intuitionistically_and and_sep_intuitionistically.
       solve_sep_entails.
   - destruct (env_app Γ Γp) eqn:Happ,
-      (env_replace i Γ Γs) as [Γs'|] eqn:?; simplify_eq/=.
+    (env_replace i Γ Γs) as [Γs'|] eqn:?; simplify_eq/=.
     apply wand_intro_l, and_intro; [apply pure_intro|].
     + destruct Hwf; constructor; simpl; eauto using env_replace_wf.
       intros j. apply (env_app_disjoint _ _ _ j) in Happ.
@@ -552,7 +580,7 @@ Proof.
 Qed.
 
 Lemma envs_simple_replace_sound Δ Δ' i p P Γ :
-  envs_lookup_true i Δ = Some (p, P)  → envs_simple_replace i p Γ Δ = Some Δ' →
+  envs_lookup_true i Δ = Some (p, P) → envs_simple_replace i p Γ Δ = Some Δ' →
   of_envs Δ ⊢ □?p P ∗ ((if p then □ [∧] Γ else [∗] Γ) -∗ of_envs Δ').
 Proof. intros. by rewrite envs_lookup_sound// envs_simple_replace_sound'//. Qed.
 
@@ -592,26 +620,6 @@ Proof.
   rewrite !right_id /bi_intuitionistically {1}affinely_and_r persistently_and;
   by rewrite persistently_affinely_elim persistently_idemp persistently_pure.
 Qed.
-
-
-(* Lemma envs_take_apart Δ:
-  of_envs Δ ⊢ □ (⌜envs_wf Δ⌝ ∧ □ [∧] (env_intuitionistic Δ)) ∗ [∗] (env_spatial Δ).
-Proof.
-  destruct Δ as [Δi Δs c].
-  assert (of_envs (Envs Δi Δs c) ⊢ (⌜envs_wf' Δi Δs⌝ ∧ □ [∧] Δi) ∗ [∗] Δs). {
-    rewrite of_envs_eq //=.
-    apply pure_elim_l=>H1. apply sep_mono; [|done].
-    apply and_intro; by try (apply pure_intro).
-  }
-
-  assert (⌜envs_wf' Δi Δs⌝ ∧ □ [∧] Δi ⊢ □ (⌜envs_wf' Δi Δs⌝ ∧ □ [∧] Δi)). {
-    rewrite /bi_intuitionistically {1}affinely_and_r persistently_and;
-    by rewrite persistently_affinely_elim persistently_idemp persistently_pure.
-  }
-
-  rewrite H {1}H0 /envs_wf //=.
-Qed. *)
-
 
 Lemma env_split_go_wf (Δi Δs Δs1 Δs2 : env PROP) bs c:
   env_split_go bs Δs = Some (Δs1, Δs2) -> envs_wf (Envs Δi Δs c) ->
@@ -705,4 +713,53 @@ Proof.
   injection Hyp => Hyp1 Hyp2. rewrite -Hyp1 -Hyp2.
   apply (env_split_go_sound _ _ bs). done.
 Qed.
+
+Lemma envs_simple_subst_replace Δ Δ' i p P c c' Q :
+  envs_wf Δ ->
+  envs_lookup_with_constr i Δ = Some (p, c, P) →
+  envs_simple_subst i p c' Q Δ = Δ' <->
+  envs_simple_replace i p (Esnoc Enil (c', i) Q) Δ = Some Δ'.
+Proof.
+  move => [Hwfp Hwfs Hdisj] H.
+  destruct p, Δ as [Γp Γs], (env_lookup_with_constr i Γp) as [[p' P']|] eqn:Heqi;
+  cbn in H; rewrite Heqi in H; simplify_eq /=.
+  - destruct (Hdisj i) as [Hd|Hd]; pattern c in Heqi;
+    apply ex_intro, env_lookup_env_lookup_with_constr in Heqi; [congruence | rewrite Hd //=].
+    split.
+    + destruct Δ' as [Γ'p Γ's]. intros [= H ? ?].
+      eapply env_replace_subst in H; try eassumption.
+      rewrite H /=. congruence.
+    + destruct env_replace eqn: Heqo; [|done];
+      intros [=]; eapply env_replace_subst in Heqo; try eassumption.
+      congruence.
+  - move: H; destruct (env_lookup_with_constr _ Γs) eqn: ?;
+    subst; inversion 1; congruence.
+  - move: H.
+    destruct (env_lookup_with_constr _ Γs) as [[b R]|] eqn: Heqs; inversion_clear 1.
+    destruct (Hdisj i) as [Hd|Hd]; pattern b in Heqs; apply ex_intro in Heqs;
+    apply env_lookup_env_lookup_with_constr in Heqs; [rewrite Hd //= | congruence].
+    split.
+    + destruct Δ' as [Γ'p Γ's]. intros [= ? H ?].
+      eapply env_replace_subst in H; try eassumption.
+      rewrite H /=. congruence.
+    + destruct env_replace eqn: Heqo; [|done];
+      intros [=]; eapply env_replace_subst in Heqo; try eassumption.
+      congruence.
+Qed.
+
+Lemma envs_simple_subst_sound Δ i p P c (c' : bool) Q :
+  envs_lookup_with_constr i Δ = Some (p, c, P) →
+  of_envs Δ ⊢ (if c then □?p P else emp) ∗
+              ((if c' then □?p Q else emp) -∗ of_envs (envs_simple_subst i p c' Q Δ)).
+Proof.
+  move => Hl.
+  apply pure_elim with (envs_wf Δ).
+  { rewrite of_envs_eq. apply and_elim_l. }
+  move => Hwf.
+  pose (envs_simple_subst i p c' Q Δ) as Δ'.
+  assert (envs_simple_subst i p c' Q Δ = Δ') as Hs; [reflexivity|rewrite Hs].
+  eapply (envs_simple_subst_replace _ _ _ _ _ _ _ _ Hwf) in Hs; [|done].
+  rewrite envs_simple_replace_singleton_sound_with_constr //=.
+Qed.
+
 End envs.
