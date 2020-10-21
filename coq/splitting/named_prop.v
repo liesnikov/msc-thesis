@@ -603,6 +603,31 @@ Proof.
     by apply (envs_lookup_sound_with_constr _ _ _ false P).
 Qed.
 
+Lemma envs_replace_sound' Δ Δ' i p q Γ :
+  envs_replace i p q Γ Δ = Some Δ' →
+  of_envs (envs_delete true i p Δ) ⊢ (if q then □ [∧] Γ else [∗] Γ) -∗ of_envs Δ'.
+Proof.
+  rewrite /envs_replace; destruct (beq _ _) eqn:Hpq.
+  - apply eqb_prop in Hpq as ->. apply envs_simple_replace_sound'.
+  - apply envs_app_sound.
+Qed.
+
+Lemma envs_replace_singleton_sound' Δ Δ' i p q b j Q :
+  envs_replace i p q (Esnoc Enil (b,j) Q) Δ = Some Δ' →
+  of_envs (envs_delete true i p Δ) ⊢ (if b then □?q Q else emp) -∗ of_envs Δ'.
+Proof. move=> /envs_replace_sound'. destruct q, b; by rewrite /= ?right_id ?intuitionistically_True_emp. Qed.
+
+Lemma envs_replace_sound Δ Δ' i p q b P Γ :
+  envs_lookup_with_constr i Δ = Some (p, b, P) → envs_replace i p q Γ Δ = Some Δ' →
+  of_envs Δ ⊢ (if b then □?p P else emp) ∗ ((if q then □ [∧] Γ else [∗] Γ) -∗ of_envs Δ').
+Proof. intros. by rewrite envs_lookup_sound_with_constr// envs_replace_sound'//. Qed.
+
+Lemma envs_replace_singleton_sound Δ Δ' i b0 p q P b1 j Q :
+  envs_lookup_with_constr i Δ = Some (p, b0, P) →
+  envs_replace i p q (Esnoc Enil (b1,j) Q) Δ = Some Δ' →
+  of_envs Δ ⊢ (if b0 then □?p P else emp) ∗ ((if b1 then □?q Q else emp)-∗ of_envs Δ').
+Proof. intros. by rewrite envs_lookup_sound_with_constr// envs_replace_singleton_sound'//. Qed.
+
 Lemma envs_clear_spatial_sound Δ :
   of_envs Δ ⊢ of_envs (envs_clear_spatial Δ) ∗ [∗] env_spatial Δ.
 Proof.

@@ -372,14 +372,35 @@ Proof.
   rewrite envs_simple_replace_singleton_sound' //; simpl. by rewrite wand_elim_r.
 Qed.
 
-(** *TODO: lemma for specialization *)
-Lemma tac_specialize_intuitionistic Δ i j k c1 c2 c P1 P2 R Q:
+(* Since the goal is transformed, we can't work on
+   resources, which aren't present *)
+Lemma tac_modal_elim Δ i p p' φ P' P Q Q' :
+  envs_lookup_true i Δ = Some (p, P) →
+  ElimModal φ p p' P P' Q Q' →
+  φ →
+  match envs_replace i p p' (Esnoc Enil (true,i) P') Δ with
+  | None => False
+  | Some Δ' => envs_entails Δ' Q'
+  end →
+  envs_entails Δ Q.
+Proof.
+  destruct (envs_replace _ _ _ _ _) as [Δ'|] eqn:?; last done.
+  rewrite envs_entails_eq => ??? HΔ.
+  apply pure_elim with (envs_wf Δ).
+  { rewrite of_envs_eq. apply and_elim_l. }
+  move => Hwf.
+  rewrite (envs_replace_singleton_sound _ _ _ true _ _ _ true)//=.
+  2 : { rewrite envs_lookup_with_constr_envs_lookup_true //=. }
+  rewrite HΔ. by eapply elim_modal.
+Qed.
+
+Lemma tac_specialize_intuitionistic Δ i j k c1 c2 P1 P2 R Q:
   envs_lookup_with_constr i Δ = Some (true, c1, P1) ->
-  let Δ1 := envs_simple_subst i true ((negb c) && c1) P1 Δ in
+  let Δ1 := envs_simple_subst i true (c1) P1 Δ in
   envs_lookup_with_constr j Δ1 = Some (true, c2, R) ->
   IntoWand true true R P1 P2 ->
-  let Δ2 :=  envs_simple_subst j true ((negb c) && c2) R Δ1 in
-  match envs_app false (Esnoc Enil (c && c1 && c2, k) P2) Δ2 with
+  let Δ2 :=  envs_simple_subst j true (c2) R Δ1 in
+  match envs_app false (Esnoc Enil (c1 && c2, k) P2) Δ2 with
   | Some Δ3 => envs_entails Δ3 Q
   | None => False
   end
@@ -387,14 +408,13 @@ Lemma tac_specialize_intuitionistic Δ i j k c1 c2 c P1 P2 R Q:
 Proof.
   rewrite envs_entails_eq /IntoWand. intros ?? HR ?.
   destruct (envs_app _ _ _) as [Δ''|] eqn:?; last done.
-  rewrite (envs_simple_subst_sound _ _ _ _ _ (negb c && c1) P1 H) //=.
-  rewrite (envs_simple_subst_sound _ _ _ _ _ (negb c && c2) R H0) //=.
-  rewrite envs_app_sound //=; simpl in *.
-  destruct c1 eqn:?, c eqn:?, c2 eqn:?;
-   rewrite ?emp_sep ?emp_wand ?assoc ?wand_elim_r //=.
-    + rewrite HR wand_elim_r sep_emp wand_elim_r //=.
-    + rewrite intuitionistically_elim_emp emp_sep //=.
-    + rewrite intuitionistically_elim_emp emp_sep //=.
+  rewrite (envs_simple_subst_sound _ _ _ _ _ (c1) P1 _) //=.
+  rewrite (envs_simple_subst_sound _ _ _ _ _ (c2) R _) //=.
+  rewrite envs_app_sound //=; destruct c1 eqn:?, c2 eqn:?; simpl in *.
+  1:{ rewrite sep_emp {1}intuitionistically_sep_dup -?assoc wand_elim_r
+            {1}(intuitionistically_sep_dup R) -?assoc !wand_elim_r
+            HR ?assoc !wand_elim_r //=. }
+  all: repeat (rewrite ?sep_emp ?emp_sep ?emp_wand); rewrite ?wand_elim_r //=.
 Qed.
 
 Lemma tac_specialize_with_constr Δ i j k c1 c2 p q P1 P2 R Q:

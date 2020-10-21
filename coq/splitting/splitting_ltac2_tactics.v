@@ -252,22 +252,25 @@ Ltac2 i_intro_intuitionistic_ident (x : ident_ltac2) :=
         | i_solve_tc () | i_solve_tc ()
         | i_solve_tc () | pm_reduce ()]).
 
-Ltac2 select_hypothesis f e :=
+Ltac2 select_hypothesis condition selected others e :=
   let fst xy := match xy with (x,_) => x end in
   let snd xy := match xy with (_,y) => y end in
   lazy_match! e with
   | (@Envs _ ?gp ?gs _) =>
     let l := List.map (fun xyz => match xyz with (x,y,_) => (x,y) end) (env_to_list gs) in
-    let (hh, rest) := List.partition (fun x => f (snd x)) l in
-    let _ := List.iter unify_constr_true (List.map fst hh) in
-    let _ := List.iter unify_constr_false (List.map fst rest) in
+    let (hh, rest) := List.partition (fun x => condition (snd x)) l in
+    let _ := List.iter selected (List.map fst hh) in
+    let _ := List.iter others (List.map fst rest) in
     ()
   end.
+
+Ltac2 only_selected condition e :=
+  select_hypothesis condition unify_constr_true unify_constr_false e.
 
 Ltac2 i_exact_spatial h :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
-    select_hypothesis (fun x => Constr.equal x h) e
+    only_selected (fun x => Constr.equal x h) e
   end;
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
   [ () | ()
@@ -278,7 +281,7 @@ Ltac2 i_exact_spatial h :=
 Ltac2 i_exact_intuitionistic h :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
-    select_hypothesis (fun x => false) e
+    only_selected (fun x => false) e
   end;
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
   [ () | ()
@@ -326,7 +329,7 @@ Ltac2 i_assumption () :=
               | true => ('(true), (fun x => Constr.equal x j))
               | false => ('(false), (fun x => false))
               end in
-              select_hypothesis bf g;
+              only_selected bf g;
               refine '(tac_false_destruct _ $j $pf $pp _ _ _) >
               [ pm_force_reflexivity ()
               | refine (Control.hyp h)]
@@ -454,3 +457,16 @@ Ltac2 i_mod_intro () :=
   | i_solve_tc () (* IntoModalSpatialEnv *)
   | pm_reduce (); i_solve_tc () (* if ?fi then Absorbing (...) else TCTrue *)
   | pm_prettify ()].
+
+(* TODO: battle-test this *)
+Ltac2 i_mod_core (i : constr) :=
+  lazy_match! goal with
+  | [|- @envs_entails _ ?e _] =>
+    select_hypothesis (fun x => Constr.equal x i) unify_constr_true (fun _ => ()) e
+  end;
+  refine '(tac_modal_elim _ $i _ _ _ _ _ _ _ _ _ _ _) >
+  [ | | | | | | | |
+  | pm_force_reflexivity ()
+  | i_solve_tc ()
+  | (* i_solve_side_conditions *)
+  | pm_reduce (); pm_prettify ()].
