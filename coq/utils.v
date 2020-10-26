@@ -135,6 +135,15 @@ Module Evars.
     end.
 End Evars.
 
+
+Module String.
+  From iris_string_ident Require Import ltac2_string_ident.
+
+  Ltac2 coq_string_to_ident := StringToIdent.coq_string_to_ident.
+  Ltac2 ident_to_coq_string := ().
+End String.
+
+
 Ltac2 Notation "evar" "(" n(ident) ":" type(constr) ")" :=
   Evars.evar n type.
 
@@ -144,6 +153,8 @@ Ltac2 Notation "instantiate" "(" n(ident) ":=" t(constr) ")" :=
 Ltac2 Notation "unify" t1(constr) t2(constr) :=
   Evars.unify0 t1 t2.
 
+
+(* Test *)
 Goal nat.
 Proof.
   evar (p : bool).

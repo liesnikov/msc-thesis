@@ -1,5 +1,4 @@
--R ../../iris/theories iris
--R . Local
+-Q . Local
 
 utils.v
 ltac2_tactics.v

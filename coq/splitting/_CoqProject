@@ -1,5 +1,5 @@
--R ../../../iris/theories iris
--R .. Local
+-Q .. Local
+-Q . Local.splitting
 
 named_prop.v
 named_prop_notation.v

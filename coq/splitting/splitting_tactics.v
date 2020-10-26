@@ -85,6 +85,47 @@ Proof.
   - destruct H; by rewrite sep_elim_l.
 Qed.
 
+Lemma tac_pose_proof Δ j P Q :
+  (⊢ P) →
+  match envs_app true (Esnoc Enil (true,j) P) Δ with
+  | None => False
+  | Some Δ' => envs_entails Δ' Q
+  end →
+  envs_entails Δ Q.
+Proof.
+  destruct (envs_app _ _ _) as [Δ'|] eqn:?; last done.
+  rewrite envs_entails_eq => HP <-. rewrite envs_app_singleton_sound //=.
+  by rewrite -HP /= intuitionistically_emp emp_wand.
+Qed.
+
+(* Lemma tac_pose_proof_hyp Δ i j Q :
+  match envs_lookup_delete false i Δ with
+  | None => False
+  | Some (p, P, Δ') =>
+    match envs_app p (Esnoc Enil j P) Δ' with
+    | None => False
+    | Some Δ'' => envs_entails Δ'' Q
+    end
+  end →
+  envs_entails Δ Q.
+Proof.
+  destruct (envs_lookup_delete _ _ _) as [((p&P)&Δ')|] eqn:Hlookup; last done.
+  destruct (envs_app _ _ _) as [Δ''|] eqn:?; last done.
+  rewrite envs_entails_eq. rewrite envs_lookup_delete_Some in Hlookup *.
+  intros [? ->] <-.
+  rewrite envs_lookup_sound' // envs_app_singleton_sound //=.
+  by rewrite wand_elim_r.
+Qed. *)
+
+Lemma tac_apply Δ i p R P1 P2 :
+  envs_lookup_true i Δ = Some (p, R) →
+  IntoWand p false R P1 P2 →
+  envs_entails (envs_delete true i p Δ) P1 → envs_entails Δ P2.
+Proof.
+  rewrite envs_entails_eq => ?? HP1. rewrite envs_lookup_sound //.
+  by rewrite (into_wand p false) /= HP1 wand_elim_l.
+Qed.
+
 Lemma tac_rename Δ i j p c P Q :
   envs_lookup_with_constr i Δ = Some (p, c, P) →
   match envs_simple_replace i p (Esnoc Enil (c,j) P) Δ with
@@ -675,3 +716,59 @@ Section tac_modal_intro.
       by rewrite -modality_sep.
   Qed.
 End tac_modal_intro.
+
+
+Section sbi_tactics.
+Context {PROP : sbi}.
+Implicit Types Γ : env PROP.
+Implicit Types Δ : envs PROP.
+Implicit Types P Q : PROP.
+
+(** * Later *)
+(** The class [MaybeIntoLaterNEnvs] is used by tactics that need to introduce
+laters, e.g. the symbolic execution tactics. *)
+Class MaybeIntoLaterNEnvs (n : nat) (Δ1 Δ2 : envs PROP) := {
+  into_later_intuitionistic :
+    TransformIntuitionisticEnv (modality_laterN n) (MaybeIntoLaterN false n)
+      (env_intuitionistic Δ1) (env_intuitionistic Δ2);
+  into_later_spatial :
+    TransformSpatialEnv (modality_laterN n)
+      (MaybeIntoLaterN false n) (env_spatial Δ1) (env_spatial Δ2) false
+}.
+
+Global Instance into_laterN_envs n Γp1 Γp2 Γs1 Γs2 m :
+  TransformIntuitionisticEnv (modality_laterN n) (MaybeIntoLaterN false n) Γp1 Γp2 →
+  TransformSpatialEnv (modality_laterN n) (MaybeIntoLaterN false n) Γs1 Γs2 false →
+  MaybeIntoLaterNEnvs n (Envs Γp1 Γs1 m) (Envs Γp2 Γs2 m).
+Proof. by split. Qed.
+
+Lemma into_laterN_env_sound n Δ1 Δ2 :
+  MaybeIntoLaterNEnvs n Δ1 Δ2 → of_envs Δ1 ⊢ ▷^n (of_envs Δ2).
+Proof.
+  intros [[Hp ??] [Hs ??]]; rewrite !of_envs_eq /= !laterN_and !laterN_sep.
+  rewrite -{1}laterN_intro. apply and_mono, sep_mono.
+  - apply pure_mono; destruct 1; constructor; naive_solver.
+  - apply Hp; rewrite /= /MaybeIntoLaterN.
+    + intros P Q ->. by rewrite laterN_intuitionistically_2.
+    + intros P Q. by rewrite laterN_and.
+  - by rewrite Hs //= right_id.
+Qed.
+
+Lemma tac_löb Δ i Q :
+  env_spatial_is_nil Δ = true →
+  match envs_app true (Esnoc Enil (true,i) (▷ Q)%I) Δ with
+  | None => False
+  | Some Δ' => envs_entails Δ' Q
+  end →
+  envs_entails Δ Q.
+Proof.
+  destruct (envs_app _ _ _) eqn:?; last done.
+  rewrite envs_entails_eq => ? HQ.
+  rewrite (env_spatial_is_nil_intuitionistically Δ) //.
+  rewrite -(persistently_and_emp_elim Q). apply and_intro; first apply: affine.
+  rewrite -(löb (<pers> Q)%I) later_persistently. apply impl_intro_l.
+  rewrite envs_app_singleton_sound //; simpl; rewrite HQ.
+  rewrite persistently_and_intuitionistically_sep_l -{1}intuitionistically_idemp.
+  rewrite intuitionistically_sep_2 wand_elim_r intuitionistically_into_persistently_1 //.
+Qed.
+End sbi_tactics.

@@ -252,25 +252,35 @@ Ltac2 i_intro_intuitionistic_ident (x : ident_ltac2) :=
         | i_solve_tc () | i_solve_tc ()
         | i_solve_tc () | pm_reduce ()]).
 
-Ltac2 select_hypothesis condition selected others e :=
+Ltac2 Type spatial_intuitionistic := [spatial | intuitionistic].
+
+Ltac2 select_hypothesis (sel : spatial_intuitionistic) condition selected others e :=
   let fst xy := match xy with (x,_) => x end in
   let snd xy := match xy with (_,y) => y end in
   lazy_match! e with
   | (@Envs _ ?gp ?gs _) =>
-    let l := List.map (fun xyz => match xyz with (x,y,_) => (x,y) end) (env_to_list gs) in
+    let l := List.map (fun xyz => match xyz with (x,y,_) => (x,y) end)
+                      match spatial with
+                      | spatial => (env_to_list gs)
+                      | intuitionistic => (env_to_list gp)
+                      end in
     let (hh, rest) := List.partition (fun x => condition (snd x)) l in
     let _ := List.iter selected (List.map fst hh) in
     let _ := List.iter others (List.map fst rest) in
     ()
   end.
 
-Ltac2 only_selected condition e :=
-  select_hypothesis condition unify_constr_true unify_constr_false e.
+Ltac2 only_selected_spatial condition e :=
+  select_hypothesis spatial
+                    condition
+                    (fun x => try (unify_constr_true x))
+                    (fun x => try (unify_constr_false x)) e.
 
 Ltac2 i_exact_spatial h :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
-    only_selected (fun x => Constr.equal x h) e
+    only_selected_spatial (fun x => Constr.equal x h) e
+    select_hypothesis intuitionistic (fun x => true) (try x => unify_constr_false x) (fun _ => ()) e
   end;
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
   [ () | ()
@@ -281,7 +291,9 @@ Ltac2 i_exact_spatial h :=
 Ltac2 i_exact_intuitionistic h :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
-    only_selected (fun x => false) e
+    (* remove all spatial hypothesis *)
+    only_selected_spatial (fun x => false) e;
+    select_hypothesis intuitionistic (fun x => Constr.equal x h) unify_constr_true (fun _ => ()) e
   end;
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
   [ () | ()
@@ -343,6 +355,45 @@ Ltac2 i_assumption () :=
            | i_assumption_coq ()
            | Control.zero (Iriception (oc q ++ os " not found"))]
 end.
+
+(* TODO: i_apply *)
+Ltac2 i_apply (h : ident_ltac2) :=
+  lazy_match! goal with
+  | [|- @envs_entails _ ?e _] =>
+    (* remove all spatial hypothesis *)
+    select_hypothesis spatial (Constr.equal h) unify_constr_true (fun _ => ()) e;
+    select_hypothesis inuitionistic (Constr.equal h) unify_constr_true (fun _ => ()) e;
+  end;
+  refine '(tac_apply _ $h _ _ _ _ _ _ _) >
+  [ | | | |
+  | pm_force_reflexivity ()
+  | i_solve_tc ()
+  | pm_reduce ()].
+
+(* TODO: i_specialize *)
+Ltac2 i_specialize (f : ident_ltac2) (a : ident_ltac2) (n : ident_ltac2) :=
+  lazy_match! goal with
+  | [|- @envs_entails _ ?e _] =>
+    (* remove all spatial hypothesis *)
+    select_hypothesis spatial (fun x => or (Constr.equal f x) (Constr.equal a x))
+                      unify_constr_true (fun _ => ()) e;
+    select_hypothesis intuitionistic (fun x => or (Constr.equal f x) (Constr.equal a x))
+                      unify_constr_true (fun _ => ()) e;
+  end;
+  refine '(tac_specialize_with_constr _ $a $f $n _ _ _ _ _ _ _ _ _ _ _ _) >
+  [ | | | | | | | |
+  | pm_reflexivity ()
+  | pm_reflexivity ()
+  | i_solve_tc ()
+  | pm_reduce (); pm_prettify () ].
+
+(* TODO: tac_forall_specialize *)
+
+(* TODO: i_pose *)
+
+(* TODO: i_frame *)
+
+(* TODO: i_revert *)
 
 Ltac2 i_and_destruct (x : ident_ltac2)
                      (y : ident_ltac2)
@@ -459,14 +510,18 @@ Ltac2 i_mod_intro () :=
   | pm_prettify ()].
 
 (* TODO: battle-test this *)
+(* FIME: add solve_side_condition *)
 Ltac2 i_mod_core (i : constr) :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
-    select_hypothesis (fun x => Constr.equal x i) unify_constr_true (fun _ => ()) e
+    select_spatial_hypothesis (fun x => Constr.equal x i) unify_constr_true (fun _ => ()) e
   end;
   refine '(tac_modal_elim _ $i _ _ _ _ _ _ _ _ _ _ _) >
   [ | | | | | | | |
   | pm_force_reflexivity ()
   | i_solve_tc ()
-  | (* i_solve_side_conditions *)
+  | (*TODO: i_solve_side_conditions *)
   | pm_reduce (); pm_prettify ()].
+
+(* TODO: iris intropatterns *)
+(* Ltac2 i_intros *)

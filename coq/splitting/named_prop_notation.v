@@ -1,5 +1,5 @@
 From stdpp Require Export strings.
-Require Import named_prop.
+From Local.splitting Require Import named_prop.
 
 Set Default Proof Using "Type".
 Delimit Scope proof_scope with env.
