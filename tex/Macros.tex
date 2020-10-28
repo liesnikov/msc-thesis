@@ -10,7 +10,7 @@
 \newcommand{\dd}[2]{\ensuremath{#1_1,\dots,#1_{#2}}}  % x_1,...,x_n
 \newcommand{\ddd}[2]{\ensuremath{#1_1\dots\,#1_{#2}}}  % x_1...x_n
 \newcommand{\col}{\colon}
-\newcommand{\set}[1]{\ensuremath{\{#1\}}}
+\newcommand{\set}[1]{\ensuremath{\left\{ #1 \right\}}}
 \newcommand{\mset}[2]{\set{\,#1\mid#2\,}}
 \newcommand{\eset}{\ensuremath{\emptyset}}
 \newcommand{\incl}{\ensuremath{\subseteq}}
@@ -52,7 +52,7 @@ $\square$% % the end-of-proof mark
 % mostly from iris/tex/iris.sty
 % \newcommand*{\Sep}[1][]{\scalerel*{\ast}{\sum}\ifthenelse{\isempty{#1}}{}{_{#1}\;}}
 \newcommand\wand{\ensuremath{\mathrel{-\mkern-6mu*}}}
-\newcommand\emp{\ensuremath{\textsf{emp}\xspace}}
+\newcommand\emp{\textsf{emp}\xspace}
 \newcommand\iMatch{\coqe{iMatch}}
 
 \newcommand\expr{\ensuremath{\text{exp}}}
@@ -63,11 +63,14 @@ $\square$% % the end-of-proof mark
 
 \newcommand\pure[1]{\ensuremath{\ulcorner #1 \urcorner}}
 \newcommand{\affine}{\ensuremath{\langle\text{affine}\rangle}}
+\newcommand{\absorb}{\ensuremath{\langle\text{absorb}\rangle}}
 \newcommand{\pers}{\ensuremath{\langle\text{pers}\rangle}}
 \newcommand{\intuit}{\always}
 % \newcommand{\later}{\mathop{{\triangleright}}}
 
-\newcommand\entails[3]{\ensuremath{#1 ; #2 \Vdash #3}}
+\newcommand\entailsOne[2]{\ensuremath{#1 \,\Vdash\, #2}}
+\newcommand\entails[3]{\ensuremath{#1 ;\,\, #2 \,\Vdash\, #3}}
 \newcommand\IntuD{\ensuremath{\Gamma}}
 \newcommand\SpatD{\ensuremath{\Pi}}
-\newcommand\entailsD[1]{\ensuremath{\IntuD ; \SpatD \Vdash #1}}
+\newcommand\entailsOneD[1]{\ensuremath{\entailsOne {\SpatD} {#1}}}
+\newcommand\entailsD[1]{\ensuremath{\entails {\IntuD} {\SpatD} {#1}}}

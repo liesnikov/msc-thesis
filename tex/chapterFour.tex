@@ -93,8 +93,7 @@ Moreover, since we deduced earlier that \(c'_2\) must be \true, expression attac
 
 The resulting system of equations allows us to conclude that \(c_1\) and \(c_3\) are false and values of \(c'_1\) and \(c'_3\) are arbitrary.
 
-This gives us a total assignment: \(\setBrackets{c_1 \mapsto , c_2 \mapsto , c_3 \mapsto , c'_1 \mapsto , c'_2 \mapsto , c'_3 \mapsto \), which means as soon as we're done with the left derivation it's clear what resources should go to the right sequent.
-
+This gives us a total assignment: \(\set {c_1 \mapsto , c_2 \mapsto , c_3 \mapsto , c'_1 \mapsto , c'_2 \mapsto , c'_3 \mapsto }\), which means as soon as we're done with the left derivation it's clear what resources should go to the right sequent.
 \section{Rules for environments with constraints}
 
 \(e\) is a Boolean expression.
@@ -207,7 +206,7 @@ We will also discuss other options in the later chapter~\ref{subsec:design_decis
 
 \subsection{From theoretical perspective}
 
-To implement these ideas in Iris Proof Mode we have to make several modifications to the original design (\ref{sec:ipm_general}).
+To implement these ideas in Iris Proof Mode we have to make several modifications to the original design (\ref{chap:reimplementation_ipm}).
 
 As a reminder, from theoretical point of view, Iris Proof Mode environment consists of two contexts, both of which are lists of resources.
 \(\IntuD \defeq [\dd P n]\) -- intuitionisctic context and \(\SpatD \defeq [\dd Q n]\) -- spatial context.
@@ -273,27 +272,27 @@ This is essentially Proposition 4.10 -- Completeness of Resource Proofs of \cite
   \infer{\Affine{ECons\ \Gamma\ (i,\, \false)\ P}}
         {\Affine{\Gamma}}
   \end{equation*}
-\item Context manipulation
-  \begin{itemize}
-  \item iRename
-  \item iClear
-    \[
-    \infer{\entails {\IntuD} {P[\true], \SpatD} {Q}}
-          {\entailsD Q &
-           \Affine{P} \vee \Absorbing{Q}}
-    \]
-    \[
-    \infer{\entails {\IntuD} {P[\false], \SpatD} {Q}}
-          {\entailsD Q}
-    \]
-  \item iEval
-    \[
-    \infer{\entailsD Q}
-          {\entailsD Q' &
-           Q' \vdash Q
-          }
-    \]
-  \end{itemize}
+% \item Context manipulation
+%   \begin{itemize}
+%   \item iRename
+%   \item iClear
+%     \[
+%     \infer{\entails {\IntuD} {P[\true], \SpatD} {Q}}
+%           {\entailsD Q &
+%            \Affine{P} \vee \Absorbing{Q}}
+%     \]
+%     \[
+%     \infer{\entails {\IntuD} {P[\false], \SpatD} {Q}}
+%           {\entailsD Q}
+%     \]
+%   \item iEval
+%     \[
+%     \infer{\entailsD Q}
+%           {\entailsD Q' &
+%            Q' \vdash Q
+%           }
+%     \]
+%   \end{itemize}
 \item Assumptions
   These force unification
   \[
@@ -313,61 +312,61 @@ This is essentially Proposition 4.10 -- Completeness of Resource Proofs of \cite
   \infer{\entailsD P}
         {\entailsD \bot}
   \]
-\item Intuitionistic/Spatail/Pure transitions
-  \begin{itemize}
-  \item iIntuitionistic
-   %\[
-   % \infer{\entailsD R}
-   %       {P[c] \in \IntuD &
-   %        \pers P \vdash \pers Q^{(\text{IntoPersistent}\ \true\ P\ Q)} &
-   %        \entails {\IntuD [P / Q]} {\SpatD} {R}
-   %      }
-   %\]
-    \[
-    \infer{\entailsD R}
-          {(\pers P)[c] \in \SpatD &
-%           P \vdash \pers Q^{(\text{IntoPersistent}\ \false\ P\ Q)} &
-           \entails {\IntuD, P} {\SpatD \backslash (\pers P)} {R}
-         }
-    \]
-  \item iSpatial
-    \[
-    \infer{\entailsD R}
-          {(\affine P)[c] \in \IntuD &
-           \entails {\IntuD \backslash (\affine P)} {\SpatD, P} {R}
-         }
-    \]
-  \item iPure
-    \[
-    \infer{\entailsD R}
-          {\pure{\phi}[\true] \in \IntuD &
-           \phi \imp \entails {\IntuD \backslash (\pure{\phi})} {\SpatD} {R}
-         }
-    \]
-    \[
-    \infer{\entailsD R}
-          {\pure{\phi}[\true] \in \SpatD &
-           \Affine{P} \vee \Absorbing{R} &
-           \phi \imp \entails {\IntuD} {\SpatD \backslash (\pure{\phi})} {R}
-         }
-    \]
-  \item iEmpIntro
-    \[
-    \infer{\entailsD \emp}
-          {\Affine{\SpatD}}
-    \]
-  \item iPureIntro
-    \begin{equation}
-    \infer{\entailsD {\pure \phi}}
-          {\phi}
-    \quad
-    \infer{\entailsD {\affine \pure \phi }}
-          {\phi & &
-           \Affine{\SpatD}
-          }
-    \end{equation}
-  \end{itemize}
-\item iFrame
+% \item Intuitionistic/Spatail/Pure transitions
+%   \begin{itemize}
+%   \item iIntuitionistic
+%    %\[
+%    % \infer{\entailsD R}
+%    %       {P[c] \in \IntuD &
+%    %        \pers P \vdash \pers Q^{(\text{IntoPersistent}\ \true\ P\ Q)} &
+%    %        \entails {\IntuD [P / Q]} {\SpatD} {R}
+%    %      }
+%    %\]
+%     \[
+%     \infer{\entailsD R}
+%           {(\pers P)[c] \in \SpatD &
+% %           P \vdash \pers Q^{(\text{IntoPersistent}\ \false\ P\ Q)} &
+%            \entails {\IntuD, P} {\SpatD \backslash (\pers P)} {R}
+%          }
+%     \]
+%   \item iSpatial
+%     \[
+%     \infer{\entailsD R}
+%           {(\affine P)[c] \in \IntuD &
+%            \entails {\IntuD \backslash (\affine P)} {\SpatD, P} {R}
+%          }
+%     \]
+%   \item iPure
+%     \[
+%     \infer{\entailsD R}
+%           {\pure{\phi}[\true] \in \IntuD &
+%            \phi \imp \entails {\IntuD \backslash (\pure{\phi})} {\SpatD} {R}
+%          }
+%     \]
+%     \[
+%     \infer{\entailsD R}
+%           {\pure{\phi}[\true] \in \SpatD &
+%            \Affine{P} \vee \Absorbing{R} &
+%            \phi \imp \entails {\IntuD} {\SpatD \backslash (\pure{\phi})} {R}
+%          }
+%     \]
+%   \item iEmpIntro
+%     \[
+%     \infer{\entailsD \emp}
+%           {\Affine{\SpatD}}
+%     \]
+%   \item iPureIntro
+%     \begin{equation}
+%     \infer{\entailsD {\pure \phi}}
+%           {\phi}
+%     \quad
+%     \infer{\entailsD {\affine \pure \phi }}
+%           {\phi & &
+%            \Affine{\SpatD}
+%           }
+%     \end{equation}
+%   \end{itemize}
+% \item iFrame
 \item Intro of wand/implication
   \[
   \infer{\entailsD P \wand Q}
@@ -385,16 +384,16 @@ This is essentially Proposition 4.10 -- Completeness of Resource Proofs of \cite
          \entails {\IntuD} {\SpatD , \affine P[\true]} {Q} &
         }
   \end{equation*}
-\item Revert
+% \item Revert
 \item Specialize and Pose
   \[
   \infer{\entailsD Q}
         {(P \wand R)[c_1] \in \SpatD &
          P[c_2] \in \SpatD &
          \entails{\IntuD}{\SpatD [(P \wand R)[c_1] /
-                                  (P \wand R)[\neg c \& c_1]]
-                                 [P[c_2] / P [\neg c \& c_2]],
-                                 R[c \& c_1 \& c_2]}}
+                                  (P \wand R)[\neg c_2 \& c_1]]
+                                 [P[c_2] / P [\neg c_1 \& c_2]],
+                                 R[ c_1 \& c_2]}}
   \]
 \item Apply
   \[
@@ -453,11 +452,11 @@ This is essentially Proposition 4.10 -- Completeness of Resource Proofs of \cite
         {(P \ast R)[c] \in \SpatD &
          \entails {\IntuD} {\SpatD \backslash (P \ast R), P[c], R [c]} Q}
   \]
-\item iIntros
-\item Induction
-\item Löb
-\item Assert
-\item Rewrite
+% \item iIntros
+% \item Induction
+% \item Löb
+% \item Assert
+% \item Rewrite
 \end{itemize}
 
 \section{Design implemented}
@@ -579,7 +578,7 @@ This is achieved by manually unifying all expressions from the spatial context w
 \paragraph{Displaying environments}
 
 We also introduce changes to the environment printing infrastructure of Iris Proof Mode.
-Reusing the same technique as the original Iris Proof Mode implementation \citet[Section 4.4]{robbertInteractiveProofsHigherorder2017}, we rely on notation machinery.
+Reusing the same technique as the original Iris Proof Mode implementation \citet[Section 4.4]{krebbersMoSeLGeneralExtensible2018}, we rely on notation machinery.
 As Splitting Iris Proof Mode subsumes regular IPM, we choose not to show Boolean expressions if they evaluate to \true.
 Also, as resources with \false expressions aren't in this branch at all, we don't display them too.
 
