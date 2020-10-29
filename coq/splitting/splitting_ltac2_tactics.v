@@ -55,7 +55,7 @@ Ltac2 rec unify_constr_true (e : constr) := unify_with_bool e true.
 Ltac2 rec unify_constr_false (e : constr) := unify_with_bool e false.
 
 Ltac2 reduce_const () := (parse_strategy [
-  fst (* for some reason doesn't get reduced on its own, even when introduced as match in tac_and_destruct_split *)
+  fst snd (* for some reason doesn't get reduced on its own, even when introduced as match in tac_and_destruct_split *)
   base.Pos_succ base.ascii_beq base.string_beq
   base.positive_beq base.ident_beq
 
@@ -74,6 +74,7 @@ Ltac2 reduce_const () := (parse_strategy [
   named_prop.envs_lookup_true  named_prop.envs_delete
   named_prop.envs_snoc named_prop.envs_app
   named_prop.envs_simple_replace named_prop.envs_replace
+  named_prop.envs_simple_subst named_prop.env_subst
   named_prop.envs_split named_prop.envs_clear_spatial
   named_prop.envs_clear_intuitionistic named_prop.envs_incr_counter
   named_prop.envs_split
@@ -82,7 +83,7 @@ Ltac2 reduce_const () := (parse_strategy [
 
 Ltac2 reduce_force_const () := (parse_strategy [negb andb orb]).(Std.rConst).
 
-Ltac2 pm_reduce_force' (force : bool) :=
+Ltac2 pm_reduce_force0 (force : bool) :=
   Std.cbv {
       Std.rBeta  := true;
       Std.rMatch := true;
@@ -99,16 +100,14 @@ Ltac2 pm_reduce_force' (force : bool) :=
   } (default_on_concl None);
   ltac2_tactics.pm_reduce ().
 
-Ltac2 pm_reduce_force () := pm_reduce_force' true.
-Ltac2 pm_reduce () := pm_reduce_force' false.
-
-
-(* pm_reflexivity doesn't and shouldn't reduce negb, since we want to use it
-   for lookups with constraints *)
+(* pm_reduce and pm_reflexivity don't and shouldn't reduce negb,
+   since we want to use them for lookups with constraints *)
+Ltac2 pm_reduce () := pm_reduce_force0 false.
 Ltac2 pm_reflexivity () :=
   pm_reduce (); exact eq_refl.
 
 (* However, we need to compute when doing TC search or looking up present resources *)
+Ltac2 pm_reduce_force () := pm_reduce_force0 true.
 Ltac2 pm_force_reflexivity () :=
   pm_reduce_force (); exact eq_refl.
 
@@ -127,12 +126,53 @@ Ltac2 pm_prettify () :=
     | true => true
     | _ => false
     end in
-  List.map (fun c => (ltac1:(c |- let c1 := (eval compute in c) in
-                              change_no_check c with c1) (Ltac1.of_constr c)))
-           (List.filter check_if_evals env_expressions);
+  let _ :=
+    List.map (fun c => (ltac1:(c |- let c1 := (eval compute in c) in
+                                change_no_check c with c1) (Ltac1.of_constr c)))
+             (List.filter check_if_evals env_expressions) in
   ltac2_tactics.pm_prettify ().
 
 Ltac2 i_solve_tc := ltac2_tactics.i_solve_tc.
+
+Ltac2 Type context_choice := [Spatial | Intuitionistic].
+
+Ltac2 select_hypothesis_from_context condition selected others con :=
+  let fst xy := match xy with (x,_) => x end in
+  let snd xy := match xy with (_,y) => y end in
+  let l := List.map (fun xyz => match xyz with (x,y,_) => (x,y) end)
+                    (env_to_list con) in
+  let (hh, rest) := List.partition (fun x => condition (snd x)) l in
+  let _ := List.iter selected (List.map fst hh) in
+  let _ := List.iter others (List.map fst rest) in
+  ().
+
+Ltac2 select_hypothesis (sel : context_choice) condition selected others e :=
+  lazy_match! e with
+  | (@Envs _ ?gp ?gs _) =>
+    select_hypothesis_from_context condition selected others
+                                   (match sel with
+                                    | Spatial => gs
+                                    | Intuitionistic => gp
+                                   end)
+  end.
+
+Ltac2 only_selected sel condition e :=
+  select_hypothesis sel
+                    condition
+                    (fun x => unify_constr_true x)
+                    (fun x => unify_constr_false x) e.
+
+Ltac2 try_only_selected sel condition e :=
+  select_hypothesis sel
+                    condition
+                    (fun x => try (unify_constr_true x))
+                    (fun x => try (unify_constr_false x)) e.
+
+Ltac2 ensure_selected sel condition e :=
+  select_hypothesis sel
+                    condition
+                    (fun x => unify_constr_true x)
+                    (fun _ => ()) e.
 
 Ltac2 i_start_split_proof () :=
   let apply_named () := refine '(from_named _ _ _) > [ pm_reduce ()] in
@@ -166,7 +206,7 @@ Ltac2 i_clear_hyp (x : ident_ltac2) :=
 Ltac2 i_clear_false_hyp (x : ident_ltac2) :=
   refine '(tac_clear_false _ $x _ _ _ _ _) >
   [ () | ()
-  | pm_reflexivity ()
+  | pm_force_reflexivity ()
   | pm_reduce ()].
 
 Ltac2 rec i_clear_false_hyps (x : ident_ltac2 list) :=
@@ -196,10 +236,31 @@ Ltac2 i_cleanup () :=
            env) in
   Control.enter (fun () => pm_prettify (); i_clear_false_hyps to_clean).
 
+Ltac2 i_pure0 (h : ident_ltac2) (x : Std.intro_pattern) :=
+  lazy_match! goal with
+  | [|- @envs_entails _ ?g _] =>
+    try_only_selected Intuitionistic (Constr.equal h) g;
+    try_only_selected Spatial (Constr.equal h) g
+  end;
+  refine '(splitting_tactics.tac_pure _ $h _ _ _ _ _ _ _ _) >
+  [ | |
+  | pm_force_reflexivity ()
+  | i_solve_tc ()
+  | pm_reduce_force (); i_solve_tc ()
+  | pm_reduce (); intros0 false [x]].
+
+Ltac2 Notation "i_pure" h(self) "as" p(intropattern) := i_pure0 h p.
+
 Ltac2 i_emp_intro () :=
+  i_start_split_proof ();
   refine '(tac_emp_intro _ _) > [i_solve_tc ()].
 
-Ltac2 i_intro_pat' (x : Std.intro_pattern) :=
+Ltac2 i_pure_intro () :=
+  i_start_split_proof ();
+  refine '(tac_pure_intro _ _ _ _ _ _ _) >
+  [ | | i_solve_tc () | pm_reduce (); i_solve_tc () | ].
+
+Ltac2 i_intro_pat0 (x : Std.intro_pattern) :=
   or (fun () => failwith (fun () => intros0 false [x]) "couldn't use intro")
      (fun () =>
       failwith i_start_split_proof "couldn't start proof in i_intro_pat";
@@ -218,15 +279,15 @@ Ltac2 i_intro_pat' (x : Std.intro_pattern) :=
         | pm_prettify (); intros0 false [x]]
       end).
 
-Ltac2 Notation "i_intro_pat" p(intropattern) := i_intro_pat' p.
+Ltac2 Notation "i_intro_pat" p(intropattern) := i_intro_pat0 p.
 
-Ltac2 i_intro_ident (x: ident_ltac2) :=
+Ltac2 i_intro_spatial_ident (x: ident_ltac2) :=
   failwith (i_start_split_proof) "Couldn't start splitting proof in intro_constr";
   or
     (fun () => refine '(@tac_impl_intro _ _ $x _ _ _ _ _ _ _ _) >
-            [() | () | ()
+            [ () | () | ()
             | i_solve_tc ()
-            | pm_reduce (); ltac2_tactics.i_solve_tc ()
+            | pm_reduce_force (); i_solve_tc ()
             | i_solve_tc ()
             | pm_reduce ();
               lazy_match! goal with
@@ -249,38 +310,21 @@ Ltac2 i_intro_intuitionistic_ident (x : ident_ltac2) :=
      (fun () =>
         refine '(tac_wand_intro_intuitionistic _ $x _ _ _ _ _ _ _ _) >
         [ () | () | ()
-        | i_solve_tc () | i_solve_tc ()
-        | i_solve_tc () | pm_reduce ()]).
+        | i_solve_tc ()
+        | i_solve_tc ()
+        | i_solve_tc ()
+        | pm_reduce ()]).
 
-Ltac2 Type spatial_intuitionistic := [spatial | intuitionistic].
-
-Ltac2 select_hypothesis (sel : spatial_intuitionistic) condition selected others e :=
-  let fst xy := match xy with (x,_) => x end in
-  let snd xy := match xy with (_,y) => y end in
-  lazy_match! e with
-  | (@Envs _ ?gp ?gs _) =>
-    let l := List.map (fun xyz => match xyz with (x,y,_) => (x,y) end)
-                      match spatial with
-                      | spatial => (env_to_list gs)
-                      | intuitionistic => (env_to_list gp)
-                      end in
-    let (hh, rest) := List.partition (fun x => condition (snd x)) l in
-    let _ := List.iter selected (List.map fst hh) in
-    let _ := List.iter others (List.map fst rest) in
-    ()
-  end.
-
-Ltac2 only_selected_spatial condition e :=
-  select_hypothesis spatial
-                    condition
-                    (fun x => try (unify_constr_true x))
-                    (fun x => try (unify_constr_false x)) e.
+Ltac2 i_intro_ident (x : ident_ltac2) :=
+  or (fun () => i_intro_intuitionistic_ident x)
+     (fun () => i_intro_spatial_ident x).
 
 Ltac2 i_exact_spatial h :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
-    only_selected_spatial (fun x => Constr.equal x h) e
-    select_hypothesis intuitionistic (fun x => true) (try x => unify_constr_false x) (fun _ => ()) e
+    only_selected Spatial (Constr.equal h) e;
+    (* try to clear intuitionisctic hyps too *)
+    try_only_selected Intuitionistic (fun x => false) e
   end;
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
   [ () | ()
@@ -291,9 +335,9 @@ Ltac2 i_exact_spatial h :=
 Ltac2 i_exact_intuitionistic h :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
-    (* remove all spatial hypothesis *)
-    only_selected_spatial (fun x => false) e;
-    select_hypothesis intuitionistic (fun x => Constr.equal x h) unify_constr_true (fun _ => ()) e
+    (* try remove all spatial hypothesis *)
+    try_only_selected Spatial (fun x => false) e;
+    ensure_selected Intuitionistic (Constr.equal h) e
   end;
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
   [ () | ()
@@ -328,7 +372,7 @@ Ltac2 i_assumption_coq () :=
 
 Ltac2 i_assumption () :=
   let h := fresh () in
-  let rec find p g q :=
+  let rec find p gamma g q :=
     lazy_match! g with
     | Esnoc ?gg (_,?j) ?pp =>
       first [ (*assert (FromAssumption $p $pp $q) as $h > [i_solve_tc ()|];*)
@@ -337,55 +381,100 @@ Ltac2 i_assumption () :=
               | true => i_exact_intuitionistic j
               end
             | assert_as_id '($pp = False%I) h > [reflexivity];
-              let (pf,bf) := match p with
-              | true => ('(true), (fun x => Constr.equal x j))
-              | false => ('(false), (fun x => false))
-              end in
-              only_selected bf g;
+              match p with
+              | true => (* means intuitionistic *)
+                only_selected Intuitionistic (Constr.equal j) gamma;
+                try_only_selected Spatial (fun _ => false) gamma
+              | false => (* means spatial *)
+                only_selected Spatial (Constr.equal j) gamma;
+                try_only_selected Intuitionistic (fun _ => false) gamma
+              end;
+              let pf := match p with true => '(true) | _ => '(false) end in
               refine '(tac_false_destruct _ $j $pf $pp _ _ _) >
               [ pm_force_reflexivity ()
               | refine (Control.hyp h)]
-            | find p gg q]
+            | find p gamma gg q]
     end
   in
   lazy_match! goal with
-  | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] =>
-     first [ find true gp q
-           | find false gs q
+  | [|- @envs_entails _ ?g ?q] =>
+     lazy_match! g with
+     | (@Envs _ ?gp ?gs _) =>
+     first [ find true g gp q
+           | find false g gs q
            | i_assumption_coq ()
-           | Control.zero (Iriception (oc q ++ os " not found"))]
-end.
+           | Control.zero (Iriception (os "no assumption matching " ++ oc q ++ os " was found"))]
+     end
+  end.
 
-(* TODO: i_apply *)
-Ltac2 i_apply (h : ident_ltac2) :=
-  lazy_match! goal with
-  | [|- @envs_entails _ ?e _] =>
-    (* remove all spatial hypothesis *)
-    select_hypothesis spatial (Constr.equal h) unify_constr_true (fun _ => ()) e;
-    select_hypothesis inuitionistic (Constr.equal h) unify_constr_true (fun _ => ()) e;
-  end;
-  refine '(tac_apply _ $h _ _ _ _ _ _ _) >
-  [ | | | |
-  | pm_force_reflexivity ()
-  | i_solve_tc ()
-  | pm_reduce ()].
-
-(* TODO: i_specialize *)
 Ltac2 i_specialize (f : ident_ltac2) (a : ident_ltac2) (n : ident_ltac2) :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
     (* remove all spatial hypothesis *)
-    select_hypothesis spatial (fun x => or (Constr.equal f x) (Constr.equal a x))
+    select_hypothesis Spatial (fun x => Bool.or (Constr.equal f x) (Constr.equal a x))
                       unify_constr_true (fun _ => ()) e;
-    select_hypothesis intuitionistic (fun x => or (Constr.equal f x) (Constr.equal a x))
-                      unify_constr_true (fun _ => ()) e;
+    select_hypothesis Intuitionistic (fun x => Bool.or (Constr.equal f x) (Constr.equal a x))
+                      unify_constr_true (fun _ => ()) e
   end;
-  refine '(tac_specialize_with_constr _ $a $f $n _ _ _ _ _ _ _ _ _ _ _ _) >
-  [ | | | | | | | |
-  | pm_reflexivity ()
-  | pm_reflexivity ()
+  refine '(tac_specialize_with_constr _ $a $f $n true true true _ _ _ _ _ _ _ _ _ _) >
+  [ () | () | () | () | ()
+  | pm_force_reflexivity ()
+  | pm_force_reflexivity ()
   | i_solve_tc ()
-  | pm_reduce (); pm_prettify () ].
+  | pm_reduce (); i_cleanup (); pm_prettify () ].
+
+Ltac2 i_specialize_assert (f : ident_ltac2) :=
+  let n :=
+    lazy_match! goal with
+    | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] =>
+        (* "f" doesn't need a new constraint *)
+        Int.sub (List.length (env_to_list gs)) 1
+    end in
+  let rec gen_list n :=
+    match (Int.equal 0 n) with
+    | true => '(nil)
+    | false =>
+      let v := new_constraint () in
+      let tl := gen_list (Int.sub n 1) in
+      '($v :: $tl)
+    end in
+  let bs := gen_list n in
+  (* unify expression attached to "f" with true *)
+  lazy_match! goal with
+  | [|- @envs_entails _ ?e _] =>
+    (* remove all spatial hypothesis *)
+    ensure_selected Spatial (Constr.equal f) e;
+    ensure_selected Intuitionistic (Constr.equal f) e
+  end;
+  refine '(tac_specialize_assert _ $f _ false $bs _ _ _ _ _ _ _ _ _) >
+  [ () | () | () | () | ()
+  | pm_force_reflexivity ()
+  | i_solve_tc ()
+  | pm_reduce (); i_solve_tc ()
+  | pm_reduce (); split > [i_cleanup ()| i_cleanup ()]].
+
+Ltac2 i_apply_one (h : ident_ltac2) :=
+  lazy_match! goal with
+  | [|- @envs_entails _ ?e _] =>
+    (* remove all spatial hypothesis *)
+    ensure_selected Spatial (Constr.equal h) e;
+    ensure_selected Intuitionistic (Constr.equal h) e
+  end;
+  refine '(tac_apply _ $h _ _ _ _ _ _ _) >
+  [ () | () | ()
+  | pm_force_reflexivity ()
+  | i_solve_tc ()
+  | pm_reduce ()].
+
+Ltac2 rec i_apply_loop (f : ident_ltac2) :=
+  first [ i_apply_one f
+        | i_specialize_assert f > [ | i_apply_loop f]].
+
+Ltac2 i_apply_ident (f : ident_ltac2) :=
+  first [ i_exact f
+        | i_apply_loop f
+        | Control.zero (Iriception (os "can't apply " ++ oc f))
+        ].
 
 (* TODO: tac_forall_specialize *)
 
@@ -429,6 +518,12 @@ Ltac2 i_or_destruct (x : ident_ltac2)
   | i_solve_tc ()
   | pm_reduce(); split ].
 
+Ltac2 i_exists_one (x : constr) :=
+  i_start_split_proof ();
+  refine '(tac_exist _ _ _ _ _) >
+  [ | | i_solve_tc ()
+  | exists0 true [(fun () => Std.ImplicitBindings ([x]))]].
+
 Ltac2 i_split () :=
   let n :=
     lazy_match! goal with
@@ -455,7 +550,6 @@ Ltac2 i_split () :=
       end]
   | [|- _] => iriception "the goal isn't bi entailment"
   end.
-
 
 Ltac2 get_modality () :=
   let fresh_id := fresh () in
@@ -514,7 +608,8 @@ Ltac2 i_mod_intro () :=
 Ltac2 i_mod_core (i : constr) :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
-    select_spatial_hypothesis (fun x => Constr.equal x i) unify_constr_true (fun _ => ()) e
+    select_hypothesis Spatial (fun x => Constr.equal x i) unify_constr_true (fun _ => ()) e;
+    select_hypothesis Intuitionistic (fun x => Constr.equal x i) unify_constr_true (fun _ => ()) e
   end;
   refine '(tac_modal_elim _ $i _ _ _ _ _ _ _ _ _ _ _) >
   [ | | | | | | | |

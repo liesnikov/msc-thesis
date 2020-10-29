@@ -33,7 +33,7 @@ Proof.
   let a := Std.eval_red '(1 + 1) in
   Message.print (utils.Misc.oc a).
 
-  new_evar '(nat).
+  let _ := new_evar '(nat) in ().
   admit.
 Admitted.
 
@@ -101,8 +101,7 @@ Lemma test_six P Q : Q ⊢ □ (<absorb> P) -∗ (* P ∗*) Q.
 Proof.
   i_start_split_proof ().
   i_intro_ident '(INamed "q").
-  (* i_intro_ident '(INamed "p"). *)
-  i_intro_intuitionistic_ident '(INamed "p").
+  i_intro_ident '(INamed "p").
   (* i_split ().*)
   iLazyMatch! goal with
   | [h1 : <?> ?p |- _] => Message.print (Misc.oc p)
@@ -112,4 +111,73 @@ Proof.
   | [h1 : _, h2 : (<absorb> _)%I |- ?p] =>
     i_assumption ()
   end.
+Qed.
+
+Lemma test_seven P Q R : Q ⊢ (Q -∗ P -∗ R) -∗ P -∗ (emp ∗ R).
+  i_start_split_proof ().
+  i_intro_ident '(INamed "q").
+  i_intro_ident '(INamed "f").
+  i_intro_ident '(INamed "p").
+  i_split ().
+  Focus 2.
+  i_specialize '(INamed "f") '(INamed "q") '(INamed "fq").
+  i_specialize '(INamed "fq") '(INamed "p") '(INamed "r").
+  i_assumption (). i_emp_intro ().
+Qed.
+
+Lemma test_eight : ⊢@{PROP} ∃ x, ⌜x = true⌝.
+Proof.
+  i_start_split_proof ().
+  i_exists_one '(true).
+  i_pure_intro ().
+  reflexivity.
+Qed.
+
+Lemma test_nine : ⌜1 = 2⌝ ⊢@{PROP} True.
+Proof.
+  i_start_split_proof ().
+  i_intro_ident '(INamed "p").
+  i_pure '(INamed "p") as p.
+  discriminate.
+Qed.
+
+Lemma test_ten P Q R : Q ⊢ (Q -∗ R) -∗ (emp ∗ R).
+Proof.
+  i_start_split_proof ().
+  i_intro_ident '(INamed "q").
+  i_intro_ident '(INamed "f").
+  i_split ().
+  Focus 2.
+  i_apply_ident '(INamed "f"). i_assumption ().
+  i_emp_intro ().
+Qed.
+
+
+Lemma test_eleven P Q R : Q ⊢ (Q -∗ P -∗ R) -∗ P -∗ (emp ∗ R).
+Proof.
+  i_start_split_proof ().
+  i_intro_ident '(INamed "q").
+  i_intro_ident '(INamed "f").
+  i_intro_ident '(INamed "p").
+  i_split (). Focus 2.
+  i_specialize_assert '(INamed "f").
+  Focus 2.
+  i_specialize_assert '(INamed "f").
+  Focus 2.
+  i_assumption ().
+  i_assumption ().
+  i_assumption ().
+  i_emp_intro ().
+Qed.
+
+Lemma test_twelve P Q R : Q ⊢ (Q -∗ P -∗ R) -∗ P -∗ (emp ∗ R).
+  i_start_split_proof ().
+  i_intro_ident '(INamed "q").
+  i_intro_ident '(INamed "f").
+  i_intro_ident '(INamed "p").
+  i_split (). Focus 2.
+  i_apply_ident '(INamed "f").
+  i_assumption ().
+  i_assumption ().
+  i_emp_intro ().
 Qed.

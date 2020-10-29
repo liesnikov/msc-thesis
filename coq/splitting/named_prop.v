@@ -478,9 +478,9 @@ Lemma envs_lookup_sound Δ i p P :
 Proof. apply envs_lookup_sound'. Qed.
 
 
-Lemma envs_lookup_sound_with_constr Δ i p c P:
+Lemma envs_lookup_with_constr_sound' Δ rp i p c P:
   envs_lookup_with_constr i Δ = Some (p, c, P) ->
-  of_envs Δ ⊢ (if c then □?p P else emp) ∗ of_envs (envs_delete true i p Δ).
+  of_envs Δ ⊢ (if c then □?p P else emp) ∗ of_envs (envs_delete rp i p Δ).
 Proof.
   intro.
   apply pure_elim with (envs_wf Δ).
@@ -488,22 +488,27 @@ Proof.
   move => Hwf.
   destruct c. {
     apply envs_lookup_with_constr_envs_lookup_true in H;[|done].
-    by apply envs_lookup_sound.
+    by apply envs_lookup_sound'.
   }
   rewrite emp_sep !of_envs_eq.
   apply pure_elim_l=> _.
   destruct Δ as [Γp Γs], (env_lookup_with_constr i Γp) as [[p' P']|] eqn:Heq;
   cbn in H; rewrite Heq in H; simplify_eq /=.
-  - rewrite pure_True ?left_id.
+  - destruct rp; rewrite pure_True ?left_id //=.
     + by rewrite (env_lookup_with_constr_perm Γp i) //=.
     + destruct Hwf; constructor; cbn;
       naive_solver eauto using env_delete_wf, env_delete_fresh.
-  - destruct (env_lookup_with_constr i Γs) as [[p' P']|] eqn:?; simplify_eq/=.
-    rewrite pure_True ?left_id.
-    + by rewrite (env_lookup_with_constr_perm Γs i) //=.
-    + destruct Hwf; constructor; cbn;
-      naive_solver eauto using env_delete_wf, env_delete_fresh.
+  - destruct rp, (env_lookup_with_constr i Γs) as [[p' P']|] eqn:?; simplify_eq/=;
+    rewrite pure_True ?left_id //=.
+    1,3: by rewrite (env_lookup_with_constr_perm Γs i) //=.
+    all: destruct Hwf; constructor; cbn;
+        naive_solver eauto using env_delete_wf, env_delete_fresh.
 Qed.
+
+Lemma envs_lookup_with_constr_sound Δ i p c P:
+  envs_lookup_with_constr i Δ = Some (p, c, P) ->
+  of_envs Δ ⊢ (if c then □?p P else emp) ∗ of_envs (envs_delete true i p Δ).
+Proof. apply envs_lookup_with_constr_sound'. Qed.
 
 Lemma envs_app_sound Δ Δ' p Γ :
   envs_app p Γ Δ = Some Δ' →
@@ -576,7 +581,7 @@ Lemma envs_simple_replace_singleton_sound_with_constr Δ Δ' i p P j c c' Q :
 Proof.
   intros.
   destruct c, c';
-  by rewrite envs_lookup_sound_with_constr// envs_simple_replace_singleton_sound'//.
+  by rewrite envs_lookup_with_constr_sound// envs_simple_replace_singleton_sound'//.
 Qed.
 
 Lemma envs_simple_replace_sound Δ Δ' i p P Γ :
@@ -600,7 +605,7 @@ Proof.
       rewrite HE emp_sep envs_simple_replace_sound' //=.
     }
     rewrite -(emp_sep (of_envs (envs_delete _ _ _ _))%I).
-    by apply (envs_lookup_sound_with_constr _ _ _ false P).
+    by apply (envs_lookup_with_constr_sound _ _ _ false P).
 Qed.
 
 Lemma envs_replace_sound' Δ Δ' i p q Γ :
@@ -620,13 +625,13 @@ Proof. move=> /envs_replace_sound'. destruct q, b; by rewrite /= ?right_id ?intu
 Lemma envs_replace_sound Δ Δ' i p q b P Γ :
   envs_lookup_with_constr i Δ = Some (p, b, P) → envs_replace i p q Γ Δ = Some Δ' →
   of_envs Δ ⊢ (if b then □?p P else emp) ∗ ((if q then □ [∧] Γ else [∗] Γ) -∗ of_envs Δ').
-Proof. intros. by rewrite envs_lookup_sound_with_constr// envs_replace_sound'//. Qed.
+Proof. intros. by rewrite envs_lookup_with_constr_sound// envs_replace_sound'//. Qed.
 
 Lemma envs_replace_singleton_sound Δ Δ' i b0 p q P b1 j Q :
   envs_lookup_with_constr i Δ = Some (p, b0, P) →
   envs_replace i p q (Esnoc Enil (b1,j) Q) Δ = Some Δ' →
   of_envs Δ ⊢ (if b0 then □?p P else emp) ∗ ((if b1 then □?q Q else emp)-∗ of_envs Δ').
-Proof. intros. by rewrite envs_lookup_sound_with_constr// envs_replace_singleton_sound'//. Qed.
+Proof. intros. by rewrite envs_lookup_with_constr_sound// envs_replace_singleton_sound'//. Qed.
 
 Lemma envs_clear_spatial_sound Δ :
   of_envs Δ ⊢ of_envs (envs_clear_spatial Δ) ∗ [∗] env_spatial Δ.

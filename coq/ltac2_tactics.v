@@ -233,5 +233,5 @@ Ltac2 i_assumption () :=
      first [find '(true) gp q
            |find '(false) gs q
            |i_assumption_coq ()
-           |Control.zero (Iriception (oc q ++ os " not found"))]
+           |Control.zero (Iriception (os "no assumption matching " ++ oc q ++ os " was found"))]
 end.
