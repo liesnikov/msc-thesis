@@ -181,3 +181,17 @@ Lemma test_twelve P Q R : Q ⊢ (Q -∗ P -∗ R) -∗ P -∗ (emp ∗ R).
   i_assumption ().
   i_emp_intro ().
 Qed.
+
+Lemma test_thirteen P x : (x = true) -> P ⊢ emp ∗ P ∗ ⌜x = true⌝.
+Proof.
+  intros.
+  i_intro_ident '(INamed "p").
+  i_split ().
+  Focus 2.
+  i_frame_hyp '(INamed "p").
+  i_frame_pure H.
+  Undo 2.
+  i_frame ().
+  i_frame_any_pure ().
+  i_emp_intro ().
+Qed.

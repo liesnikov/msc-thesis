@@ -260,6 +260,71 @@ Ltac2 i_pure_intro () :=
   refine '(tac_pure_intro _ _ _ _ _ _ _) >
   [ | | i_solve_tc () | pm_reduce (); i_solve_tc () | ].
 
+(** Framing *)
+
+Ltac2 i_frame_finish () :=
+  pm_prettify ();
+  try (lazy_match! goal with
+      | [|- @envs_entails _ _ ((True)%I)] => now (i_pure_intro ())
+      | [|- @envs_entails _ _ (emp%I)] => i_emp_intro ()
+      end).
+
+Ltac2 i_frame_pure_constr (t : constr) :=
+  i_start_split_proof ();
+  refine '(tac_frame_pure _ _ _ _ $t _ _) >
+  [ () | i_solve_tc () | i_frame_finish ()].
+
+Ltac2 i_frame_pure0 (i : ident) :=
+  i_frame_pure_constr (Control.hyp i).
+
+Ltac2 Notation "i_frame_pure" i(ident) :=
+  i_frame_pure0 i.
+
+Ltac2 i_frame_hyp (h : ident_ltac2) :=
+  i_start_split_proof ();
+  lazy_match! goal with
+  | [|- @envs_entails _ ?e _] =>
+    ensure_selected Spatial (Constr.equal h) e;
+    ensure_selected Intuitionistic (Constr.equal h) e
+  end;
+  refine '(tac_frame _ $h _ _ _ _ _ _ _) >
+  [ () | () | ()
+  | pm_force_reflexivity ()
+  | i_solve_tc ()
+  | pm_reduce (); i_frame_finish ()].
+
+Ltac2 i_frame_any_pure () :=
+  repeat (match! goal with [h : _ |- _] => i_frame_pure0 h end).
+
+Ltac2 i_frame_any_intuitionistic () :=
+  i_start_split_proof ();
+  let rec go ls := match ls with
+    | [] => ()
+    | lh :: lt => repeat (i_frame_hyp lh); go lt
+    end in
+  lazy_match! goal with
+  | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] =>
+     let l := List.map (fun xyz => match xyz with (_,y,_) => y end)
+                       (env_to_list gp) in
+     go l
+  end.
+
+Ltac2 i_frame_any_spatial () :=
+  i_start_split_proof ();
+  let rec go ls := match ls with
+    | [] => ()
+    | lh :: lt => repeat (i_frame_hyp lh); go lt
+    end in
+  lazy_match! goal with
+  | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] =>
+     let l := List.map (fun xyz => match xyz with (_,y,_) => y end)
+                       (env_to_list gs) in
+     go l
+  end.
+
+Ltac2 i_frame () := i_frame_any_spatial ().
+
+(** * Basic introduction tactics *)
 Ltac2 i_intro_pat0 (x : Std.intro_pattern) :=
   or (fun () => failwith (fun () => intros0 false [x]) "couldn't use intro")
      (fun () =>
@@ -278,6 +343,7 @@ Ltac2 i_intro_pat0 (x : Std.intro_pattern) :=
            end)
         | pm_prettify (); intros0 false [x]]
       end).
+
 
 Ltac2 Notation "i_intro_pat" p(intropattern) := i_intro_pat0 p.
 
@@ -479,8 +545,6 @@ Ltac2 i_apply_ident (f : ident_ltac2) :=
 (* TODO: tac_forall_specialize *)
 
 (* TODO: i_pose *)
-
-(* TODO: i_frame *)
 
 (* TODO: i_revert *)
 
