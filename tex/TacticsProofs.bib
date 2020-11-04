@@ -7,6 +7,24 @@
   journal = {INRIA Rocquencourt and Princeton University, Early Draft}
 }
 
+@inproceedings{boutinUsingReflectionBuild1997,
+  title = {Using Reflection to Build Efficient and Certified Decision Procedures},
+  booktitle = {Theoretical {{Aspects}} of {{Computer Software}}},
+  author = {Boutin, Samuel},
+  editor = {Abadi, Mart{\'i}n and Ito, Takayasu},
+  year = {1997},
+  pages = {515--529},
+  publisher = {{Springer}},
+  address = {{Berlin, Heidelberg}},
+  doi = {10.1007/BFb0014565},
+  abstract = {In this paper we explain how computational reflection can help build efficient certified decision procedure in reduction systems. We have developed a decision procedure on abelian rings in the Coq system but the approach we describe applies to all reduction systems that allow the definition of concrete types (or datatypes). We show that computational reflection is more efficient than an LCF-like approach to implement decision procedures in a reduction system. We discuss the concept of total reflection, which we have investigated in Coq using two facts: the extraction process available in Coq and the fact that the implementation language of the Coq system can be considered as a sublanguage of Coq. Total reflection is not yet implemented in Coq but we can test its performance as the extraction process is effective. Both reflection and total reflection are conservative extensions of the reduction system in which they are used. We also discuss performance and related approaches. In the paper,we assume basic knowledges of ML and proof-checkers.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Boutin/1997/Boutin - 1997 - Using reflection to build efficient and certified .pdf},
+  isbn = {978-3-540-69530-1},
+  keywords = {Computer Algebra System,Decision Procedure,Object Language,Order Theory,Reduction System},
+  language = {en},
+  series = {Lecture {{Notes}} in {{Computer Science}}}
+}
+
 @misc{chajedLtac2Tutorial,
   title = {An {{Ltac2}} Tutorial},
   author = {Chajed, Tej},
@@ -14,6 +32,52 @@
   howpublished = {https://github.com/tchajed/ltac2-tutorial/blob/master/src/ltac2\_tutorial.v},
   journal = {Github},
   type = {Source File}
+}
+
+@inproceedings{chlipalaBedrockStructuredProgramming2013,
+  title = {The Bedrock Structured Programming System: Combining Generative Metaprogramming and Hoare Logic in an Extensible Program Verifier},
+  shorttitle = {The Bedrock Structured Programming System},
+  booktitle = {Proceedings of the 18th {{ACM SIGPLAN}} International Conference on {{Functional}} Programming},
+  author = {Chlipala, Adam},
+  year = {2013},
+  month = sep,
+  pages = {391--402},
+  publisher = {{Association for Computing Machinery}},
+  address = {{New York, NY, USA}},
+  doi = {10.1145/2500365.2500592},
+  abstract = {We report on the design and implementation of an extensible programming language and its intrinsic support for formal verification. Our language is targeted at low-level programming of infrastructure like operating systems and runtime systems. It is based on a cross-platform core combining characteristics of assembly languages and compiler intermediate languages. From this foundation, we take literally the saying that C is a "macro assembly language": we introduce an expressive notion of certified low-level macros, sufficient to build up the usual features of C and beyond as macros with no special support in the core. Furthermore, our macros have integrated support for strongest postcondition calculation and verification condition generation, so that we can provide a high-productivity formal verification environment within Coq for programs composed from any combination of macros. Our macro interface is expressive enough to support features that low-level programs usually only access through external tools with no formal guarantees, such as declarative parsing or SQL-inspired querying. The abstraction level of these macros only imposes a compile-time cost, via the execution of functional Coq programs that compute programs in our intermediate language; but the run-time cost is not substantially greater than for more conventional C code. We describe our experiences constructing a full C-like language stack using macros, with some experiments on the verifiability and performance of individual programs running on that stack.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Chlipala/2013/Chlipala - 2013 - The bedrock structured programming system combini.pdf},
+  isbn = {978-1-4503-2326-0},
+  keywords = {functional programming,generative metaprogramming,interactive proof assistants,low-level programming languages},
+  series = {{{ICFP}} '13}
+}
+
+@article{chlipalaMostlyautomatedVerificationLowlevel2011,
+  title = {Mostly-Automated Verification of Low-Level Programs in Computational Separation Logic},
+  author = {Chlipala, Adam},
+  year = {2011},
+  month = jun,
+  volume = {46},
+  pages = {234--245},
+  issn = {0362-1340},
+  doi = {10.1145/1993316.1993526},
+  abstract = {Several recent projects have shown the feasibility of verifying low-level systems software. Verifications based on automated theorem-proving have omitted reasoning about first-class code pointers, which is critical for tasks like certifying implementations of threads and processes. Conversely, verifications that deal with first-class code pointers have featured long, complex, manual proofs. In this paper, we introduce the Bedrock framework, which supports mostly-automated proofs about programs with the full range of features needed to implement, e.g., language runtime systems. The heart of our approach is in mostly-automated discharge of verification conditions inspired by separation logic. Our take on separation logic is computational, in the sense that function specifications are usually written in terms of reference implementations in a purely functional language. Logical quantifiers are the most challenging feature for most automated verifiers; by relying on functional programs (written in the expressive language of the Coq proof assistant), we are able to avoid quantifiers almost entirely. This leads to some dramatic improvements compared to both past work in classical verification, which we compare against with implementations of data structures like binary search trees and hash tables; and past work in verified programming with code pointers, which we compare against with examples like function memoization and a cooperative threading library.},
+  file = {/home/buzzer/.local/share/Zotero/storage/LFV7B44B/Chlipala - Mostly-Automated Veriﬁcation of Low-Level Programs.pdf},
+  journal = {ACM SIGPLAN Notices},
+  keywords = {functional programming,interactive proof assistants,low-level programming languages,separation logic},
+  number = {6}
+}
+
+@inproceedings{claretLightweightProofReflection2013,
+  title = {Lightweight Proof by Reflection Using a Posteriori Simulation of Effectful Computation},
+  booktitle = {Interactive {{Theorem Proving}}},
+  author = {Claret, Guillaume and Huesca, Lourdes del Carmen Gonzalez and {R{\'e}gis-Gianas}, Yann and Ziliani, Beta},
+  year = {2013},
+  month = jul,
+  doi = {10/document},
+  abstract = {Proof-by-reflection is a well-established technique that em- ploys decision procedures to reduce the size of proof-terms. Currently, decision procedures can be written either in Type Theory--in a purely functional way that also ensures termination-- or in an effectful program- ming language, where they are used as oracles for the certified checker. The first option offers strong correctness guarantees, while the second one permits more efficient implementations. We propose a novel technique for proof-by-reflection that marries, in Type Theory, an effectful language with (partial) proofs of correctness. The key to our approach is to use simulable monads, where a monad is simulable if, for all terminating reduction sequences in its equivalent effectful computational model, there exists a witness from which the same reduction may be simulated a posteriori by the monad. We encode several examples using simulable monads and demonstrate the advantages of the technique over previous approaches.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Claret et al/2013/Claret et al. - 2013 - Lightweight proof by reflection using a posteriori.pdf;/home/buzzer/.local/share/Zotero/storage/QB8922W7/hal-00870110.html},
+  language = {en}
 }
 
 @article{harlandResourceDistributionBooleanConstraints2003,
@@ -32,6 +96,13 @@
   number = {1}
 }
 
+@techreport{jones1993composing,
+  title = {Composing Monads},
+  author = {Jones, Mark P and Duponcheel, Luc},
+  year = {1993},
+  institution = {{Technical Report YALEU/DCS/RR-1004, Department of Computer Science. Yale University, New Haven}}
+}
+
 @article{jungIrisGroundModular2018,
   title = {Iris from the Ground up: {{A}} Modular Foundation for Higher-Order Concurrent Separation Logic},
   shorttitle = {Iris from the Ground Up},
@@ -44,6 +115,22 @@
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Jung et al/2018/Jung et al. - 2018 - Iris from the ground up A modular foundation for .pdf},
   journal = {Journal of Functional Programming},
   language = {en}
+}
+
+@article{kaiserMtac2TypedTactics2018a,
+  title = {Mtac2: Typed Tactics for Backward Reasoning in {{Coq}}},
+  shorttitle = {Mtac2},
+  author = {Kaiser, Jan-Oliver and Ziliani, Beta and Krebbers, Robbert and {R{\'e}gis-Gianas}, Yann and Dreyer, Derek},
+  year = {2018},
+  month = jul,
+  volume = {2},
+  pages = {1--31},
+  issn = {2475-1421, 2475-1421},
+  doi = {10.1145/3236773},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Kaiser et al/2018/Kaiser et al. - 2018 - Mtac2 typed tactics for backward reasoning in Coq2.pdf},
+  journal = {Proceedings of the ACM on Programming Languages},
+  language = {en},
+  number = {ICFP}
 }
 
 @article{kiselyovBacktrackingInterleavingTerminating2005,
@@ -95,6 +182,24 @@
   howpublished = {https://wiki.haskell.org/ListT\_done\_right},
   journal = {HaskellWiki},
   type = {Wiki}
+}
+
+@inproceedings{malechaExtensibleEfficientAutomation2016,
+  title = {Extensible and {{Efficient Automation Through Reflective Tactics}}},
+  booktitle = {Programming {{Languages}} and {{Systems}}},
+  author = {Malecha, Gregory and Bengtson, Jesper},
+  editor = {Thiemann, Peter},
+  year = {2016},
+  pages = {532--559},
+  publisher = {{Springer}},
+  address = {{Berlin, Heidelberg}},
+  doi = {10.1007/978-3-662-49498-1_21},
+  abstract = {Foundational proof assistants simultaneously offer both expressive logics and strong guarantees. The price they pay for this flexibility is often the need to build and check explicit proof objects which can be expensive. In this work we develop a collection of techniques for building reflective automation, where proofs are witnessed by verified decision procedures rather than verbose proof objects. Our techniques center around a verified domain specific language for proving, {$\mathsl{t}\mathsl{a}\mathsl{c}$}Rtac\textbackslash mathcal \{R\}\_\{tac\}, written in Gallina, Coq's logic. The design of tactics makes it easy to combine them into higher-level automation that can be proved sound in a mostly automated way. Furthermore, unlike traditional uses of reflection, {$\mathsl{t}\mathsl{a}\mathsl{c}$}Rtac\textbackslash mathcal \{R\}\_\{tac\} tactics are independent of the underlying problem domain, which allows them to be re-tasked to automate new problems with very little effort. We demonstrate the usability of {$\mathsl{t}\mathsl{a}\mathsl{c}$}Rtac\textbackslash mathcal \{R\}\_\{tac\} through several case studies demonstrating orders of magnitude speedups for relatively little engineering work.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Malecha_Bengtson/2016/Malecha and Bengtson - 2016 - Extensible and Efficient Automation Through Reflec.pdf},
+  isbn = {978-3-662-49498-1},
+  keywords = {Automatic Reflection,Objective Proof,Proof Assistant,Reﬂective Tactics,Unification Variables},
+  language = {en},
+  series = {Lecture {{Notes}} in {{Computer Science}}}
 }
 
 @incollection{mccreightPracticalTacticsSeparation2009,
@@ -222,6 +327,22 @@
   howpublished = {Zenodo},
   keywords = {formal proofs,mathematical software,proof assistant},
   language = {eng}
+}
+
+@inproceedings{zilianiMtacMonadTyped2013,
+  title = {Mtac: A Monad for Typed Tactic Programming in {{Coq}}},
+  shorttitle = {Mtac},
+  booktitle = {Proceedings of the 18th {{ACM SIGPLAN}} International Conference on {{Functional}} Programming - {{ICFP}} '13},
+  author = {Ziliani, Beta and Dreyer, Derek and Krishnaswami, Neelakantan R. and Nanevski, Aleksandar and Vafeiadis, Viktor},
+  year = {2013},
+  pages = {87},
+  publisher = {{ACM Press}},
+  address = {{Boston, Massachusetts, USA}},
+  doi = {10.1145/2500365.2500579},
+  abstract = {Effective support for custom proof automation is essential for largescale interactive proof development. However, existing languages for automation via tactics either (a) provide no way to specify the behavior of tactics within the base logic of the accompanying theorem prover, or (b) rely on advanced type-theoretic machinery that is not easily integrated into established theorem provers.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Ziliani et al/2013/Ziliani et al. - 2013 - Mtac a monad for typed tactic programming in Coq.pdf},
+  isbn = {978-1-4503-2326-0},
+  language = {en}
 }
 
 

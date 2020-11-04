@@ -261,6 +261,14 @@ will fail since Control.hyp returns a var reference and not a literal constr.
 ** If it was possible to anitquote patterns, non-linearity would be reachable with a hack
 just take all patterns, put them in a list, match against list of returned hypothesis
 ** =notypeclasses refine= is not present in Ltac2, not sure where it causes problems
+** not possible to match existential goals?
+#+begin_src coq
+assert (exists a : nat, a = 2).
+lazy_match! goal with
+| [|- exists (_ : ?t), ?p] =>
+  ()
+end
+#+end_src
 * Control.once is equivalent to
 
 #+begin_src coq
