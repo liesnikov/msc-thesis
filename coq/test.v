@@ -61,3 +61,37 @@ Proof.
   i_intro_constr '(INamed "v").
   i_exact '(INamed "v").
 Qed.
+
+
+
+
+Ltac2 eassumption0 () := ltac1:(eassumption).
+Ltac2 Notation "eassumption" := eassumption0 ().
+
+Ltac2 rec tauto0 () :=
+  match! goal with
+  | [|- True] =>
+    refine '(I)
+  | [|- ?p /\ ?q] =>
+    split > [tauto0 ()| tauto0 ()]
+  | [|- ?p \/ ?q] =>
+    Control.plus (fun () => refine '(or_introl _); tauto0 ())
+                 (fun e => refine '(or_intror _); tauto0 ())
+  | [|- forall x, ?p] =>
+    intros ?; tauto0 ()
+  | [|- exists (_ : ?a), _] =>
+    (* let i := fresh_ident x in
+    Evars.evar0 i a;
+    let xv := Std.eval_red (Control.hyp i) in
+    exists0 true [(fun () => Std.ImplicitBindings ([xv]))]; *)
+    eexists;
+    tauto0 ()
+  | [|- _] => eassumption
+  end.
+
+Ltac2 Notation "tauto" := tauto0 ().
+
+Goal forall Q : nat -> Prop, Q 2 -> exists (x : nat), Q (1 + x) /\ True.
+Proof.
+  intros ? ?. tauto.
+Qed.

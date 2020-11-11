@@ -569,8 +569,17 @@ Qed.
 Lemma envs_simple_replace_singleton_sound' Δ Δ' i p j c Q :
   envs_simple_replace i p (Esnoc Enil (c, j) Q) Δ = Some Δ' →
   of_envs (envs_delete true i p Δ) ⊢ (if c then □?p Q else emp) -∗ of_envs Δ'.
-Proof. move=> /envs_simple_replace_sound'.
-       destruct p, c; by rewrite /= ?right_id ?intuitionistically_True_emp.
+Proof.
+  move=> /envs_simple_replace_sound'.
+  destruct p, c; by rewrite /= ?right_id ?intuitionistically_True_emp.
+Qed.
+
+Lemma envs_simple_replace_singleton_sound Δ Δ' i p P j Q :
+  envs_lookup_true i Δ = Some (p,P) →
+  envs_simple_replace i p (Esnoc Enil (true, j) Q) Δ = Some Δ' →
+  of_envs Δ ⊢ □?p P ∗ (□?p Q -∗ of_envs Δ').
+Proof.
+  intros. by rewrite envs_lookup_sound// envs_simple_replace_singleton_sound'//.
 Qed.
 
 Lemma envs_simple_replace_singleton_sound_with_constr Δ Δ' i p P j c c' Q :

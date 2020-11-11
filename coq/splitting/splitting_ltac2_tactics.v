@@ -588,7 +588,24 @@ Ltac2 i_exists_one (x : constr) :=
   [ | | i_solve_tc ()
   | exists0 true [(fun () => Std.ImplicitBindings ([x]))]].
 
-Ltac2 i_split () :=
+Ltac2 i_exist_destruct0 (i : ident_ltac2) (j : ident_ltac2) (x : Std.intro_pattern) :=
+  refine '(splitting_tactics.tac_exist_destruct _ $i _ $j _ _ _ _ _ _) >
+  [ () | () | () | ()
+  | pm_force_reflexivity ()
+  | i_solve_tc ()
+  | intros0 false [x]; pm_reduce () ].
+
+Ltac2 Notation "i_exist_destruct" i(self) "as" x(intropattern) j(self) :=
+  i_exist_destruct0 i j x.
+
+Ltac2 i_and_split () :=
+  i_start_split_proof ();
+  refine '(tac_and_split _ _ _ _ _ _ _) >
+  [ () | ()
+  | i_solve_tc ()
+  | () | () ].
+
+Ltac2 i_sep_split () :=
   let n :=
     lazy_match! goal with
     | [|- @envs_entails _ (@Envs _ ?gp ?gs _) ?q] => List.length (env_to_list gs)
@@ -614,6 +631,9 @@ Ltac2 i_split () :=
       end]
   | [|- _] => iriception "the goal isn't bi entailment"
   end.
+
+Ltac2 i_split () :=
+  or (i_sep_split) (i_and_split).
 
 Ltac2 get_modality () :=
   let fresh_id := fresh () in

@@ -873,6 +873,49 @@ Implicit Types Γ : env PROP.
 Implicit Types Δ : envs PROP.
 Implicit Types P Q : PROP.
 
+
+Lemma tac_rewrite Δ i p Pxy d Q :
+  envs_lookup_true i Δ = Some (p, Pxy) →
+  ∀ {A : ofeT} (x y : A) (Φ : A → PROP),
+    IntoInternalEq Pxy x y →
+    (Q ⊣⊢ Φ (if d is Left then y else x)) →
+    NonExpansive Φ →
+    envs_entails Δ (Φ (if d is Left then x else y)) → envs_entails Δ Q.
+Proof.
+  intros ? A x y ? HPxy R ?.
+  rewrite envs_entails_eq R.
+  apply internal_eq_rewrite'; auto. rewrite {1}envs_lookup_sound //.
+  rewrite (into_internal_eq Pxy x y) intuitionistically_if_elim sep_elim_l.
+  destruct d; auto using internal_eq_sym.
+Qed.
+
+
+(* FIXME: can be done with more precise constraints *)
+Lemma tac_rewrite_in Δ i p Pxy j q P d Q :
+  envs_lookup_true i Δ = Some (p, Pxy) →
+  envs_lookup_true j Δ = Some (q, P) →
+  ∀ {A : ofeT} (x y : A) (Φ : A → PROP),
+    IntoInternalEq Pxy x y →
+    (P ⊣⊢ Φ (if d is Left then y else x)) →
+    NonExpansive Φ →
+    match envs_simple_replace j q (Esnoc Enil (true,j) (Φ (if d is Left then x else y))) Δ with
+    | None => False
+    | Some Δ' => envs_entails Δ' Q
+    end →
+    envs_entails Δ Q.
+Proof.
+  rewrite envs_entails_eq /IntoInternalEq => ?? A x y Φ HPxy HP ? Hentails.
+  destruct (envs_simple_replace _ _ _ _) as [Δ'|] eqn:?; last done. rewrite -Hentails.
+  rewrite -(idemp bi_and (of_envs Δ)) {2}(envs_lookup_sound _ i) //.
+  rewrite (envs_simple_replace_singleton_sound _ _ j) //=.
+  rewrite HP HPxy (intuitionistically_if_elim _ (_ ≡ _)%I) sep_elim_l.
+  rewrite persistent_and_affinely_sep_r -assoc. apply wand_elim_r'.
+  rewrite -persistent_and_affinely_sep_r. apply impl_elim_r'. destruct d.
+  - apply (internal_eq_rewrite x y (λ y, □?q Φ y -∗ of_envs Δ')%I). solve_proper.
+  - rewrite internal_eq_sym.
+    eapply (internal_eq_rewrite y x (λ y, □?q Φ y -∗ of_envs Δ')%I). solve_proper.
+Qed.
+
 (** * Later *)
 (** The class [MaybeIntoLaterNEnvs] is used by tactics that need to introduce
 laters, e.g. the symbolic execution tactics. *)

@@ -195,3 +195,16 @@ Proof.
   i_frame_any_pure ().
   i_emp_intro ().
 Qed.
+
+Lemma test_fourteen (P : nat -> PROP) : (∃ x, P (x - 1)) ⊢ ∃ x, P (x).
+  i_intro_ident '(INamed "p").
+  (i_exist_destruct '(INamed "p") as [|] '(INamed "p"));
+   Control.enter (fun () => i_exists_one '(_); i_assumption ()).
+Qed.
+
+Lemma test_fifteen P Q :  P ∧ Q ⊢ Q ∧ P.
+Proof.
+  i_intro_ident '(INamed "pq").
+  i_split (); Control.enter (fun _ =>
+    i_and_destruct_split '(INamed "pq") '(INamed "p") '(INamed "q"); i_assumption ()).
+Qed.

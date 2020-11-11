@@ -1,6 +1,7 @@
 From Ltac2 Require Import Ltac2.
 
 From Ltac2 Require Constr Bool List.
+From iris_string_ident Require ltac2_string_ident.
 
 Module Misc.
   Ltac2 Type exn ::= [ ListExn ((message option) * (exn list)) ].
@@ -14,8 +15,12 @@ Module Misc.
 
   Ltac2 current_hyps_names () :=
     List.map (fun x => let (i, _, _) := x in i) (Control.hyps ()).
+
+  Ltac2 fresh_ident0 (s : ident) :=
+   Fresh.fresh (Fresh.Free.of_ids (current_hyps_names ())) s.
+
   Ltac2 fresh () :=
-    Fresh.fresh (Fresh.Free.of_ids (current_hyps_names ())) ident:(H).
+    fresh_ident0 ident:(H).
 
   Ltac2 ident_of_string s :=
     match Ident.of_string s with
@@ -92,7 +97,7 @@ Module Evars.
 
   Ltac2 new_evar type := remove_all_casts (new_evar_with_cast type).
 
-  Ltac2 evar (name : ident) (type : constr) :=
+  Ltac2 evar0 (name : ident) (type : constr) :=
     let p := new_evar type in
     pose ($name := $p).
 
@@ -137,22 +142,23 @@ End Evars.
 
 
 Module String.
-  From iris_string_ident Require Import ltac2_string_ident.
+  Import ltac2_string_ident.
 
   Ltac2 coq_string_to_ident := StringToIdent.coq_string_to_ident.
   Ltac2 ident_to_coq_string := ().
 End String.
 
+Ltac2 Notation "fresh_ident" n(ident):=
+  Misc.fresh_ident0 n.
 
 Ltac2 Notation "evar" "(" n(ident) ":" type(constr) ")" :=
-  Evars.evar n type.
+  Evars.evar0 n type.
 
 Ltac2 Notation "instantiate" "(" n(ident) ":=" t(constr) ")" :=
   Evars.instantiate0 n t.
 
 Ltac2 Notation "unify" t1(constr) t2(constr) :=
   Evars.unify0 t1 t2.
-
 
 (* Test *)
 Goal nat.
@@ -163,5 +169,16 @@ Proof.
   let p2 := Evars.new_evar '(nat) in
   epose (q := $p1 + $p2);
   unify (1+2) &q.
+
+  assert (exists a : nat, a = 2).
+  lazy_match! goal with
+  | [|- exists (_ : ?t), _] =>
+    let i := fresh_ident x in
+    Evars.evar0 i t;
+    exists0 true [(fun () => Std.ImplicitBindings ([Control.hyp i]))]
+  end; tauto ().
+    Evars.instantiate0 i '(2);
+  Evars.has_evar (Std.eval_red (Control.hyp i)).
+
   exact q.
 Qed.
