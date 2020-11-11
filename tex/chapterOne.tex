@@ -1,10 +1,76 @@
 \chapter{Introduction}
 
-\todo{thesis in general -- experiment with Ltac2 and some new things}
+This thesis is about interactive proof development for separation logic.
+In the introductory chapter we give an overview of historical account for developments of mechanized tools for separation logic, highlight some of the gaps of existing developments and list our contributions to the subject
 
-\section{Separation logic}
+\section{Separation logic and mechanization}
+\label{sec:separation-logic-mechanization}
+
+Separation logic was introduced introduced by \citet{reynoldsSeparationLogicLogic2002} and
+\citet{ohearnLocalReasoningPrograms2001} as a solution to problems with reasoning about mutable data structures.
+It proved to be widely successful \cite{ohearnSeparationLogic2019} and served as a basis for multiple other developments of logics used for reasoning about programs, the most influential of them, perhaps, being Concurrent Separation Logic by \citet{ohearnResourcesConcurrencyLocal2007}.
+
+In the last decade there were multiple new advanced logics developed that are both higher-order and are based on Concurrency Separation Logic, like one that serves as a foundation for Verified Software Toolchain by \citet{appelProgramLogicsCertified2014} or Iris \cite{jungIrisGroundModular2018}, which was used to establish formal foundations of Rust programming language \cite{jungRustBeltSecuringFoundations2018}.
+
+Separation logic also gave rise to multiple mechanized tools.
+Initial applications of separation logic to mechanized developments were concentrating on mostly automatic proofs, like Smallfoot\cite{berdineSmallfootModularAutomatic2006} or Verifast \cite{jacobsVeriFastProgramVerifier2008} or Bedrock by \citet{chlipalaMostlyautomatedVerificationLowlevel2011.
+With this approach logics have to be restricted in order for automation to be feasible, as on its own even separation logic with a magic wand \((\wand)\) is undecidable \cite{brotherstonUndecidabilityPropositionalSeparation2014}.
+
+However, fully automatic proofs are not the only possibility and they are not suitable for more expressive variants of SL.
+The alternative is tactic-based interactive verification.
+There are multiple developments that pursue this idea, usually using existing interactive proof assistants: ``Charge!'' framework by \citet{bengtsonCharge2012},
+ chlipalaBedrockStructuredProgramming2013}, VST-Floyd~\cite{caoVSTFloydSeparationLogic2018} for Verified Software Toolchain, MoSeL for Iris \cite{krebbersInteractiveProofsHigherorder2017, krebbersMoSeLGeneralExtensible2018}.
+In fact, MoSeL (and its predecessor, Iris Proof Mode) turned out to be essential for developments based on Iris \cite{krebbersMoSeLGeneralExtensible2018, jungUnderstandingEvolvingRust2020}.
+
+One of the first advances on finding out what tactics can look like for separation logic was done by \citet{appel2006tactics}.
+It built on existing work which embedded separation logic in Coq and developed a set of tactics for stepping through atomic operations, assertion operations and some automation tactics, like \coqe{sep_trivial}.
+This was followed by a paper by \citet{mccreightPracticalTacticsSeparation2009}.
+It presented a comprehensible set of tactics in Coq, applied them to Cminor, a C-like intermediate language for CompCert and used them to verify a garbage collector.
+Afterwards, ``Charge!'' framework by \citet{bengtsonCharge2012} developed language- and memory-model independent tactic language, also in Coq.
+It provided automation for first-order propositions in separation logic and brought tactics closer to native tactic language of Coq.
+
+Two most recent developments are VST-Floyd~\cite{caoVSTFloydSeparationLogic2018} and MoSeL \cite{krebbersMoSeLGeneralExtensible2018}.
+The former focuses, as the work above, focuses on tactics for one specific logic, while the latter strives to be a general framework with support for many expressive logical connectives, e.g.\ modalities and higher-order unification.
+Both of them provide support for automation, though differ significantly in approaches.
+VST-Floyd follows the idea of normal form for propositions, which was also used in \cite{bengtsonCharge2012} and is mostly focused a forward-style reasoning approach.
+MoSeL, on the other hand, doesn't try to normalize goals and places emphasis on genericity of the logic: it builds on the interface of Bunched Implications (BI) logic, which allows user to apply it in any logic that instantiates the interface.
+
+
+\section{Separation logic as BI logic}
+\label{sec:separation-logic-intro}
+\paragraph{We will now describe the basics of the separation logic.}
+Separation logic is an extension of Hoare logic which includes several new operators, the most important two being separating conjunction \((*)\) and separating implication or ``magic wand'' \((\wand)h\).
+
+Separation logic is also built on Bunched Implications logic.
+A BI logic is a set of propositions \Prop with an entailment predicate \(\vdash\) and the following connectives:
+\begin{enumerate}
+\item embedding of ``pure'' propositions from meta-logic, which don't concern resources: \(\pure { } : \textbf{Prop} \to \Prop\)
+\item \True, neutral element for non-separating conjunction \(\wedge : \Prop \to \Prop \to \Prop\)
+\item \False, neutral element for non-separating disjunction \(\vee : \Prop \to \Prop \to \Prop\)
+\item \emp, neutral element for separating conjunction \(* : \Prop \to \Prop \to \Prop\)
+\item \(\imp\) and \(\wand\), two implication-like connectives, where only the latter is separating.
+\item quantifiers, since the logic is higher-order: \(\forall, \exists : \forall A, (A \to \Prop) \to \Prop\)
+\end{enumerate}
+
+Apart from the laws concerning neutral elements mentioned above, there are laws concerning introduction and elimination of connectives, as well as the usual properties like commutativity and associativity.
+
+The semantics for the classical separation logic \cite{reynoldsSeparationLogicLogic2002, ohearnLocalReasoningPrograms2001} describes predicates on heaps, and in that case a separating conjunction \(P * Q\) means that the heap can be divided in two heaplets, such that they don't share any memory and each one satisfies one the propositions respectively.
+Separating implication \(P \wand Q\) means that any heaplet that satisfies \(P\) also satisfies \(Q\).
+
+
+
+\todo{explain details of BI here}
+
+
+\subsection{Modalities}
+\label{sec:modalities-intro}
+\todo{write this}
+
 
 \section{Motivation}
+\label{sec:motivation}
+
+
 
 solving tautolgies (different from coq)
 
@@ -14,9 +80,29 @@ approaches
   \item composable tactics, view it as as PL
   \end{itemize}
 
-\section{Problem and Solution}
 
+\section{Problem and Solution}
+\label{sec:problem-solution}
+
+One of the main problems with incorporating backwards-style proofs to separation logic is the introduction rule for a new connective -- ``separating conjunction''.
+The issue was first described in a paper by \citet{harlandResourceDistributionBooleanConstraints2003}.
+Separation logic, being substructural, i.e.\ lacking contraction rule, requires a user to distribute formulae manually when introducing a new spatial connective.
+This creates a problem with backwards reasoning, as frequently the distribution is only known post-factum, when the proof is done and it is evident in the derivation which resources were used in which branch of the proof.
+The paper proposes a logic amended to solve this problem.
+
+  
 \section{Contributions}
+\label{sec:contributions}
+
+\begin{itemize}
+\item In chapter~\ref{chap:reimplementation_ipm} we describe reimplementaion of MoSeL in Ltac2, thus contributing one of the first significant applications of the language.
+  In the process, we evaluate parts of the language used and suggest possible directions for future development.
+\item In chapter~\ref{chap:postponed_splitting} we propose and implement an adaptation and extension of amended logic as per \cite{harlandResourceDistributionBooleanConstraints2003} to MoSeL, as reimplemented in the previous chapter.
+\item In chapter~\ref{chap:imatch} we describe a new primitive for tactic language of separation logic, which allows us to match entailments akin to Coq's native \coqe{match goal} construct.
+\item Finally, in chapter~\ref{chap:solver} we bring the implemented features together in order to implement a solver for separation logic.
+\end{itemize}
+
+We conclude with an overview of related work~\ref{cha:related-work}.
 
 
 % \setCoqFilename{filename}

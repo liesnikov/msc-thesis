@@ -13,19 +13,21 @@ mathescape=true,
 %
 % Comments may or not include Latex commands
 texcl=false,
+% curly quotes
+upquote=true,
 %
 % Vernacular commands
 morekeywords=[1]{Section, Module, End, Require, Import, Export,
   Variable, Variables, Parameter, Parameters, Axiom, Hypothesis,
   Hypotheses, Notation, Local, Tactic, Reserved, Scope, Open, Close,
-  Bind, Delimit, Definition, Let, Ltac, Fixpoint, CoFixpoint, Add,
+  Bind, Delimit, Definition, Let, Ltac2, Ltac, Fixpoint, CoFixpoint, Add,
   Morphism, Relation, Implicit, Arguments, Unset, Contextual,
   Strict, Prenex, Implicits, Inductive, CoInductive, Record,
   Structure, Canonical, Coercion, Context, Class, Global, Instance,
   Program, Infix, Theorem, Lemma, Corollary, Proposition, Fact,
   Remark, Example, Proof, Goal, Save, Qed, Defined, Hint, Resolve,
   Rewrite, View, Search, Show, Print, Printing, All, Eval, Check,
-  Projections, inside, outside, Def, MetaCoq, Run, Scheme, Ltac, Ltac2},
+  Projections, inside, outside, Def, MetaCoq, Run, Scheme},
 %
 % Gallina
 morekeywords=[2]{forall, exists, exists2, fun, fix, cofix, struct,
@@ -51,12 +53,12 @@ morekeywords=[5]{by, done, exact, reflexivity, tauto, romega, omega,
 % Control
 morekeywords=[6]{do, last, first, try, idtac, repeat},
 %
+% Ltac2
+morekeywords=[7]{lazy_match!, match!, multi_match!, constr, ident,
+  iMatch, iLazyMatch, iMultiMatch},
 % Comments delimiters, we do turn this off for the manual
 morecomment=[s]{(*}{*)},
 %
-% Ltac2
-morekeywords=[6]{lazy_match!, match!, lazy_match!, constr,
-  iMatch, iLazyMatch, iMultiMatch},
 % Spaces are not displayed as a special character
 showstringspaces=false,
 %
@@ -99,7 +101,7 @@ keywordstyle=[4]{\ttfamily\color{dkblue}},
 % Style for terminators keywords
 keywordstyle=[5]{\ttfamily\color{dkred}},
 %Style for iterators
-%keywordstyle=[6]{\ttfamily\color{dkpink}},
+keywordstyle=[7]{\ttfamily\color{dkgreen}},
 % Style for strings
 stringstyle=\ttfamily,
 % Style for comments

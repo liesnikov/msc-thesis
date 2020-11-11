@@ -1,173 +1,33 @@
 \chapter{Ltac2}
 
-Ltac2 is a tactic language that comes as a successor to Ltac and in this chapter we give an overview of its semantics and features.
-Following the convention (\cite[Section 3.3.2]{thecoqdevelopmentteamCoqProofAssistant2020} \cite{pedrotLtac2TacticalWarfare2019}) we will be calling the original implementation Ltac1.
+Ltac2 is a tactic language that comes as a successor to Ltac.
+Following the convention (\cite[Section 3.3.2]{thecoqdevelopmentteamCoqProofAssistant2020}, \cite{pedrotLtac2TacticalWarfare2019}) we will be calling the original implementation Ltac1.
+In this chapter we describe main parts of Ltac2, including both semantics and the standard library.
 
 The need for a new tactic language is well-justified due to multiple issues with Ltac1, the very first one being that it was never intended to be a full tactic language -- as per \citet{pedrotCoqHoTTminuteTickingClockwork2016}, the aim was to handle ``small automations''.
 Current usages of Ltac1, i.e. Bedrock platform by \citet{chlipalaMostlyautomatedVerificationLowlevel2011} and Iris Proof Mode by \citet{krebbersInteractiveProofsHigherorder2017, krebbersMoSeLGeneralExtensible2018} go far beyond what one would consider ``simple''.
-This discrepancy between intent and usage shows itself in unpredictability and lack of uniformity in semantics, absence of user-defined datatypes, as well as issues with maintainability (\cite[Section 3.3.2]{thecoqdevelopmentteamCoqProofAssistant2020} \cite{pedrotLtac2TacticalWarfare2019}).
+This discrepancy between intent and usage shows itself in unpredictability and lack of uniformity in semantics, issues with maintainability (\cite[Section 3.3.2]{thecoqdevelopmentteamCoqProofAssistant2020}, \cite{pedrotLtac2TacticalWarfare2019}) and lack of expressivity in general.
 
 Coq community developed multiple alternatives to Ltac1, such Mtac \cite*{zilianiMtacMonadTyped2013, kaiserMtac2TypedTactics2018a}, which is focusing on stronger types for tactics,
-Rtac by \citet{malechaExtensibleEfficientAutomation2016} and Cydele by \citet{claretLightweightProofReflection2013}, providing reflection-based tactics and others.
-
+Rtac \cite{malechaExtensibleEfficientAutomation2016} and Cydele \cite{claretLightweightProofReflection2013} providing reflection-based tactics, and others.
 Ltac2, on the other hand, aims not for a new approach to tactics, but rather to be a sane successor to Ltac1, being backwards-compatible where possible.
 It is still experimental and was integrated in Coq in version 8.11, so the description here applies only to versions 8.11 and 8.12, which are available at the moment.
 
-We will first cover semantics of the language and then turn to various features, such as notations and compatibility with Ltac1.
+We will first cover semantics of the language and then turn to various features, such as meta-programming capabilities and notations.
 In the end we will also present a small example of a solver for first-order logic.
+We also assume some knowledge of Ltac1.
 
 \section{Semantics of Ltac2}
 
-Ltac2 is a ML-family language, which means it is a call-by-value, effectful functional language with static types and support rank-1 polymorphism and algebraic datatypes.
+Ltac2 is a ML-family language, which means it is a call-by-value, effectful functional language.
 
-Effects are interpreted in a monad, which is provided by Coq's tactic engine \cite{spiwackAbstractTypeConstructing2010}.
-It is also explained in a blog post by \citet{pedrotCoqHoTTminuteTickingClockwork2016} and here we will try to expand on it, explaining not only how Ltac2 interfaces the monad, but also how some user-facing tactics are implemented.
-
-Note that we focus on the monad from user-perspective, so the types provided in ML syntax should only be seen as guidance for an Ltac2 user, and not as true to the implementation.
-
-\subsection{Tactics form a monad}
-\label{sec:monad-tactics}
-
-When a user applies a tactic to a goal in Coq, they expect to get back a list of new goals generated.
-\begin{ocaml}
-type 'a tactic = goal -> goal list * a
-\end{ocaml}
-
-However, the tactic might not always succeed, so we have to amend the type to allow tactics to fail with some exception \ocamle|exn|.
-\begin{ocaml}
-type 'a tactic = goal -> (exn, goal list * a) sum
-\end{ocaml}
-
-This monad comes equipped with usual monad operators \ocamle{return} and \ocamle{bind}:
-\begin{ocaml}
-val tclReturn : 'a -> 'a tactic.
-val tclBind : 'a tactic -> ('a -> 'b tactic) -> 'b tactic.
-\end{ocaml}
-
-For a user perspective, these already allow implementation of chaining of tactics and arbitrary branching inside tactics.
-We can also already recover some familiar tactical, such as sequencing: \coqe{tactic1; tactic2}, which is simply a bind with constant function.
-Technically we can also implement non-backtracking branching, but this would require us to rely on the type of the tactic and not primitive operations, so we postpone it till later.
-
-There are also several primitive tactics which are provided here and don't follow from the monadic interface, such as
-\begin{coqe}
-goal := fun g => Right [g] g
-\end{coqe}
-
-\subsection{Backtracking monad for tactics}
-\label{sec:backtr-monad-tact}
-
-The monad described above suffices for many purposes, it doesn't allow backtracking naturally.
-The usual solution in this case is to apply some variant of \ocamle{ListT} transformer.
-However, the problem with ListT is well-known \cite{jones1993composing} (or, for a more approachable explanation \cite{ListTDoneRight}) -- in general it is not associative, and hence, not a monad.
-Instead we take the following type:
-
-\begin{ocaml}
-type 'a elist = Node of (exn -> 'a enode)
-and 'a enode = Zero of exn | Plus of 'a * 'a elist
-
-type +'a tactic = goal * state -> (goal list * state * 'a) elist
-\end{ocaml}
-
-The type is derived from \cite{kiselyovBacktrackingInterleavingTerminating2005} and provides several primitives.
-Among those, we are interested in the following three:
-\begin{ocaml}
-val tclZERO : exn -> 'a tactic
-val tclPLUS : 'a tactic -> (exn -> 'a tactic) -> 'a tactic
-type 'a case =
-  | Fail of exn
-  | Next of 'a * (exn -> 'a tactic)
-val tclCASE : 'a tactic -> 'a case tactic
-\end{ocaml}
-
-The type signature for tactics and the interface are not the easier to grasp or to form intuition about, so we are going to show several examples on how they apply to real-world tactics.
-
-The functions above, however, come not on their own, but with several laws that guard execution.
-Below, \coqe{zero}, \coqe{plus} and \coqe{case} correspond to their respective functions and all of \coqe{t, u, f, g, e} are values.
-\begin{figure}[H]
-\begin{coq}
-plus t zero $\equiv$ t ()
-plus (fun () => zero e) f $\equiv$ f e
-plus (plus t f) g $\equiv$ plus t (fun e => plus (f e) g)
-\end{coq}
-\caption{Equations concerning \coqe{zero} and \coqe{plus}}
-\label{fig:zero_plus_eq}
-\end{figure}
-
-We can think about \coqe{plus} as \coqe{cons} constructor of the list of results.
-Respectively, \coqe{zero} is a \coqe{nil} constructor, which means that the tactic couldn't return any result and thus, failed.
-
-This also gives us an ability to recreate branching tactics with just primitive constructions.
-Surprisingly, backtracking branching is easier:
-\begin{coq}
-tactic1 + tactic 2 := plus (tactic1) (fun _ => tactic2)
-\end{coq}
-It works in the following way: if \coqe{tactic1} evaluates to an exception, that is, a zero, it is discarded as per second equation of~\ref{fig:zero_plus_eq}.
-If it evaluates to a list of results, they are chained with those from \coqe{tactic2}.
-
-Both this usage and the last equation about plus~\ref{fig:zero_plus_eq} somewhat break intuition of \coqe{plus} being \coqe{cons} constructor and instead behaves more like \coqe{app} operation on lists of results.
-
-Now let's turn to the last element of the interface -- \coqe{case}.
-Intuitively, it evaluates the thunk it is given and then takes it apart, serving as a pattern-matching construction for the lists of \coqe{plus} and \coqe{zero}.
-\begin{figure}[H]
-\begin{coq}
-case (fun () => zero e) $\equiv$ Left e
-case (fun () => plus (fun () => t) f) $\equiv$ Right (t,f)
-\end{coq}
-\caption{Equations concerning \coqe{case}}
-\label{fig:case_eq}
-\end{figure}
-
-This enables introspection of results.
-In particular, we can implement a tactical, that cuts off backtracking and returns the first value, if there is any:
-\begin{coq}
-Ltac2 once t := match (Control.case t) with
-  | Err exn => Control.zero exn
-  | Val v => let (x, rr) := v in x
-  end.
-\end{coq}
-
-And using \coqe{once}, we can also implement non-backtracking branching:
-\begin{coq}
-tactic1 ||tactic2 := once (tactic1 + tactic2).
-\end{coq}
-
-Finally, there are two laws guarding the behavior of biding with respect to \coqe{plus} and \coqe{zero}.
-\begin{figure}[H]
-\begin{coq}
-let x := zero e in u $\equiv$ zero e
-let x := plus t f in u $\equiv$ plus (fun () => let x := t in u) (fun e => let x := f e in u)
-\end{coq}
-\caption{Equations concerning binders}
-\label{fig:let_eq}
-\end{figure}
-
-An important thing to keep in mind is that the interface above comes \emph{in addition} to the monadic interface, which means we don't have to deal with it unless backtracking is concerned.
-
-\subsection{General language feature and other effects}
-\label{sec:other-effects}
-
-Aside from the effects described above, Ltac2 also features
-\begin{itemize}
-\item standard non-backtracking IO, in particular, printing and mutable arrays
-\item ``fatal'' errors, which don't go through the backtracking machinery described above and can't be caught
-  \begin{coq}
-  Ltac2 throw : exn -> 'a
-  \end{coq}\vspace{-0.7em}
-\item ability to inspect goals.
-  We mentioned \coqe{goal} briefly before, but user also gets access to hypothesis:
-  \begin{coq}
-  Ltac2 goal : unit -> constr
-  Ltac2 hyp : ident -> constr.
-  Ltac2 hyps : unit -> (ident * constr option * constr) list.
-  \end{coq}\vspace{-0.7em}
-\end{itemize}
-
-As for the rest, Ltac2 is a fairly standard ML-family language, with usual features and intuitive syntax.
 In particular, it has:
 \begin{itemize}
-\item static types, including algebraic datatypes, rank-1 polymorphism and several built-in types (\coqe{bool}, \coqe{int}, \coqe{string}, \coqe{constr}, \coqe{ident}).
+\item static types, including algebraic datatypes, rank-1 polymorphism and several built-in types (\coqe{bool}, \coqe{int}, \coqe{string}, \coqe{constr}, \coqe{ident}, \ldots).
   \begin{coq}
+  (*lists of integers *)
   Ltac2 Type rec int_list := [IntCons (int, int_list) | IntNil ].
+  (* polymorphic sum type *)
   Ltac2 Type ('a, 'b) sum := [Left ('a) | Right ('b)].
   \end{coq}
 \item functions, lambda functions and pattern-matching:
@@ -181,42 +41,257 @@ In particular, it has:
   \end{coq}
 \end{itemize}
 
+Ltac2 also has effectful computations, which are interpreted inside a tactic monad.
+The monad is provided by Coq's tactic engine \cite{spiwackAbstractTypeConstructing2010}.
+It is also explained in a blog post by \citet{pedrotCoqHoTTminuteTickingClockwork2016} and here we will try to expand on it, explaining not only how Ltac2 interfaces the monad, but also how some user-facing tactics are implemented.
+
+Note that we focus on the monad from user-perspective, so the types provided in ML syntax should only be seen as guidance for an Ltac2 user, and not as ones true to the implementation.
+
+\subsection{Tactics form a monad}
+\label{sec:monad-tactics}
+
+When a user applies a tactic to a goal in Coq, they expect to get back a list of new goals generated or an error:
+\begin{ocaml}
+type 'a tactic = goal * state -> (exn, goal list * state * a) sum
+\end{ocaml}
+where \ocamle{state} encapsulates proof state, such as existential variable instantiations.
+The \coqe{tactic} type is a monad and it comes equipped with usual monad operators \ocamle{return} and \ocamle{bind}:
+\begin{ocaml}
+val tclReturn : 'a -> 'a tactic.
+val tclBind : 'a tactic -> ('a -> 'b tactic) -> 'b tactic.
+\end{ocaml}
+
+The functions above are not exposed to a user, but rather used while interpreting Ltac2 programs.
+A user can think of Ltac2 as a DSL over \coqe{tactic} monad with do-notations.
+
+This already gives us sequencing inside the language: \coqe{tactic1; tactic2} and ability to write simple programs that trasnform goals.
+Technically we could also implement non-backtracking branching, but this would require OCaml implementation instead of reliance on primitive operations inside the monad, so we postpone it till later.
+
+However, we can already explain some of the primitive tactics, like \coqe{Control.goal}, which returns current goal as a term.
+\begin{coq}
+  Ltac2 goal : unit -> constr.
+\end{coq}\vspace{-1em}
+Morally, \coqe{goal} is implemented in OCaml as \ocamle{fun (g : goal) -> Right [g] g}.
+
+\subsection{Backtracking monad for tactics}
+\label{sec:backtr-monad-tact}
+
+The monad described above suffices for many purposes, but it doesn't allow backtracking naturally.
+The usual solution is to apply \ocamle{ListT} transformer to the monad.
+However, the problem with ListT is well-known \cite{jones1993composing} -- in general it does not satisfy associativity laws, and hence, not is not a monad at all.
+So, instead of applying \ocamle{ListT}, we interleave exception reading effect with return value generation and get the following type:
+\begin{ocaml}
+type 'a elist = Node of (exn -> 'a enode)
+and 'a enode = Zero of exn | Plus of 'a * 'a elist
+
+type +'a tactic = goal * state-> (goal list * state * 'a) elist
+\end{ocaml}
+It was derived by \citet{spiwackAbstractTypeConstructing2010} using construction by \citet{kiselyovBacktrackingInterleavingTerminating2005} and provides several primitives.
+We are interested in the following three from them:
+\begin{ocaml}
+val tclZERO : exn -> 'a tactic
+val tclPLUS : 'a tactic -> (exn -> 'a tactic) -> 'a tactic
+type 'a case =
+  | Fail of exn
+  | Next of 'a * (exn -> 'a tactic)
+val tclCASE : 'a tactic -> 'a case tactic
+\end{ocaml}
+
+The type signature for the monad and the interface are not the easiest to grasp or to form intuition about, so we are going to show several examples on how they apply to real-world tactics.
+The important difference to the previous monad primitives is that these are exposed inside Ltac2 and are available to a user in \coqe{Control} module.
+
+The primitives come not on their own but with several laws that guard evaluation.
+In figures \ref{fig:zero_plus_eq}, \ref{fig:case_eq}, \ref{fig:let_eq}, \coqe{zero}, \coqe{plus} and \coqe{case} correspond to their respective functions and \coqe{t, u, f, g, e} are values.
+\begin{figure}[H]
+\begin{coq}
+plus t zero $\equiv$ t ()
+plus (fun () => zero e) f $\equiv$ f e
+plus (plus t f) g $\equiv$ plus t (fun e => plus (f e) g)
+\end{coq}
+\caption{Equations concerning \coqe{zero} and \coqe{plus}}
+\label{fig:zero_plus_eq}
+\end{figure}
+
+One can think about \coqe{plus} as a \coqe{cons} constructor of the list of results and \coqe{zero} would a \coqe{nil} constructor, used when a tactic couldn't return any result and thus, failed.
+
+Contrary to the previous time, the exposure of primitives gives us an ability to recreate branching tactics inside Ltac2 with just primitive constructions.
+Somewhat surprisingly, backtracking branching is simpler that non-backtracking one, so we first present the former:
+\begin{coq}
+tactic1 + tactic 2 := plus (tactic1) (fun _ => tactic2)
+\end{coq}
+It works in the following way: if \coqe{tactic1} evaluates to an exception, that is, a \coqe{zero e}, it is discarded as per second equation of~\ref{fig:zero_plus_eq}.
+If it evaluates to a list of results, they are chained with those from \coqe{tactic2} following third law.
+
+Both this example and the last equation in figure~\ref{fig:zero_plus_eq} somewhat break the intuition of \coqe{plus} being \coqe{cons} constructor and instead behaves more like \coqe{app} operation on lists of results.
+
+Now let's turn to the last element of the interface -- \coqe{case}.
+Intuitively, it evaluates the thunk provided and then takes it apart, serving as a pattern-matching construction for the lists of \coqe{plus} and \coqe{zero}.
+\begin{figure}[H]
+\begin{coq}
+case (fun () => zero e) $\equiv$ Left e
+case (fun () => plus (fun () => t) f) $\equiv$ Right (t,f)
+\end{coq}
+\caption{Equations concerning \coqe{case}}
+\label{fig:case_eq}
+\end{figure}
+
+This enables introspection of results.
+In particular, we can implement a function, that cuts off backtracking and returns the first value, if there is any:
+\begin{coq}
+Ltac2 once t := match (case t) with
+  | Err exn => zero exn
+  | Val v => let (x, rr) := v in x
+  end.
+\end{coq}
+
+And using \coqe{once}, we can also implement non-backtracking branching:
+\begin{coq}
+tactic1 ||tactic2 := once (tactic1 + tactic2).
+\end{coq}
+
+Finally, there are two laws guarding the behavior of biding with respect to \coqe{plus} and \coqe{zero}.
+\begin{figure}[H]
+\begin{coq}
+(let x := zero e in u) $\equiv$ zero e
+(let x := plus t f in u) $\equiv$ (plus (fun () => let x := t in u)
+                                 (fun e => let x := f e in u))
+\end{coq}
+\caption{Equations concerning binders}
+\label{fig:let_eq}
+\end{figure}
+
+The first equation states that the exceptions propagated through any binding and the second one describes propagation of the backtracking values very much alike \ocamle{ListT}.
+An important thing to keep in mind is that the backtracking interface above comes \emph{in addition} to the monadic interface, which means a user can ignore these functions as long as backtracking isn't of concern.
+
+\subsection{General language feature and other effects}
+\label{sec:other-effects}
+
+Aside from the effects described above, Ltac2 also features
+\begin{itemize}
+\item standard non-backtracking IO, in particular, printing and mutable arrays
+\item ``fatal'' errors, which don't go through the backtracking machinery described above and can't be caught
+  \begin{coq}
+  Ltac2 throw : exn -> 'a
+  \end{coq}\vspace{-0.7em}
+\item access to the proof state.
+  We mentioned \coqe{goal} briefly before, but user also gets access to hypothesis:
+  \begin{coq}
+  Ltac2 goal : unit -> constr
+  Ltac2 hyp : ident -> constr.
+  Ltac2 hyps : unit -> (ident * constr option * constr) list.
+  \end{coq}\vspace{-0.7em}
+\end{itemize}
+
 \section{Standard library for Ltac2 and differences from Ltac1}
 
-In the previous section we described general language features, now we turn to non-essential parts of the language.
+In the previous section we focused on semantics, so now we turn to the standard library provided with Ltac2.
 
-\subsection{Matching terms}
+\subsection{Matching terms and goals}
 \label{sec:matching-terms}
 
-In order to work with coq terms effectively, Ltac2 gives user an ability to match them in a way, which is very similar to matching proper Ltac2 terms.
+In order to work with Coq terms effectively, Ltac2 gives user an ability to match them in a way, which is very similar syntactically to matching proper Ltac2 terms.
+\begin{coq}
+  Ltac2 is_conjunction (v : constr) :=
+    match! v with
+    | ?p /\ ?q => true
+    | _ => false
+    end.
+\end{coq}
+There are two differences in syntax: the keyword is \coqe{match!} instead of \coqe{match} and binding named in patterns have to be prepended with question marks.
 
-\begin{itemize}
-  \item Matching terms
-  
-  \item Notations and scopes
-  \item Exceptions
-\end{itemize}
+Ltac2 also brings back matching of goals:
+\begin{coq}
+Ltac2 one_conjunct_trivial :=
+  match! goal with
+  | [ h : ?p |- ?p /\ ?q] => split > [assumption | ()]
+  | [ h : ?q |- ?p /\ ?q] => split > [() | assumption]
+  | _ => ()
+  end.
+\end{coq}
+
+The syntax is the same as for Ltac1. Units \coqe{()} are no-op in the snippet above, but we include them for readability.
+The other new element of syntax is \coqe{tactic1 > [tactic2_1 | $\ldots$ | tactic2_n]} which stands for tactic dispatch and looked like \coqe{tactic1; [tactic2_1 |  $\ldots$ | tactic2_n]} in Ltac1.
+
+However, there's more to it. Ltac2 not only provides machinery for pattern-matching terms, and goals, but also exposes notations for them and functions used internally.
+This is a key element that allowed us to implement pattern-matching inside IPM which we describe in chapter \ref{chap:imatch}.
+
+\subsection{Notations and scopes}
+\label{subsec:ltac2-notations-scopes}
+
+Since Ltac2 separates Coq terms from Ltac2 terms clearly, it has to rely on notations to bring back automagic parsing of Ltac1.
+
+There are two different categories of notation machinery in Ltac2: notations and scopes.
+notations are user-defined and look very similar to Coq \coqe{Notation} commands and scopes are custom parsers for arguments.
+\begin{coq}
+  Ltac2 Notation "is_conjuction_pretty" v(constr) := is_conjuction v.
+\end{coq}
+In this case, scope annotation \(v(constr)\) says that argument \coqe{v} should be parsed as a Coq term.
+Currently only a limited number of pre-defined scopes is available and there is no way to extend them without changing Ltac2 grammar in OCaml.
+Some of the available scopes are \coqe{cosntr}, \coqe{ident}, \coqe{list0}.
+The former two allow parsing of respective types instead of explicit quotations, while the latter is combinator that takes a scope and produces a parses for list of them.
+Notations, unlike in Coq, are parse-only and are mostly used to define better-looking aliases for existing Ltac2 tactics.
+
+\subsection{Exceptions}
+\label{subsec:ltac2-exceptions}
+
+Ltac2 features an extensible exception type.
+\begin{coq}
+Ltac2 Type exn ::= [ MyNewException(string) ].
+\end{coq}
+While in Ltac1 one could only specify number of backtracking points to jump through, Ltac2 enables user to throw and catch user-defined exceptions.
+
+This allows for more precise error messages and exception recovery.
+
+\subsection{The rest of the standard library}
+The main point of this chapter is Ltac2 can be seen as a substitute for Ltac1, while keeping stricter informal semantics.
+Of course, there is more to it, than we could describe here, so we refer interested readers to the documentation \cite[Section 3.3.2]{thecoqdevelopmentteamCoqProofAssistant2020}.
 
 \section{Propositional solver}
 \label{sec:propositional-solver}
 
-\begin{coq}
-Ltac2 rec tauto () :=
+Having covered the essentials of the language, we provide a simple tautology solver for first-order logic akin to one described by \citet{zilianiMtacMonadTyped2013} as an example.
+
+We define a recursive function \coqe{tauto} which matches the current goal with a set of patterns and then applies fitting tactics.
+While we are not passing the goal explicitly, \coqe{tauto} is called on each generated subgoal, unless it is a leaf, where either the goal is \coqe{True} or we can't apply any other rule.
+
+\begin{figure}[H]
+  \begin{coq}
+  Ltac2 rec tauto () :=
   match! goal with
   | [|- True] =>
-    refine '(I)
+   refine '(I)
   | [|- ?p /\ ?q] =>
     split > [tauto ()| tauto ()]
   | [|- ?p \/ ?q] =>
-    Control.plus (fun () => refine '(or_introl _); tauto ())
-                 (fun e => refine '(or_intror _); tauto ())
+    (* backtracking branching *)
+    plus (fun _ => refine '(or_introl _); tauto ())
+         (fun _ => refine '(or_intror _); tauto ())
   | [|- forall _, _] =>
     intros ?; tauto ()
   | [|- exists (_ : ?a), _] =>
     eexists; tauto ()
-  | [|- _] => eassumption
+  | [|- _] => ltac1:(eassumption)
   end.
-\end{coq}
+  \end{coq}
+  \caption{solver for first-order logic}
+  \label{fig:ltac2-solver}
+\end{figure}
+
+We haven't yet covered two constructs from the snippet above.
+The first one is quotations -- we saw how scopes allow better notations, but haven't yet seen how to specify a parsing category without scopes.
+Quotations are doing precisely this: in order to input a Coq literal \coqe{I} in Ltac2 one must wrap it into a \coqe{constr:(I)} specifier, which tells Ltac2 to parse the inside differently.
+\coqe{'(I)} is a shorthand for a \coqe{constr:(I)} quotation.
+
+The second one is availability of some of the usual tactics.
+While one can not use any other tactic language in combination with Ltac2, basic tactics are recreated inside it.
+In the example above these are \coqe{refine}, \coqe{split}, \coqe{eexists}.
+Some others are not present though, like \coqe{eassumption} -- we have to call \coqe{ltac1} version of the tactic.
+
+% \section{Patterns API, evar managment and more}
+% \label{sec:ltac2-missing-pieces}
+
+% There are also some problems with Ltac2, like missing ability to define scopes or limited API for patterns, but we are going to describe them in the relevant chapters later.
+
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "thesis"

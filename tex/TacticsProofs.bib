@@ -7,6 +7,51 @@
   journal = {INRIA Rocquencourt and Princeton University, Early Draft}
 }
 
+@book{appelProgramLogicsCertified2014,
+  title = {Program {{Logics}} for {{Certified Compilers}}},
+  author = {Appel, Andrew W. and Dockins, Robert and Hobor, Aquinas and Beringer, Lennart and Dodds, Josiah and Stewart, Gordon and Blazy, Sandrine and Leroy, Xavier},
+  year = {2014},
+  publisher = {{Cambridge University Press}},
+  address = {{USA}},
+  abstract = {Separation Logic is the twenty-first-century variant of Hoare Logic that permits verification of pointer-manipulating programs. This book covers practical and theoretical aspects of Separation Logic at a level accessible to beginning graduate students interested in software verification. On the practical side it offers an introduction to verification in Hoare and Separation logics, simple case studies for toy languages, and the Verifiable C program logic for the C programming language. On the theoretical side it presents separation algebras as models of separation logics; step-indexed models of higher-order logical features for higher-order programs; indirection theory for constructing step-indexed separation algebras; tree-shares as models for shared ownership; and the semantic construction (and soundness proof) of Verifiable C. In addition, the book covers several aspects of the CompCert verified C compiler, and its connection to foundationally verified software analysis tools. All constructions and proofs are made rigorous and accessible in the Coq developments of the open-source Verified Software Toolchain.},
+  isbn = {978-1-107-04801-0}
+}
+
+@inproceedings{bengtsonCharge2012,
+  title = {Charge!},
+  booktitle = {Interactive {{Theorem Proving}}},
+  author = {Bengtson, Jesper and Jensen, Jonas Braband and Birkedal, Lars},
+  editor = {Beringer, Lennart and Felty, Amy},
+  year = {2012},
+  pages = {315--331},
+  publisher = {{Springer}},
+  address = {{Berlin, Heidelberg}},
+  doi = {10.1007/978-3-642-32347-8_21},
+  abstract = {We present a comprehensive set of tactics for working with a shallow embedding of a higher-order separation logic for a subset of Java in Coq. The tactics make it possible to reason at a level of abstraction similar to pen-and-paper separation-logic proof outlines. In particular, the tactics allow the user to reason in the embedded logic rather than in the concrete model, where the stacks and heaps are exposed. The development is generic in the choice of heap model, and most of the development is also independent of the choice of programming language.},
+  isbn = {978-3-642-32347-8},
+  keywords = {Binary Search Tree,Normal Form,Program Variable,Proof Assistant,Separation Logic},
+  language = {en},
+  series = {Lecture {{Notes}} in {{Computer Science}}}
+}
+
+@inproceedings{berdineSmallfootModularAutomatic2006,
+  title = {Smallfoot: {{Modular Automatic Assertion Checking}} with {{Separation Logic}}},
+  shorttitle = {Smallfoot},
+  booktitle = {Formal {{Methods}} for {{Components}} and {{Objects}}},
+  author = {Berdine, Josh and Calcagno, Cristiano and O'Hearn, Peter W.},
+  editor = {{de Boer}, Frank S. and Bonsangue, Marcello M. and Graf, Susanne and {de Roever}, Willem-Paul},
+  year = {2006},
+  pages = {115--137},
+  publisher = {{Springer}},
+  address = {{Berlin, Heidelberg}},
+  doi = {10.1007/11804192_6},
+  abstract = {Separation logic is a program logic for reasoning about programs that manipulate pointer data structures. We describe Smallfoot, a tool for checking certain lightweight separation logic specifications. The assertions describe the shapes of data structures rather than their detailed contents, and this allows reasoning to be fully automatic. The presentation in the paper is tutorial in style. We illustrate what the tool can do via examples which are oriented toward novel aspects of separation logic, namely: avoidance of frame axioms (which say what a procedure does not change); embracement of ``dirty'' features such as memory disposal and address arithmetic; information hiding in the presence of pointers; and modular reasoning about concurrent programs.},
+  isbn = {978-3-540-36750-5},
+  keywords = {Free List,Information Hiding,Separation Logic,Symbolic Execution,Tree Predicate},
+  language = {en},
+  series = {Lecture {{Notes}} in {{Computer Science}}}
+}
+
 @inproceedings{boutinUsingReflectionBuild1997,
   title = {Using Reflection to Build Efficient and Certified Decision Procedures},
   booktitle = {Theoretical {{Aspects}} of {{Computer Software}}},
@@ -23,6 +68,38 @@
   keywords = {Computer Algebra System,Decision Procedure,Object Language,Order Theory,Reduction System},
   language = {en},
   series = {Lecture {{Notes}} in {{Computer Science}}}
+}
+
+@article{brotherstonUndecidabilityPropositionalSeparation2014,
+  title = {Undecidability of {{Propositional Separation Logic}} and {{Its Neighbours}}},
+  author = {Brotherston, James and Kanovich, Max},
+  year = {2014},
+  month = apr,
+  volume = {61},
+  pages = {14:1--14:43},
+  issn = {0004-5411},
+  doi = {10.1145/2542667},
+  abstract = {In this article, we investigate the logical structure of memory models of theoretical and practical interest. Our main interest is in ``the logic behind a fixed memory model'', rather than in ``a model of any kind behind a given logical system''. As an effective language for reasoning about such memory models, we use the formalism of separation logic. Our main result is that for any concrete choice of heap-like memory model, validity in that model is undecidable even for purely propositional formulas in this language. The main novelty of our approach to the problem is that we focus on validity in specific, concrete memory models, as opposed to validity in general classes of models. Besides its intrinsic technical interest, this result also provides new insights into the nature of their decidable fragments. In particular, we show that, in order to obtain such decidable fragments, either the formula language must be severely restricted or the valuations of propositional variables must be constrained. In addition, we show that a number of propositional systems that approximate separation logic are undecidable as well. In particular, this resolves the open problems of decidability for Boolean BI and Classical BI. Moreover, we provide one of the simplest undecidable propositional systems currently known in the literature, called ``Minimal Boolean BI'', by combining the purely positive implication-conjunction fragment of Boolean logic with the laws of multiplicative *-conjunction, its unit and its adjoint implication, originally provided by intuitionistic multiplicative linear logic. Each of these two components is individually decidable: the implication-conjunction fragment of Boolean logic is co-NP-complete, and intuitionistic multiplicative linear logic is NP-complete. All of our undecidability results are obtained by means of a direct encoding of Minsky machines.},
+  file = {/home/buzzer/.local/share/Zotero/storage/NE2ZDDNV/Brotherston and Kanovich - 2014 - Undecidability of Propositional Separation Logic a.pdf},
+  journal = {Journal of the ACM},
+  keywords = {bunched logic,memory models,Separation logic,undecidability},
+  number = {2}
+}
+
+@article{caoVSTFloydSeparationLogic2018,
+  title = {{{VST}}-{{Floyd}}: {{A Separation Logic Tool}} to {{Verify Correctness}} of {{C Programs}}},
+  shorttitle = {{{VST}}-{{Floyd}}},
+  author = {Cao, Qinxiang and Beringer, Lennart and Gruetter, Samuel and Dodds, Josiah and Appel, Andrew W.},
+  year = {2018},
+  month = jun,
+  volume = {61},
+  pages = {367--422},
+  issn = {1573-0670},
+  doi = {10.1007/s10817-018-9457-5},
+  abstract = {The Verified Software Toolchain builds foundational machine-checked proofs of the functional correctness of C programs. Its program logic, Verifiable C, is a shallowly embedded higher-order separation Hoare logic which is proved sound in Coq with respect to the operational semantics of CompCert Clight. This paper introduces VST-Floyd, a verification assistant which offers a set of semiautomatic tactics helping users build functional correctness proofs for C programs using Verifiable C.},
+  journal = {Journal of Automated Reasoning},
+  language = {en},
+  number = {1}
 }
 
 @misc{chajedLtac2Tutorial,
@@ -62,7 +139,7 @@
   issn = {0362-1340},
   doi = {10.1145/1993316.1993526},
   abstract = {Several recent projects have shown the feasibility of verifying low-level systems software. Verifications based on automated theorem-proving have omitted reasoning about first-class code pointers, which is critical for tasks like certifying implementations of threads and processes. Conversely, verifications that deal with first-class code pointers have featured long, complex, manual proofs. In this paper, we introduce the Bedrock framework, which supports mostly-automated proofs about programs with the full range of features needed to implement, e.g., language runtime systems. The heart of our approach is in mostly-automated discharge of verification conditions inspired by separation logic. Our take on separation logic is computational, in the sense that function specifications are usually written in terms of reference implementations in a purely functional language. Logical quantifiers are the most challenging feature for most automated verifiers; by relying on functional programs (written in the expressive language of the Coq proof assistant), we are able to avoid quantifiers almost entirely. This leads to some dramatic improvements compared to both past work in classical verification, which we compare against with implementations of data structures like binary search trees and hash tables; and past work in verified programming with code pointers, which we compare against with examples like function memoization and a cooperative threading library.},
-  file = {/home/buzzer/.local/share/Zotero/storage/LFV7B44B/Chlipala - Mostly-Automated Veriﬁcation of Low-Level Programs.pdf},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Chlipala/2011/Chlipala - 2011 - Mostly-automated verification of low-level program.pdf},
   journal = {ACM SIGPLAN Notices},
   keywords = {functional programming,interactive proof assistants,low-level programming languages,separation logic},
   number = {6}
@@ -90,10 +167,37 @@
   issn = {1529-3785},
   doi = {10.1145/601775.601778},
   abstract = {We consider the problem of searching for proofs in sequential presentations of logics with multiplicative (or intensional) connectives. Specifically, we start with the multiplicative fragment of linear logic and extend, on the one hand, to linear logic with its additives and, on the other, to the additives of the logic of bunched implications (BI). We give an algebraic method for calculating the distribution of the side-formul\ae{} in multiplicative rules which allows the occurrence or non-occurrence of a formula on a branch of a proof to be determined once sufficient information is available. Each formula in the conclusion of such a rule is assigned a Boolean expression. As a search proceeds, a set of Boolean constraint equations is generated. We show that a solution to such a set of equations determines a proof corresponding to the given search. We explain a range of strategies, from the lazy to the eager, for solving sets of constraint equations. We indicate how to apply our methods systematically to large family of relevant systems.},
-  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Harland/undefined/Harland - Resource-distribution via Boolean Constraints.pdf;/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Harland/undefined/Harland - Resource-distribution via Boolean Constraints2.pdf},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Harland_Pym/2003/Harland and Pym - 2003 - Resource-Distribution via Boolean Constraints.pdf;/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Harland_Pym/2003/Harland and Pym - 2003 - Resource-Distribution via Boolean Constraints2.pdf},
   journal = {ACM Trans. Comput. Logic},
   keywords = {Algebras,Boolean constraints,proof-search,relevant logics,sequent calculus,substructural logics},
   number = {1}
+}
+
+@inproceedings{ishtiaqBIAssertionLanguage2001,
+  title = {{{BI}} as an Assertion Language for Mutable Data Structures},
+  booktitle = {Proceedings of the 28th {{ACM SIGPLAN}}-{{SIGACT}} Symposium on {{Principles}} of Programming Languages},
+  author = {Ishtiaq, Samin S. and O'Hearn, Peter W.},
+  year = {2001},
+  month = jan,
+  pages = {14--26},
+  publisher = {{Association for Computing Machinery}},
+  address = {{New York, NY, USA}},
+  doi = {10.1145/360204.375719},
+  abstract = {Reynolds has developed a logic for reasoning about mutable data structures in which the pre- and postconditions are written in an intuitionistic logic enriched with a spatial form of conjunction. We investigate the approach from the point of view of the logic BI of bunched implications of O'Hearnand Pym. We begin by giving a model in which the law of the excluded middleholds, thus showing that the approach is compatible with classical logic. The relationship between the intuitionistic and classical versions of the system is established by a translation, analogous to a translation from intuitionistic logic into the modal logic S4. We also consider the question of completeness of the axioms. BI's spatial implication is used to express weakest preconditions for object-component assignments, and an axiom for allocating a cons cell is shown to be complete under an interpretation of triplesthat allows a command to be applied to states with dangling pointers. We make this latter a feature, by incorporating an operation, and axiom, for disposing of memory. Finally, we describe a local character enjoyed by specifications in the logic, and show how this enables a class of frame axioms, which say what parts of the heap don't change, to be inferred automatically.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Ishtiaq_O'Hearn/2001/Ishtiaq and O'Hearn - 2001 - BI as an assertion language for mutable data struc.pdf},
+  isbn = {978-1-58113-336-3},
+  series = {{{POPL}} '01}
+}
+
+@article{jacobsVeriFastProgramVerifier2008,
+  title = {The {{VeriFast}} Program Verifier},
+  author = {Jacobs, Bart and Piessens, Frank},
+  year = {2008},
+  month = aug,
+  publisher = {{Department of Computer Science, K.U.Leuven; Leuven, Belgium}},
+  abstract = {This note describes a separation-logic-based approach for the specification and verification of safety properties of pointer-manipulating imperative programs. The programmer may declare inductive datatypes and primitive recursive functions for specification. Verification proceeds by symbolic execution using an abstract representation of memory as a separation logic assertion. Folding or unfolding abstract predicate assertions is performed through explicit ghost statements. Lemma functions enable inductive proofs of memory representation equivalences and facts about the primitive recursive functions. An SMT solver is used to solve queries over data values; an algorithm is described that prevents non-termination of the SMT solver while enabling reduction of any ground term. Since no significant search is performed by either the verifier or the SMT solver, verification time is predictable and low.},
+  journal = {CW Reports},
+  language = {en}
 }
 
 @techreport{jones1993composing,
@@ -115,6 +219,33 @@
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Jung et al/2018/Jung et al. - 2018 - Iris from the ground up A modular foundation for .pdf},
   journal = {Journal of Functional Programming},
   language = {en}
+}
+
+@article{jungRustBeltSecuringFoundations2018,
+  ids = {jungRustBeltSecuringFoundations2017},
+  title = {{{RustBelt}}: Securing the Foundations of the Rust Programming Language},
+  shorttitle = {{{RustBelt}}},
+  author = {Jung, Ralf and Jourdan, Jacques-Henri and Krebbers, Robbert and Dreyer, Derek},
+  year = {2018},
+  month = jan,
+  volume = {2},
+  pages = {1--34},
+  issn = {2475-1421, 2475-1421},
+  doi = {10.1145/3158154},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Jung et al/2018/Jung et al. - 2018 - RustBelt securing the foundations of the rust pro.pdf;/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Jung et al/2018/Jung et al. - 2018 - RustBelt securing the foundations of the rust pro2.pdf},
+  journal = {Proceedings of the ACM on Programming Languages},
+  language = {en},
+  number = {POPL}
+}
+
+@doctoralthesis{jungUnderstandingEvolvingRust2020,
+  title = {Understanding and Evolving the Rust Programming Language},
+  author = {Jung, Ralf},
+  year = {2020},
+  publisher = {{Universit\"at des Saarlandes}},
+  address = {{Saarbr\"ucken}},
+  language = {en},
+  type = {Doctor of {{Engineering}}}
 }
 
 @article{kaiserMtac2TypedTactics2018a,
@@ -219,6 +350,24 @@
   language = {en}
 }
 
+@inproceedings{nanevskiStructuringVerificationHeapmanipulating2010,
+  ids = {nanevskiStructuringVerificationHeapManipulating},
+  title = {Structuring the Verification of Heap-Manipulating Programs},
+  booktitle = {Proceedings of the 37th Annual {{ACM SIGPLAN}}-{{SIGACT}} Symposium on {{Principles}} of Programming Languages},
+  author = {Nanevski, Aleksandar and Vafeiadis, Viktor and Berdine, Josh},
+  year = {2010},
+  month = jan,
+  pages = {261--274},
+  publisher = {{Association for Computing Machinery}},
+  address = {{New York, NY, USA}},
+  doi = {10.1145/1706299.1706331},
+  abstract = {Most systems based on separation logic consider only restricted forms of implication or non-separating conjunction, as full support for these connectives requires a non-trivial notion of variable context, inherited from the logic of bunched implications (BI). We show that in an expressive type theory such as Coq, one can avoid the intricacies of BI, and support full separation logic very efficiently, using the native structuring primitives of the type theory. Our proposal uses reflection to enable equational reasoning about heaps, and Hoare triples with binary postconditions to further facilitate it. We apply these ideas to Hoare Type Theory, to obtain a new proof technique for verification of higher-order imperative programs that is general, extendable, and supports very short proofs, even without significant use of automation by tactics. We demonstrate the usability of the technique by verifying the fast congruence closure algorithm of Nieuwenhuis and Oliveras, employed in the state-of-the-art Barcelogic SAT solver.},
+  file = {/home/buzzer/.local/share/Zotero/storage/63ZN25YW/Nanevski et al. - Structuring the Veriﬁcation of Heap-Manipulating P.pdf},
+  isbn = {978-1-60558-479-9},
+  keywords = {hoare logic,monads,separation logic,type theory},
+  series = {{{POPL}} '10}
+}
+
 @incollection{ohearnLocalReasoningPrograms2001,
   title = {Local {{Reasoning}} about {{Programs}} That {{Alter Data Structures}}},
   booktitle = {Computer {{Science Logic}}},
@@ -234,6 +383,36 @@
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/O’Hearn et al/2001/O’Hearn et al. - 2001 - Local Reasoning about Programs that Alter Data Str.pdf},
   isbn = {978-3-540-42554-0 978-3-540-44802-0},
   language = {en}
+}
+
+@article{ohearnResourcesConcurrencyLocal2007,
+  title = {Resources, Concurrency, and Local Reasoning},
+  author = {O'Hearn, Peter W.},
+  year = {2007},
+  month = apr,
+  volume = {375},
+  pages = {271--307},
+  issn = {0304-3975},
+  doi = {10.1016/j.tcs.2006.12.035},
+  abstract = {In this paper we show how a resource-oriented logic, separation logic, can be used to reason about the usage of resources in concurrent programs.},
+  journal = {Theoretical Computer Science},
+  keywords = {Concurrency,Logics of programs,Separation logic},
+  number = {1-3}
+}
+
+@article{ohearnSeparationLogic2019,
+  title = {Separation Logic},
+  author = {O'Hearn, Peter W.},
+  year = {2019},
+  month = jan,
+  volume = {62},
+  pages = {86--95},
+  issn = {0001-0782},
+  doi = {10.1145/3211968},
+  abstract = {Separation logic is a key development in formal reasoning about programs, opening up new lines of attack on longstanding problems.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/O'Hearn/2019/O'Hearn - 2019 - Separation logic.pdf;/home/buzzer/my-dir/personal/Dropbox/stuff/papers/O'Hearn/2019/O'Hearn - 2019 - Separation logic2.pdf},
+  journal = {Communications of the ACM},
+  number = {2}
 }
 
 @misc{pedrotCoqHoTTminuteTickingClockwork2016,
@@ -252,7 +431,7 @@
   author = {P{\'e}drot, Pierre-Marie},
   year = {2016},
   month = jun,
-  file = {/home/buzzer/.local/share/Zotero/storage/BILXA737/deepspec-06-16.pdf}
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pédrot/2016/Pédrot - 2016 - Towards Ltac 2.0.pdf}
 }
 
 @inproceedings{pedrotLtac2TacticalWarfare2019,
@@ -290,20 +469,30 @@
   series = {Applied {{Logic Series}}}
 }
 
+@inproceedings{reynoldsIntuitionisticReasoningShared2000,
+  title = {Intuitionistic {{Reasoning}} about {{Shared Mutable Data Structure}}},
+  booktitle = {Millennial {{Perspectives}} in {{Computer Science}}},
+  author = {Reynolds, John C.},
+  year = {2000},
+  pages = {303--321},
+  publisher = {{Palgrave}},
+  abstract = {Drawing upon early work by Burstall, we extend Hoare's approach  to proving the correctness of imperative programs, to deal with programs  that perform destructive updates to data structures containing  more than one pointer to the same location. The key concept is an  "independent conjunction" P \& Q that holds only when P and Q  are both true and depend upon distinct areas of storage. To make  this concept precise we use an intuitionistic logic of assertions, with a  Kripke semantics whose possible worlds are heaps (mapping locations  into tuples of values).},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Reynolds/2000/Reynolds - 2000 - Intuitionistic Reasoning about Shared Mutable Data.pdf;/home/buzzer/.local/share/Zotero/storage/28EWANNM/summary.html}
+}
+
 @inproceedings{reynoldsSeparationLogicLogic2002,
   title = {Separation Logic: A Logic for Shared Mutable Data Structures},
   shorttitle = {Separation Logic},
   booktitle = {Proceedings 17th {{Annual IEEE Symposium}} on {{Logic}} in {{Computer Science}}},
-  author = {Reynolds, J.C.},
+  author = {Reynolds, J. C.},
   year = {2002},
+  month = jul,
   pages = {55--74},
-  publisher = {{IEEE Comput. Soc}},
-  address = {{Copenhagen, Denmark}},
+  issn = {1043-6871},
   doi = {10.1109/LICS.2002.1029817},
-  abstract = {In joint work with Peter O'Hearn and others, based on early ideas of Burstall, we have developed an extension of Hoare logic that permits reasoning about low-level imperative programs that use shared mutable data structure.},
+  abstract = {In joint work with Peter O'Hearn and others, based on early ideas of Burstall, we have developed an extension of Hoare logic that permits reasoning about low-level imperative programs that use shared mutable data structure. The simple imperative programming language is extended with commands (not expressions) for accessing and modifying shared structures, and for explicit allocation and deallocation of storage. Assertions are extended by introducing a "separating conjunction" that asserts that its subformulas hold for disjoint parts of the heap, and a closely related "separating implication". Coupled with the inductive definition of predicates on abstract data structures, this extension permits the concise and flexible description of structures with controlled sharing. In this paper, we survey the current development of this program logic, including extensions that permit unrestricted address arithmetic, dynamically allocated arrays, and recursive procedures. We also discuss promising future directions.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Reynolds/2002/Reynolds - 2002 - Separation logic a logic for shared mutable data .pdf},
-  isbn = {978-0-7695-1483-3},
-  language = {en}
+  keywords = {address arithmetic,Arithmetic,Artificial intelligence,Bibliographies,computational complexity,Computer languages,Computer science,data structures,Data structures,formal logic,heap,Hoare logic,imperative programming language,Logic arrays,Logic programming,low-level imperative programs,program logic,Programmable logic arrays,reasoning,recursive procedures,Reflection,separation logic,shared mutable data structures}
 }
 
 @inproceedings{spiwackAbstractTypeConstructing2010,

@@ -302,3 +302,53 @@ Mtac2 tautology solver as an example of Ltac2 function
 
 * IPM tutorial
 iDestruct
+* Robbert's feedback
+** Introduction (1 page)
+1 page : motivation for separation logic, give examples of the different approaches (mostly-automated, tactic-based, etc.)
+*** Problem and approach (1.5 page)
+
+3 problems: 0.5 page per problem
+
+- Problem 1: Ltac1 has issues, there are many alternatives for new tactic languages in Coq. We will evaluate Ltac2 by reimplementing parts of MoSeL.
+- Problem 2: Split tactic in separation logic is much more complicated. We implement a better version.
+- Problem 3: Goal matching is a very important method to implement automated tactics. Currently missing in MoSeL and cannot be nicely implemented using Ltac1. We implement that in Ltac2.
+
+*** Contributions / outline (0.5 page)
+
+[keep as it's now; but make contribution 2 (chapter 4) more concrete]
+** Chapter 2: Ltac2
+*** 2.1: Ltac2 by examples
+- Use first two examples of current 2.1
+- Use other examples from 2.2
+*** 2.2 Semantics of Ltac2
+In the beginning, make clear that Ltac2 is a DSL around a monadic language in OCaml. Hence, semantics will be given in terms of a pseudo OCaml implementation 
+** Chapter 3: MoSeL
+*** 3.1 Syntax and semantics of separation logic
+- Move the syntax overview from the introduction
+- Give the basic heap model briefly
+*** 3.2 MoSeL by example
+- Show a lemma + proof + some proof states
+*** 3.3 Judgments and rules of MoSeL
+- Give the form of the judgment and explain how it corresponds to the proof state
+- Explain that tactics correspond to rules for the judgment
+- Explain that Ltac is used to apply these rules and do all kinds of bookkeeping
+- Give examples of rules
+*** 3.4 Coq part of the implementation of MoSeL
+- Basically current 3.1.2
+*** 3.5 Ltac2 part of the implementation of MoSeL
+- Basically current 3.2
+- Give the same proof as in 3.2 but in Ltac2 MoSeL
+*** 3.6 Desirable features of Ltac2
+
+** Chapter 4
+
+- Use same examples as in 3.1 and 3.5, but use the new iSplit tactic and show some of the intermediate goals.
+
+** Related work (2 pages)
+*** Other tactic languages
+  + Mtac2, Rtac, metacoq, Elphi
+*** Other approaches to separation logic automation
+  + Normalization of the goal / framing  biabdunction / logical programming in RefinedC
+*** Context splitting
+  + Harland / Pym
+  + In implementations of type systems?
