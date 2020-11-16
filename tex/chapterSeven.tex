@@ -1,7 +1,12 @@
 \chapter{Related work}
 \label{cha:related-work}
 
-
+One of the first advances on finding out what tactics can look like for separation logic was done by \citet{appel2006tactics}.
+It built on existing work which embedded separation logic in Coq and developed a set of tactics for stepping through atomic operations, assertion operations and some automation tactics, like \coqe{sep_trivial}.
+This was followed by a paper by \citet{mccreightPracticalTacticsSeparation2009}.
+It presented a comprehensible set of tactics in Coq, applied them to Cminor, a C-like intermediate language for CompCert and used them to verify a garbage collector.
+Afterwards, ``Charge!'' framework \cite{bengtsonCharge2012} developed language- and memory-model independent tactic language, also in Coq.
+It provided automation for first-order propositions in separation logic and brought tactics closer to native tactic language of Coq.
 
 \subsection{look at IPM/solving constraints related}
 
@@ -9,3 +14,22 @@
 
 compare with other tactic languages
 Mtac2 gives stronger types to tactics, what can you say about the tactics
+
+\subsection{Context management}
+\label{sec:context-management}
+
+\begin{itemize}
+\item Idris \cite{MultiplicitiesIdris2Documentation}
+\item Tag-based approaches \citet{hodasTagFrameSystemResource2002} \citet{lopezImplementingEfficientResource2004}
+  \href{http://www-cgi.cs.cmu.edu/afs/cs/user/fp/www/courses/lp/lectures/15-resources.pdf}{pfenning lectures}
+  implemented in Lolli \cite{LolliLinearLogic}
+\end{itemize}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "thesis"
+%%% TeX-parse-self: t
+%%% TeX-auto-save: t
+%%% reftex-cite-format: natbib
+%%% reftex-default-bibliography: ("/home/buzzer/my-dir/ed/uni/saar/prjcts/iris/npm/tex/TacticsProofs.bib")
+%%% End:

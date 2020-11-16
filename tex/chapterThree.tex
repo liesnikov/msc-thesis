@@ -15,10 +15,40 @@ The idea is to embed separation logic in Coq and provide necessary infrastructur
 
 The structure of the chapter is as follows:
 \begin{itemize}
-\item First we describe the embedding of logic in Coq and how MoSeL entailments correspond to the theory.
-\item Then we go into the details of the implementation of tactics and proof mode.
+\item First we describe the basics of separation logic and basic semantics.
+\item Then we cover the embedding of logic in Coq and how MoSeL entailments correspond to the theory.
+\item Afterwards we go into the details of the implementation of tactics and proof mode.
 \item Finally, we share some experiences from the translation of Ltac1 implementation to Ltac2.
 \end{itemize}
+
+\section{Separation logic as BI logic}
+\label{sec:separation-logic-intro}
+\paragraph{We will now describe the basics of the separation logic.}
+Separation logic is an extension of Hoare logic which includes several new operators, the most important two being separating conjunction \((*)\) and separating implication or ``magic wand'' \((\wand)h\).
+
+Separation logic is also built on Bunched Implications logic.
+A BI logic is a set of propositions \Prop with an entailment predicate \(\vdash\) and the following connectives:
+\begin{enumerate}
+\item embedding of ``pure'' propositions from meta-logic, which don't concern resources: \(\pure { } : \textbf{Prop} \to \Prop\)
+\item \True, neutral element for non-separating conjunction \(\wedge : \Prop \to \Prop \to \Prop\)
+\item \False, neutral element for non-separating disjunction \(\vee : \Prop \to \Prop \to \Prop\)
+\item \emp, neutral element for separating conjunction \(* : \Prop \to \Prop \to \Prop\)
+\item \(\imp\) and \(\wand\), two implication-like connectives, where only the latter is separating.
+\item quantifiers, since the logic is higher-order: \(\forall, \exists : \forall A, (A \to \Prop) \to \Prop\)
+\end{enumerate}
+
+Apart from the laws concerning neutral elements mentioned above, there are laws concerning introduction and elimination of connectives, as well as the usual properties like commutativity and associativity.
+
+The semantics for the classical separation logic \cite{reynoldsSeparationLogicLogic2002, ohearnLocalReasoningPrograms2001} describes predicates on heaps, and in that case a separating conjunction \(P * Q\) means that the heap can be divided in two heaplets, such that they don't share any memory and each one satisfies one the propositions respectively.
+Separating implication \(P \wand Q\) means that any heaplet that satisfies \(P\) also satisfies \(Q\).
+
+
+\todo{explain details of BI here}
+
+
+\subsection{Modalities}
+\label{sec:modalities-intro}
+\todo{write this}
 
 \section{MoSeL from theoretical perspective}
 \label{sec:ipm_theory}
