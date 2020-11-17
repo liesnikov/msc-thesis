@@ -385,6 +385,11 @@ Ltac2 i_intro_ident (x : ident_ltac2) :=
   or (fun () => i_intro_intuitionistic_ident x)
      (fun () => i_intro_spatial_ident x).
 
+Ltac2 i_intro_named0 (x : constr) :=
+  i_intro_ident '(INamed $x).
+
+Ltac2 Notation "i_intro_named" x(constr) := i_intro_named0 x.
+
 Ltac2 i_exact_spatial h :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>

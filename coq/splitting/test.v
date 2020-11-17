@@ -46,7 +46,7 @@ Lemma test_zero (P : PROP) (Q : PROP): ⊢ Q -∗ Q.
 Proof.
   ltac2_tactics.i_start_proof ().
   refine '(connection.from_named _ _ _).
-  i_intro_ident '(INamed "qq").
+  i_intro_named "qq".
   i_exact_spatial '(INamed "qq").
 Qed.
 
@@ -213,7 +213,7 @@ Qed.
 Lemma test_sixteen {A : Type} (P : PROP) (Φ Ψ : A → PROP) :
   P ∗ (∃ a, (Φ a) ∨ (Ψ a)) -∗ ∃ a, (P ∗ Φ a) ∨ (P ∗ Ψ a).
 Proof.
-  i_intro_ident '(INamed "H").
+  i_intro_named "H".
   i_and_destruct '(INamed "H") '(INamed "HP") '(INamed "HE").
   i_exist_destruct '(INamed "HE") as x '(INamed "HE").
   i_or_destruct '(INamed "HE") '(INamed "H1") '(INamed "H2") ;; i_exists x.

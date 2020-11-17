@@ -12,7 +12,7 @@ Import utils.Iriception utils.Misc.
 
 Set Ltac2 Backtrace.
 
-
+Ltac2 Type ident_ltac2 := Init.constr.
 Ltac2 i_fresh () := ltac1:(iFresh).
 
 (* FIXME type class resolution*)
@@ -88,6 +88,10 @@ Ltac2 i_intro_constr (x:constr) :=
        | [|- _] => ()
        end])).
 
+Ltac2 i_intro_named0 (x : ident_ltac2) :=
+  i_intro_constr '(INamed $x).
+
+Ltac2 Notation "i_intro_named" x(constr) := i_intro_named0 x.
 
 Ltac2 i_fresh_fun () :=
   i_start_proof ();
@@ -142,8 +146,8 @@ Ltac2 i_split_l_pure (hs : constr) :=
 
 Ltac2 i_split_l_named (hs : constr) :=
   failwith (i_start_proof) ("couldn't start proof in i_split_l");
-  let listed := constr:(fmap (INamed) $hs)
-  in i_split_l_pure listed.
+  let listed := constr:(fmap (INamed) $hs) in
+  i_split_l_pure listed.
 
 Ltac2 i_split_l (hs : constr) := i_split_l_named hs.
 
@@ -161,8 +165,8 @@ Ltac2 i_split_r_pure (hs : constr) :=
 
 Ltac2 i_split_r_named (hs : constr) :=
   failwith (i_start_proof) ("couldn't start proof in i_split_l");
-  let listed := constr:(fmap (INamed) $hs)
-  in i_split_r_pure listed.
+  let listed := constr:(fmap (INamed) $hs) in
+  i_split_r_pure listed.
 
 Ltac2 i_split_r (hs : constr) := i_split_r_named hs.
 
@@ -185,6 +189,48 @@ Ltac2 i_and_destruct_choice h d l :=
   | pm_reflexivity () | pm_reduce (); i_solve_tc ()
   | pm_reduce ()
   ].
+
+Ltac2 i_left () :=
+  refine '(tac_or_l _ _ _ _ _ _) > [() | () | i_solve_tc () | ()].
+
+Ltac2 i_right () :=
+  refine '(tac_or_r _ _ _ _ _ _) > [() | () | i_solve_tc () | ()].
+
+Ltac2 i_or_destruct (x : ident_ltac2)
+                    (y : ident_ltac2)
+                    (z : ident_ltac2) :=
+  refine '(tac_or_destruct _ $x _ $y $z _ _ _ _ _ _ _) >
+  [ () | () | () | ()
+  | pm_reflexivity ()
+  | i_solve_tc ()
+  | pm_reduce(); split ].
+
+Ltac2 i_exists_one (x : constr) :=
+  i_start_proof ();
+  refine '(tac_exist _ _ _ _ _) >
+  [ () | ()
+  | i_solve_tc ()
+  | exists0 true [(fun () => Std.ImplicitBindings ([x]))]].
+
+Ltac2 rec i_exists0 (x : constr list) :=
+  match x with
+  | [] => ()
+  | xh :: xs =>
+    let _ := i_exists_one xh in
+    i_exists0 xs
+  end.
+
+Ltac2 Notation "i_exists" x(list1(open_constr)) := i_exists0 x.
+
+Ltac2 i_exist_destruct0 (i : ident_ltac2) (j : ident_ltac2) (x : Std.intro_pattern) :=
+  refine '(tac_exist_destruct _ $i _ $j _ _ _ _ _ _) >
+  [ () | () | () | ()
+  | pm_reflexivity ()
+  | i_solve_tc ()
+  | intros0 false [x]; pm_reduce () ].
+
+Ltac2 Notation "i_exist_destruct" i(self) "as" x(intropattern) j(self) :=
+  i_exist_destruct0 i j x.
 
 Ltac2 i_exact h :=
   refine '(tac_assumption _ $h _ _ _ _ _ _) >

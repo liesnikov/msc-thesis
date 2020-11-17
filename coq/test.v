@@ -28,7 +28,7 @@ Context {PROP : sbi}.
 Implicit Types P Q R : PROP.
 
 
-From Local Require utils.
+From Local Require Import utils.
 Import utils.Iriception utils.Misc.
 Lemma test_iAssumption_coq_1 P Q : (⊢ Q) → <affine> P -∗ Q.
 Proof.
@@ -94,4 +94,16 @@ Ltac2 Notation "tauto" := tauto0 ().
 Goal forall Q : nat -> Prop, Q 2 -> exists (x : nat), Q (1 + x) /\ True.
 Proof.
   intros ? ?. tauto.
+Qed.
+
+
+Lemma test_sixteen {A : Type} (P : PROP) (Φ Ψ : A → PROP) :
+  P ∗ (∃ a, (Φ a) ∨ (Ψ a)) -∗ ∃ a, (P ∗ Φ a) ∨ (P ∗ Ψ a).
+Proof.
+  i_intro_named "H".
+  i_and_destruct '(INamed "H") '(INamed "HP") '(INamed "HE").
+  i_exist_destruct '(INamed "HE") as x '(INamed "HE").
+  i_or_destruct '(INamed "HE") '(INamed "H1") '(INamed "H2") ;; (i_exists x).
+  - i_left (). i_split_l '(["HP"]) ;; i_assumption ().
+  - i_right (). i_split_l '(["HP"]) ;; i_assumption ().
 Qed.
