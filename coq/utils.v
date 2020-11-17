@@ -5,7 +5,9 @@ From iris_string_ident Require ltac2_string_ident.
 
 Module Misc.
   Ltac2 Type exn ::= [ ListExn ((message option) * (exn list)) ].
-  Ltac2 or t1 t2 := Control.plus (t1) (fun e1 => Control.plus (t2) (fun e2 => Control.zero (ListExn (None, [e1 ; e2])))).
+  Ltac2 or0 msg t1 t2 := Control.plus (t1) (fun e1 => Control.plus (t2) (fun e2 => Control.zero (ListExn (msg, [e1 ; e2])))).
+  Ltac2 or t1 t2 := or0 None t1 t2.
+  Ltac2 or_msg m t1 t2 := or0 (Some m) t1 t2.
 
   Ltac2 Notation x(self) "++" y(self) := Message.concat x y.
   Ltac2 os (x:string) := Message.of_string x.
@@ -160,6 +162,8 @@ Ltac2 Notation "instantiate" "(" n(ident) ":=" t(constr) ")" :=
 Ltac2 Notation "unify" t1(constr) t2(constr) :=
   Evars.unify0 t1 t2.
 
+Ltac2 Notation t1(self) ";;" t2(thunk(self)) := t1 ; Control.enter (t2).
+
 (* Test *)
 Goal nat.
 Proof.
@@ -169,16 +173,5 @@ Proof.
   let p2 := Evars.new_evar '(nat) in
   epose (q := $p1 + $p2);
   unify (1+2) &q.
-
-  assert (exists a : nat, a = 2).
-  lazy_match! goal with
-  | [|- exists (_ : ?t), _] =>
-    let i := fresh_ident x in
-    Evars.evar0 i t;
-    exists0 true [(fun () => Std.ImplicitBindings ([Control.hyp i]))]
-  end; tauto ().
-    Evars.instantiate0 i '(2);
-  Evars.has_evar (Std.eval_red (Control.hyp i)).
-
   exact q.
 Qed.

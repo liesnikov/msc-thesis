@@ -436,7 +436,7 @@ Ltac2 i_assumption_coq () :=
     | pm_reduce (); i_solve_tc ()]
   end.
 
-Ltac2 i_assumption () :=
+Ltac2 i_assumption0 () :=
   let h := fresh () in
   let rec find p gamma g q :=
     lazy_match! g with
@@ -471,8 +471,10 @@ Ltac2 i_assumption () :=
            | i_assumption_coq ()
            | Control.zero (Iriception (os "no assumption matching " ++ oc q ++ os " was found"))]
      end
-  end.
+end.
 
+Ltac2 i_assumption () := Control.enter i_assumption0.
+      
 Ltac2 i_specialize (f : ident_ltac2) (a : ident_ltac2) (n : ident_ltac2) :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
@@ -557,15 +559,33 @@ Ltac2 i_and_destruct (x : ident_ltac2)
   | pm_reduce_force (); i_solve_tc ()
   | pm_reduce ()].
 
-Ltac2 i_and_destruct_split (x : ident_ltac2)
-                           (y : ident_ltac2)
-                           (z : ident_ltac2) :=
-  let c := new_constraint () in
+Ltac2 i_and_destruct_split0 (x : ident_ltac2)
+                            (y : ident_ltac2)
+                            (z : ident_ltac2)
+                            (c : constr) :=
   refine '(tac_and_destruct_split _ $x _ $y $z _ $c _ _ _ _ _ _ _) >
   [ () | () | () | () | ()
   | pm_reflexivity ()
   | i_solve_tc ()
   | pm_reduce () ].
+
+Ltac2 i_and_destruct_split (x : ident_ltac2)
+                           (y : ident_ltac2)
+                           (z : ident_ltac2) :=
+  let c := new_constraint () in
+  i_and_destruct_split0 x y z c.
+
+Ltac2 i_and_destruct_left (x : ident_ltac2)
+                           (y : ident_ltac2) :=
+  let c := '(true) in
+  let i := i_fresh_fun () in
+  i_and_destruct_split0 x y i c; i_cleanup ().
+
+Ltac2 i_and_destruct_right (x : ident_ltac2)
+                           (z : ident_ltac2) :=
+  let c := '(false) in
+  let i := i_fresh_fun () in
+  i_and_destruct_split0 x i z c; i_cleanup ().
 
 Ltac2 i_left () :=
   refine '(tac_or_l _ _ _ _ _ _) > [() | () | i_solve_tc () | ()].
@@ -585,8 +605,19 @@ Ltac2 i_or_destruct (x : ident_ltac2)
 Ltac2 i_exists_one (x : constr) :=
   i_start_split_proof ();
   refine '(tac_exist _ _ _ _ _) >
-  [ | | i_solve_tc ()
+  [ () | ()
+  | i_solve_tc ()
   | exists0 true [(fun () => Std.ImplicitBindings ([x]))]].
+
+Ltac2 rec i_exists0 (x : constr list) :=
+  match x with
+  | [] => ()
+  | xh :: xs =>
+    let _ := i_exists_one xh in
+    i_exists0 xs
+  end.
+
+Ltac2 Notation "i_exists" x(list1(open_constr)) := i_exists0 x.
 
 Ltac2 i_exist_destruct0 (i : ident_ltac2) (j : ident_ltac2) (x : Std.intro_pattern) :=
   refine '(splitting_tactics.tac_exist_destruct _ $i _ $j _ _ _ _ _ _) >

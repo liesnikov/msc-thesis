@@ -10,7 +10,6 @@ From Local Require Import utils.
 Import utils.Evars.
 
 Inductive Id {A} (a : A) : Type := C : Id a.
-Set Ltac2 Backtrace.
 
 
 Goal True.
@@ -198,13 +197,26 @@ Qed.
 
 Lemma test_fourteen (P : nat -> PROP) : (∃ x, P (x - 1)) ⊢ ∃ x, P (x).
   i_intro_ident '(INamed "p").
-  (i_exist_destruct '(INamed "p") as [|] '(INamed "p"));
-   Control.enter (fun () => i_exists_one '(_); i_assumption ()).
+  (i_exist_destruct '(INamed "p") as [|] '(INamed "p"));;
+  i_exists _ ;; i_assumption ().
 Qed.
 
 Lemma test_fifteen P Q :  P ∧ Q ⊢ Q ∧ P.
 Proof.
   i_intro_ident '(INamed "pq").
-  i_split (); Control.enter (fun _ =>
-    i_and_destruct_split '(INamed "pq") '(INamed "p") '(INamed "q"); i_assumption ()).
+  i_split ();;
+  i_and_destruct_split '(INamed "pq") '(INamed "p") '(INamed "q");;
+  i_assumption ().
+Qed.
+
+
+Lemma test_sixteen {A : Type} (P : PROP) (Φ Ψ : A → PROP) :
+  P ∗ (∃ a, (Φ a) ∨ (Ψ a)) -∗ ∃ a, (P ∗ Φ a) ∨ (P ∗ Ψ a).
+Proof.
+  i_intro_ident '(INamed "H").
+  i_and_destruct '(INamed "H") '(INamed "HP") '(INamed "HE").
+  i_exist_destruct '(INamed "HE") as x '(INamed "HE").
+  i_or_destruct '(INamed "HE") '(INamed "H1") '(INamed "H2") ;; i_exists x.
+  - i_left (). i_split () ;; i_assumption ().
+  - i_right (). i_split () ;; i_assumption ().
 Qed.
