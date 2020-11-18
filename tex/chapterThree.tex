@@ -83,10 +83,10 @@ Naive implementation of tactics, however, would meet a problem: Coq tactics have
 \citet{krebbersInteractiveProofsHigherorder2017} chose to restrict the context and instead of using arbitrary bunch, they propose a new entailment predicate:
 
 \[\entailsOneD Q \defeq \Sep \Pi \vdash Q\]
-where \(\SpatD\) is a list of pairs of identifiers and separation logic propositions \(\SpatD \defeq \left[H_1 : P_1, \ldots , H_n : P_n \right]\) and \(\Sep\) is an iterated separating conjunction.
+where \(\SpatD\) is a list of pairs of identifiers and separation logic propositions \(\SpatD \defeq \left[i_1 : P_1, \ldots , i_n : P_n \right]\) and \(\Sep\) is an iterated separating conjunction.
 
 If we substitute the definition of \(\SpatD\) and \(\Sep\), the entailment takes the following form:
-\[\left( \entailsOne {H_1 : P_1, \ldots , H_n : P_n} Q \right) \defeq
+\[\left( \entailsOne {i_1 : P_1, \ldots , i_n : P_n} Q \right) \defeq
   \left( P_1 * \ldots P_n \vdash Q \right)\]
 
 In fact, the definition is slightly more general, as it incorporates two contexts: \(\IntuD\) and \(\SpatD\)
@@ -129,16 +129,16 @@ Regular introduction rules don't change that much, except now the context has to
    Where \({+\hspace{-0.5em}+}\) is \coqe{append} operator for lists and \(\equiv\) is list equivalence modulo permutations.
 
    Note that intuitionistic context doesn't have to be split, since resources in it are duplicable, hence we can access them in both branches of the proof.
-\item Before we get to \coqe{assumption} tactic, let's consider \coqe{exact H}, which closes goals with assumption \coqe{H} from the context.
+\item Before we get to \coqe{assumption} tactic, let's consider \coqe{exact i}, which closes goals with assumption \coqe{i} from the context.
   The following would be a correct, but not very useful tactic:
   \begin{align*}
       \infer
         {\entailsD P}
-        {\SpatD = [H : P]}
+        {\SpatD = [i : P]}
     & \hspace{5em}
     & \infer
         {\entails {\IntuD} {[\,]} P}
-        {H : P \in \IntuD}
+        {i : P \in \IntuD}
   \end{align*}
   In the first case here there aren't any requirements for the intuitionistic context, since resources in it are affine by definition.
   This doesn't hold for spatial context in general unless the logic we're working is affine.
@@ -148,27 +148,30 @@ Regular introduction rules don't change that much, except now the context has to
   \begin{align*}
       \infer%[\textsc{tac-exact-spatial}]
         {\entailsD P}
-        {H : P \in \SpatD &
-         \SpatD \backslash (H : P) \text{ is affine}}
+        {i : P \in \SpatD &
+         \SpatD \backslash (i : P) \text{ is affine}}
     & \hspace{5em}
     & \infer%[\textsc{tac-exact-intuitionistic}]
         {\entails {\IntuD} {[\,]} P}
-        {H : P \in \IntuD &
+        {i : P \in \IntuD &
          \SpatD \text{ is affine}}
   \end{align*}
   We call a context affine if it only contains affine resources and stick to convention that in affine logic all resources are affine.
-\item Generalization of the tactic above to behave more like \coqe{assumption} is trivial -- instead of asking for a specific \(H : P\) to be in the context, we ignore identifiers entirely and the assumption becomes that there is some \(P\) in the context
+\item Generalization of the tactic above to behave more like \coqe{assumption} is trivial -- instead of asking for a specific \(i : P\) to be in the context, we ignore identifiers entirely and the assumption becomes that there is some \(P\) in the context
   \begin{align*}
       \infer%[\textsc{tac-assumption-spatial}]
         {\entailsD P}
-        {\exists H. H : P \in \SpatD &
-         \SpatD \backslash (H : P) \text{ is affine}}
+        {\exists i. i : P \in \SpatD &
+         \SpatD \backslash (i : P) \text{ is affine}}
     & \hspace{5em}
     & \infer%[\textsc{tac-assumption-spatial}]
         {\entailsD P}
         {P \in \IntuD &
          \SpatD \text{ is affine}}
   \end{align*}
+
+  The rules above are still slightly simplified, since we can ask either for context to be affine, or for the goal to be absorbing.
+  The details can be found in \citet[Section 2.3]{krebbersMoSeLGeneralExtensible2018}.
 \end{itemize}
 
 % \begin{itemize}
@@ -287,13 +290,19 @@ Inductive env (A : Type) : Type :=
 
 However, as described above MoSeL entailment predicate includes two context: spatial and intuitionistic, so we have to define another structure to include both:
 
+\begin{figure}[H]
+\centering
 \begin{coq}
 Record envs (PROP : bi) := Envs {
   env_intuitionistic : env PROP;
   env_spatial : env PROP;
   env_counter : positive (** A counter to generate fresh hypothesis names *)
 }.
-\end{coq}
+\end{coq}  
+  \caption{Definition of MoSeL environment in Coq}
+  \label{fig:coq_envs}
+\end{figure}
+
 
 Then we can define entailment predicate, which includes not only both contexts, but also a proof that identifiers in each context are unique \coqe{envs_wf $\Delta \urcorner$}.
 \begin{coq}
@@ -330,11 +339,8 @@ $\ldots$
 And modalities
 \begin{coq}
 Global Instance affinely_affine P : Affine (<affine> P).
-Global Instance affinely_if_affine p P : Affine P → Affine (<affine>?p P).
-Global Instance intuitionistically_if_affine p P : Affine P → Affine ($\intuit$?p P).
+$\ldots$
 \end{coq}
-Conditional modalities, like \coqe{<affine>?p P} are defined as \coqe{(if p then <affine> P else P)}.
-
 
 For the environment to be affine we simply require all resources in the context to be affine and declare instances for both constructors.
 \begin{coq}
@@ -440,7 +446,7 @@ Ltac2 i_assumption () :=
                                        of_constr q ++
                                        of_string " was found"))]
   end.
-\end{coq}  
+\end{coq}
 \caption{\coqe{i_assumption} definition}
 \label{fig:i-assumption-def}
 \end{figure}
@@ -470,9 +476,7 @@ Tactic Notation "iExists" uconstr(x1) "," uconstr(x2) :=
   iExists x1; iExists x2.
 Tactic Notation "iExists" uconstr(x1) "," uconstr(x2) "," uconstr(x3) :=
   iExists x1; iExists x2, x3.
-Tactic Notation "iExists" uconstr(x1) "," uconstr(x2) "," uconstr(x3) ","
-    uconstr(x4) :=
-  iExists x1; iExists x2, x3, x4.
+$\ldots$
 \end{coq}
 
 With Ltac2 we can use scopes for lists, which allow arbitrary arities.
@@ -480,7 +484,7 @@ The example above would look as follows:
 
 \begin{coq}
   Ltac2 Notation "iExists" lc(list1(thunk(seq(constr, with_bindings)), ",")) :=
-  i_exists lc.
+  i_exists$\text{~}$lc.
 \end{coq}
 
 Where \coqe{i_exists} iterates over the list and applies \coqe{iExists} to each element.

@@ -19,7 +19,31 @@ Mtac2 gives stronger types to tactics, what can you say about the tactics
 \label{sec:context-management}
 
 \begin{itemize}
+\item Harland and Pym
+
+\subsubsection{Strategies and evar instantiation}
+\label{subsubsec:strategies_and_evars}
+
+In their paper, \citet{harlandResourceDistributionBooleanConstraints2003} propose to decouple generation of equational constraints and search for their solution.
+We, on the other hand, don't generate equations at all and apply all derived unifications from generated constraints immediately.
+
+Our approach doesn't fit any of the strategies described in the paper exactly, but is closest to the ``lazy'' strategy.
+
+In the ``lazy'' strategy one branch is pursued till the maximum depth is reached, then constraints for the expressions are generated in form of equations.
+These are provided to a solver, which outputs and assignment \(I\) for variables present in the expression and the solution is propagated to other branches.
+
+``Eager distribution'' strategy requires exploring all branches until the very bottoms and only after that querying constraint solver with all equations.
+This is the only strategy that our approach doesn't accommodate at all, since we solve constraints immediately.
+
+Since Iris Proof Mode is accommodated by Coq, we get some flexibility for free, which isn't necessarily present in the strategies described above.
+In particular, since goals in Iris Proof Mode are Coq goals too, the user can jump from one goal to another at any moment, which resembles ``intermediate'' distribution.
+
+We also provide users with an ability to impose arbitrary constraints at any given moment.
+This is useful if the constraints don't necessarily enforce presence or absence of the resource, but the user doesn't want to postpone the decision of resource distribution.
+Which makes Iris Proof Mode with constraints strictly subsume regular one.
+  
 \item Idris \cite{MultiplicitiesIdris2Documentation}
+
 \item Tag-based approaches \citet{hodasTagFrameSystemResource2002} \citet{lopezImplementingEfficientResource2004}
   \href{http://www-cgi.cs.cmu.edu/afs/cs/user/fp/www/courses/lp/lectures/15-resources.pdf}{pfenning lectures}
   implemented in Lolli \cite{LolliLinearLogic}

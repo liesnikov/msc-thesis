@@ -71,7 +71,7 @@ We adapt their solution to MoSeL and create a new \coqe{iSplit} tactic, that doe
 \label{sec:goal-matching}
 
 One of the very useful tacticals of Ltac was \coqe{match goal}.
-It allows a user to match the hypothesis and the goal in the current proof state and has proven to be essential for automation tactics, i.e. it is used in \coqe{naive_solver} from stdpp~\cite{ProjectsIrisStdpp}, one of the first examples in CPDT~\cite{chlipalaCertifiedProgrammingDependent2013} and \coqe{break_match} tactic from StuctTact library~\cite{UwplseStructTact2020}.
+It allows a user to match the hypothesis and the goal in the current proof state and has proven to be essential for automation tactics, i.e.\ it is used in \coqe{naive_solver} from stdpp~\cite{std++developersandcontributorsStdpp}, one of the first examples in CPDT~\cite{chlipalaCertifiedProgrammingDependent2013} and \coqe{break_match} tactic from StuctTact library~\cite{uwplse-structtactdevelopmentteamStructTact2020}.
 \begin{coq}
 match goal with
 | [H : False |- _] => exfalso; exact H

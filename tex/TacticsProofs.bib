@@ -3,6 +3,7 @@
   title = {Tactics for Separation Logic},
   author = {Appel, Andrew W},
   year = {2006},
+  url = {https://www.cs.princeton.edu/~appel/papers/septacs.pdf},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Appel/2006/Appel - 2006 - Tactics for separation logic.pdf},
   journal = {INRIA Rocquencourt and Princeton University, Early Draft}
 }
@@ -15,6 +16,23 @@
   address = {{USA}},
   abstract = {Separation Logic is the twenty-first-century variant of Hoare Logic that permits verification of pointer-manipulating programs. This book covers practical and theoretical aspects of Separation Logic at a level accessible to beginning graduate students interested in software verification. On the practical side it offers an introduction to verification in Hoare and Separation logics, simple case studies for toy languages, and the Verifiable C program logic for the C programming language. On the theoretical side it presents separation algebras as models of separation logics; step-indexed models of higher-order logical features for higher-order programs; indirection theory for constructing step-indexed separation algebras; tree-shares as models for shared ownership; and the semantic construction (and soundness proof) of Verifiable C. In addition, the book covers several aspects of the CompCert verified C compiler, and its connection to foundationally verified software analysis tools. All constructions and proofs are made rigorous and accessible in the Coq developments of the open-source Verified Software Toolchain.},
   isbn = {978-1-107-04801-0}
+}
+
+@inproceedings{bannisterBackwardsForwardsSeparation2018,
+  title = {Backwards and {{Forwards}} with {{Separation Logic}}},
+  booktitle = {Interactive {{Theorem Proving}}},
+  author = {Bannister, Callum and H{\"o}fner, Peter and Klein, Gerwin},
+  editor = {Avigad, Jeremy and Mahboubi, Assia},
+  year = {2018},
+  pages = {68--87},
+  publisher = {{Springer International Publishing}},
+  address = {{Cham}},
+  doi = {10.1007/978-3-319-94821-8_5},
+  abstract = {The use of Hoare logic in combination with weakest preconditions and strongest postconditions is a standard tool for program verification, known as backward and forward reasoning. In this paper we extend these techniques to allow backward and forward reasoning for separation logic. While the former is derived directly from the standard operators of separation logic, the latter uses a new one. We implement our framework in the interactive proof assistant Isabelle/HOL, and enable automation with several interactive proof tactics.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Bannister et al/2018/Bannister et al. - 2018 - Backwards and Forwards with Separation Logic.pdf},
+  isbn = {978-3-319-94821-8},
+  language = {en},
+  series = {Lecture {{Notes}} in {{Computer Science}}}
 }
 
 @inproceedings{bengtsonCharge2012,
@@ -79,6 +97,8 @@
   pages = {14:1--14:43},
   issn = {0004-5411},
   doi = {10.1145/2542667},
+  url = {https://doi.org/10.1145/2542667},
+  urldate = {2020-11-06},
   abstract = {In this article, we investigate the logical structure of memory models of theoretical and practical interest. Our main interest is in ``the logic behind a fixed memory model'', rather than in ``a model of any kind behind a given logical system''. As an effective language for reasoning about such memory models, we use the formalism of separation logic. Our main result is that for any concrete choice of heap-like memory model, validity in that model is undecidable even for purely propositional formulas in this language. The main novelty of our approach to the problem is that we focus on validity in specific, concrete memory models, as opposed to validity in general classes of models. Besides its intrinsic technical interest, this result also provides new insights into the nature of their decidable fragments. In particular, we show that, in order to obtain such decidable fragments, either the formula language must be severely restricted or the valuations of propositional variables must be constrained. In addition, we show that a number of propositional systems that approximate separation logic are undecidable as well. In particular, this resolves the open problems of decidability for Boolean BI and Classical BI. Moreover, we provide one of the simplest undecidable propositional systems currently known in the literature, called ``Minimal Boolean BI'', by combining the purely positive implication-conjunction fragment of Boolean logic with the laws of multiplicative *-conjunction, its unit and its adjoint implication, originally provided by intuitionistic multiplicative linear logic. Each of these two components is individually decidable: the implication-conjunction fragment of Boolean logic is co-NP-complete, and intuitionistic multiplicative linear logic is NP-complete. All of our undecidability results are obtained by means of a direct encoding of Minsky machines.},
   file = {/home/buzzer/.local/share/Zotero/storage/NE2ZDDNV/Brotherston and Kanovich - 2014 - Undecidability of Propositional Separation Logic a.pdf},
   journal = {Journal of the ACM},
@@ -96,6 +116,8 @@
   pages = {367--422},
   issn = {1573-0670},
   doi = {10.1007/s10817-018-9457-5},
+  url = {https://doi.org/10.1007/s10817-018-9457-5},
+  urldate = {2020-11-06},
   abstract = {The Verified Software Toolchain builds foundational machine-checked proofs of the functional correctness of C programs. Its program logic, Verifiable C, is a shallowly embedded higher-order separation Hoare logic which is proved sound in Coq with respect to the operational semantics of CompCert Clight. This paper introduces VST-Floyd, a verification assistant which offers a set of semiautomatic tactics helping users build functional correctness proofs for C programs using Verifiable C.},
   journal = {Journal of Automated Reasoning},
   language = {en},
@@ -105,8 +127,8 @@
 @misc{chajedLtac2Tutorial,
   title = {An {{Ltac2}} Tutorial},
   author = {Chajed, Tej},
+  url = {https://github.com/tchajed/ltac2-tutorial/blob/master/src/ltac2_tutorial.v},
   abstract = {This tutorial aims to be pragmatic, but it is not specific to an application. The pragmatics of Ltac2 are likely to change, as the language becomes more usable. Picking an application and really trying to use Ltac2 for it is likely to uncover more tricks and bug reports necessary to make the language work.},
-  howpublished = {https://github.com/tchajed/ltac2-tutorial/blob/master/src/ltac2\_tutorial.v},
   journal = {Github},
   type = {Source File}
 }
@@ -122,11 +144,27 @@
   publisher = {{Association for Computing Machinery}},
   address = {{New York, NY, USA}},
   doi = {10.1145/2500365.2500592},
+  url = {https://doi.org/10.1145/2500365.2500592},
+  urldate = {2020-11-02},
   abstract = {We report on the design and implementation of an extensible programming language and its intrinsic support for formal verification. Our language is targeted at low-level programming of infrastructure like operating systems and runtime systems. It is based on a cross-platform core combining characteristics of assembly languages and compiler intermediate languages. From this foundation, we take literally the saying that C is a "macro assembly language": we introduce an expressive notion of certified low-level macros, sufficient to build up the usual features of C and beyond as macros with no special support in the core. Furthermore, our macros have integrated support for strongest postcondition calculation and verification condition generation, so that we can provide a high-productivity formal verification environment within Coq for programs composed from any combination of macros. Our macro interface is expressive enough to support features that low-level programs usually only access through external tools with no formal guarantees, such as declarative parsing or SQL-inspired querying. The abstraction level of these macros only imposes a compile-time cost, via the execution of functional Coq programs that compute programs in our intermediate language; but the run-time cost is not substantially greater than for more conventional C code. We describe our experiences constructing a full C-like language stack using macros, with some experiments on the verifiability and performance of individual programs running on that stack.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Chlipala/2013/Chlipala - 2013 - The bedrock structured programming system combini.pdf},
   isbn = {978-1-4503-2326-0},
   keywords = {functional programming,generative metaprogramming,interactive proof assistants,low-level programming languages},
   series = {{{ICFP}} '13}
+}
+
+@book{chlipalaCertifiedProgrammingDependent2013,
+  title = {Certified {{Programming}} with {{Dependent Types}}: {{A Pragmatic Introduction}} to the {{Coq Proof Assistant}}},
+  shorttitle = {Certified {{Programming}} with {{Dependent Types}}},
+  author = {Chlipala, Adam},
+  year = {2013},
+  month = dec,
+  publisher = {{MIT Press}},
+  abstract = {A handbook to the Coq software for writing and checking mathematical proofs, with a practical engineering focus.The technology of mechanized program verification can play a supporting role in many kinds of research projects in computer science, and related tools for formal proof-checking are seeing increasing adoption in mathematics and engineering. This book provides an introduction to the Coq software for writing and checking mathematical proofs. It takes a practical engineering focus throughout, emphasizing techniques that will help users to build, understand, and maintain large Coq developments and minimize the cost of code change over time.Two topics, rarely discussed elsewhere, are covered in detail: effective dependently typed programming (making productive use of a feature at the heart of the Coq system) and construction of domain-specific proof tactics. Almost every subject covered is also relevant to interactive computer theorem proving in general, not just program verification, demonstrated through examples of verified programs applied in many different sorts of formalizations. The book develops a unique automated proof style and applies it throughout; even experienced Coq users may benefit from reading about basic Coq concepts from this novel perspective. The book also offers a library of tactics, or programs that find proofs, designed for use with examples in the book. Readers will acquire the necessary skills to reimplement these tactics in other settings by the end of the book. All of the code appearing in the book is freely available online.},
+  googlebooks = {gevxCwAAQBAJ},
+  isbn = {978-0-262-31788-7},
+  keywords = {Computers / Programming / General},
+  language = {en}
 }
 
 @article{chlipalaMostlyautomatedVerificationLowlevel2011,
@@ -138,6 +176,8 @@
   pages = {234--245},
   issn = {0362-1340},
   doi = {10.1145/1993316.1993526},
+  url = {https://doi.org/10.1145/1993316.1993526},
+  urldate = {2020-11-02},
   abstract = {Several recent projects have shown the feasibility of verifying low-level systems software. Verifications based on automated theorem-proving have omitted reasoning about first-class code pointers, which is critical for tasks like certifying implementations of threads and processes. Conversely, verifications that deal with first-class code pointers have featured long, complex, manual proofs. In this paper, we introduce the Bedrock framework, which supports mostly-automated proofs about programs with the full range of features needed to implement, e.g., language runtime systems. The heart of our approach is in mostly-automated discharge of verification conditions inspired by separation logic. Our take on separation logic is computational, in the sense that function specifications are usually written in terms of reference implementations in a purely functional language. Logical quantifiers are the most challenging feature for most automated verifiers; by relying on functional programs (written in the expressive language of the Coq proof assistant), we are able to avoid quantifiers almost entirely. This leads to some dramatic improvements compared to both past work in classical verification, which we compare against with implementations of data structures like binary search trees and hash tables; and past work in verified programming with code pointers, which we compare against with examples like function memoization and a cooperative threading library.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Chlipala/2011/Chlipala - 2011 - Mostly-automated verification of low-level program.pdf},
   journal = {ACM SIGPLAN Notices},
@@ -152,9 +192,46 @@
   year = {2013},
   month = jul,
   doi = {10/document},
+  url = {https://hal.inria.fr/hal-00870110},
+  urldate = {2020-11-02},
   abstract = {Proof-by-reflection is a well-established technique that em- ploys decision procedures to reduce the size of proof-terms. Currently, decision procedures can be written either in Type Theory--in a purely functional way that also ensures termination-- or in an effectful program- ming language, where they are used as oracles for the certified checker. The first option offers strong correctness guarantees, while the second one permits more efficient implementations. We propose a novel technique for proof-by-reflection that marries, in Type Theory, an effectful language with (partial) proofs of correctness. The key to our approach is to use simulable monads, where a monad is simulable if, for all terminating reduction sequences in its equivalent effectful computational model, there exists a witness from which the same reduction may be simulated a posteriori by the monad. We encode several examples using simulable monads and demonstrate the advantages of the technique over previous approaches.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Claret et al/2013/Claret et al. - 2013 - Lightweight proof by reflection using a posteriori.pdf;/home/buzzer/.local/share/Zotero/storage/QB8922W7/hal-00870110.html},
   language = {en}
+}
+
+@article{dangRustBeltMeetsRelaxed2019,
+  title = {{{RustBelt}} Meets Relaxed Memory},
+  author = {Dang, Hoang-Hai and Jourdan, Jacques-Henri and Kaiser, Jan-Oliver and Dreyer, Derek},
+  year = {2019},
+  month = dec,
+  volume = {4},
+  pages = {34:1--34:29},
+  doi = {10.1145/3371102},
+  url = {https://doi.org/10.1145/3371102},
+  urldate = {2020-11-12},
+  abstract = {The Rust programming language supports safe systems programming by means of a strong ownership-tracking type system. In their prior work on RustBelt, Jung et al. began the task of setting Rust's safety claims on a more rigorous formal foundation. Specifically, they used Iris, a Coq-based separation logic framework, to build a machine-checked proof of semantic soundness for a {$\lambda$}-calculus model of Rust, as well as for a number of widely-used Rust libraries that internally employ unsafe language features. However, they also made the significant simplifying assumption that the language is sequentially consistent. In this paper, we adapt RustBelt to account for the relaxed-memory operations that concurrent Rust libraries actually use, in the process uncovering a data race in the Arc library. We focus on the most interesting technical problem: how to reason about resource reclamation under relaxed memory, using a logical construction we call synchronized ghost state.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Dang et al/2019/Dang et al. - 2019 - RustBelt meets relaxed memory.pdf},
+  journal = {Proceedings of the ACM on Programming Languages},
+  keywords = {Iris,relaxed memory models,Rust,semantic soundness},
+  number = {POPL}
+}
+
+@article{giarrussoScalaStepbystepSoundness2020,
+  title = {Scala Step-by-Step: Soundness for {{DOT}} with Step-Indexed Logical Relations in {{Iris}}},
+  shorttitle = {Scala Step-by-Step},
+  author = {Giarrusso, Paolo G. and Stefanesco, L{\'e}o and Timany, Amin and Birkedal, Lars and Krebbers, Robbert},
+  year = {2020},
+  month = aug,
+  volume = {4},
+  pages = {114:1--114:29},
+  doi = {10.1145/3408996},
+  url = {https://doi.org/10.1145/3408996},
+  urldate = {2020-11-12},
+  abstract = {The metatheory of Scala's core type system\textemdash the Dependent Object Types (DOT) calculus\textemdash is hard to extend, like the metatheory of other type systems combining subtyping and dependent types. Soundness of important Scala features therefore remains an open problem in theory and in practice. To address some of these problems, we use a semantics-first approach to develop a logical relations model for a new version of DOT, called guarded DOT (gDOT). Our logical relations model makes use of an abstract form of step-indexing, as supported by the Iris framework, to model various forms of recursion in gDOT. To demonstrate the expressiveness of gDOT, we show that it handles Scala examples that could not be handled by previous versions of DOT, and prove using our logical relations model that gDOT provides the desired data abstraction. The gDOT type system, its semantic model, its soundness proofs, and all examples in the paper have been mechanized in Coq.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Giarrusso et al/2020/Giarrusso et al. - 2020 - Scala step-by-step soundness for DOT with step-in.pdf},
+  journal = {Proceedings of the ACM on Programming Languages},
+  keywords = {Coq,data abstraction,DOT,Iris,logical relations,Scala,step-indexing,type soundness},
+  number = {ICFP}
 }
 
 @article{harlandResourceDistributionBooleanConstraints2003,
@@ -166,11 +243,47 @@
   pages = {56--90},
   issn = {1529-3785},
   doi = {10.1145/601775.601778},
+  url = {https://doi.org/10.1145/601775.601778},
   abstract = {We consider the problem of searching for proofs in sequential presentations of logics with multiplicative (or intensional) connectives. Specifically, we start with the multiplicative fragment of linear logic and extend, on the one hand, to linear logic with its additives and, on the other, to the additives of the logic of bunched implications (BI). We give an algebraic method for calculating the distribution of the side-formul\ae{} in multiplicative rules which allows the occurrence or non-occurrence of a formula on a branch of a proof to be determined once sufficient information is available. Each formula in the conclusion of such a rule is assigned a Boolean expression. As a search proceeds, a set of Boolean constraint equations is generated. We show that a solution to such a set of equations determines a proof corresponding to the given search. We explain a range of strategies, from the lazy to the eager, for solving sets of constraint equations. We indicate how to apply our methods systematically to large family of relevant systems.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Harland_Pym/2003/Harland and Pym - 2003 - Resource-Distribution via Boolean Constraints.pdf;/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Harland_Pym/2003/Harland and Pym - 2003 - Resource-Distribution via Boolean Constraints2.pdf},
   journal = {ACM Trans. Comput. Logic},
   keywords = {Algebras,Boolean constraints,proof-search,relevant logics,sequent calculus,substructural logics},
   number = {1}
+}
+
+@article{hinrichsenActrisSessiontypeBased2019,
+  title = {Actris: Session-Type Based Reasoning in Separation Logic},
+  shorttitle = {Actris},
+  author = {Hinrichsen, Jonas Kastberg and Bengtson, Jesper and Krebbers, Robbert},
+  year = {2019},
+  month = dec,
+  volume = {4},
+  pages = {6:1--6:30},
+  doi = {10.1145/3371074},
+  url = {https://doi.org/10.1145/3371074},
+  urldate = {2020-11-12},
+  abstract = {Message passing is a useful abstraction to implement concurrent programs. For real-world systems, however, it is often combined with other programming and concurrency paradigms, such as higher-order functions, mutable state, shared-memory concurrency, and locks. We present Actris: a logic for proving functional correctness of programs that use a combination of the aforementioned features. Actris combines the power of modern concurrent separation logics with a first-class protocol mechanism\textemdash based on session types\textemdash for reasoning about message passing in the presence of other concurrency paradigms. We show that Actris provides a suitable level of abstraction by proving functional correctness of a variety of examples, including a distributed merge sort, a distributed load-balancing mapper, and a variant of the map-reduce model, using relatively simple specifications. Soundness of Actris is proved using a model of its protocol mechanism in the Iris framework. We mechanised the theory of Actris, together with tactics for symbolic execution of programs, as well as all examples in the paper, in the Coq proof assistant.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Hinrichsen et al/2019/Hinrichsen et al. - 2019 - Actris session-type based reasoning in separation.pdf},
+  journal = {Proceedings of the ACM on Programming Languages},
+  keywords = {actor model,concurrency,Iris,Message passing,session types},
+  number = {POPL}
+}
+
+@inproceedings{hodasTagFrameSystemResource2002,
+  title = {A {{Tag}}-{{Frame System}} of {{Resource Management}} for {{Proof Search}} in {{Linear}}-{{Logic Programming}}},
+  booktitle = {Computer {{Science Logic}}},
+  author = {Hodas, Joshua S. and L{\'o}pez, Pablo and Polakow, Jeffrey and Stoilova, Lubomira and Pimentel, Ernesto},
+  editor = {Bradfield, Julian},
+  year = {2002},
+  pages = {167--182},
+  publisher = {{Springer}},
+  address = {{Berlin, Heidelberg}},
+  doi = {10.1007/3-540-45793-3_12},
+  abstract = {In programming languages based on linear logic, the program can grow and shrink in a nearly arbitrary manner over the course of execution. Since the introduction of the I/O model of proof search [11, 12], a number of refinements have been proposed with the intention of reducing its degree of non-determinism [3, 4, 12, 13, 14]. Unfortunately each of these systems has had some limitations. In particular, while the resource management systems of Cervesato et al. [3, 4] and the frame system of L\'opez and Pimentel [14] obtained the greatest degree of determinism, they required global operations on the set of clauses which were suitable only for interpreter-based implementations. In contrast the level-tags system of Hodas, et al. relied only on relabeling tags attached to individual formulas, and was hence appropriate as the specification of an abstract machine. However it retained more non-determinism than the resource management systems. This led to a divergence in the operational semantics of the interpreted and compiled versions of the language Lolli. In this paper we propose a tag-frame system which recaptures the behavior of the resource management systems, while being appropriate as a foundation of a compiled implementation.},
+  file = {/tmp/hodas2002.pdf},
+  isbn = {978-3-540-45793-0},
+  language = {en},
+  series = {Lecture {{Notes}} in {{Computer Science}}}
 }
 
 @inproceedings{ishtiaqBIAssertionLanguage2001,
@@ -183,6 +296,8 @@
   publisher = {{Association for Computing Machinery}},
   address = {{New York, NY, USA}},
   doi = {10.1145/360204.375719},
+  url = {https://doi.org/10.1145/360204.375719},
+  urldate = {2020-11-05},
   abstract = {Reynolds has developed a logic for reasoning about mutable data structures in which the pre- and postconditions are written in an intuitionistic logic enriched with a spatial form of conjunction. We investigate the approach from the point of view of the logic BI of bunched implications of O'Hearnand Pym. We begin by giving a model in which the law of the excluded middleholds, thus showing that the approach is compatible with classical logic. The relationship between the intuitionistic and classical versions of the system is established by a translation, analogous to a translation from intuitionistic logic into the modal logic S4. We also consider the question of completeness of the axioms. BI's spatial implication is used to express weakest preconditions for object-component assignments, and an axiom for allocating a cons cell is shown to be complete under an interpretation of triplesthat allows a command to be applied to states with dangling pointers. We make this latter a feature, by incorporating an operation, and axiom, for disposing of memory. Finally, we describe a local character enjoyed by specifications in the logic, and show how this enables a class of frame axioms, which say what parts of the heap don't change, to be inferred automatically.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Ishtiaq_O'Hearn/2001/Ishtiaq and O'Hearn - 2001 - BI as an assertion language for mutable data struc.pdf},
   isbn = {978-1-58113-336-3},
@@ -195,6 +310,8 @@
   year = {2008},
   month = aug,
   publisher = {{Department of Computer Science, K.U.Leuven; Leuven, Belgium}},
+  url = {https://lirias.kuleuven.be/1652504},
+  urldate = {2020-11-06},
   abstract = {This note describes a separation-logic-based approach for the specification and verification of safety properties of pointer-manipulating imperative programs. The programmer may declare inductive datatypes and primitive recursive functions for specification. Verification proceeds by symbolic execution using an abstract representation of memory as a separation logic assertion. Folding or unfolding abstract predicate assertions is performed through explicit ghost statements. Lemma functions enable inductive proofs of memory representation equivalences and facts about the primitive recursive functions. An SMT solver is used to solve queries over data values; an algorithm is described that prevents non-termination of the SMT solver while enabling reduction of any ground term. Since no significant search is performed by either the verifier or the SMT solver, verification time is predictable and low.},
   journal = {CW Reports},
   language = {en}
@@ -215,10 +332,30 @@
   volume = {28},
   issn = {0956-7968, 1469-7653},
   doi = {10.1017/S0956796818000151},
+  url = {https://www.cambridge.org/core/product/identifier/S0956796818000151/type/journal_article},
+  urldate = {2019-05-22},
   abstract = {Iris is a framework for higher-order concurrent separation logic, which has been implemented in the Coq proof assistant and deployed very effectively in a wide variety of verification projects. Iris was designed with the express goal of simplifying and consolidating the foundations of modern separation logics, but it has evolved over time, and the design and semantic foundations of Iris itself have yet to be fully written down and explained together properly in one place. Here, we attempt to fill this gap, presenting a reasonably complete picture of the latest version of Iris (version 3.1), from first principles and in one coherent narrative.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Jung et al/2018/Jung et al. - 2018 - Iris from the ground up A modular foundation for .pdf},
   journal = {Journal of Functional Programming},
   language = {en}
+}
+
+@article{jungRustBeltSecuringFoundations2017,
+  title = {{{RustBelt}}: Securing the Foundations of the Rust Programming Language},
+  shorttitle = {{{RustBelt}}},
+  author = {Jung, Ralf and Jourdan, Jacques-Henri and Krebbers, Robbert and Dreyer, Derek},
+  year = {2017},
+  month = dec,
+  volume = {2},
+  pages = {66:1--66:34},
+  doi = {10.1145/3158154},
+  url = {https://doi.org/10.1145/3158154},
+  urldate = {2020-11-12},
+  abstract = {Rust is a new systems programming language that promises to overcome the seemingly fundamental tradeoff between high-level safety guarantees and low-level control over resource management. Unfortunately, none of Rust's safety claims have been formally proven, and there is good reason to question whether they actually hold. Specifically, Rust employs a strong, ownership-based type system, but then extends the expressive power of this core type system through libraries that internally use unsafe features. In this paper, we give the first formal (and machine-checked) safety proof for a language representing a realistic subset of Rust. Our proof is extensible in the sense that, for each new Rust library that uses unsafe features, we can say what verification condition it must satisfy in order for it to be deemed a safe extension to the language. We have carried out this verification for some of the most important libraries that are used throughout the Rust ecosystem.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Jung et al/2017/Jung et al. - 2017 - RustBelt securing the foundations of the rust pro.pdf},
+  journal = {Proceedings of the ACM on Programming Languages},
+  keywords = {concurrency,logical relations,Rust,separation logic,type systems},
+  number = {POPL}
 }
 
 @article{jungRustBeltSecuringFoundations2018,
@@ -232,9 +369,29 @@
   pages = {1--34},
   issn = {2475-1421, 2475-1421},
   doi = {10.1145/3158154},
+  url = {http://dl.acm.org/doi/10.1145/3158154},
+  urldate = {2020-03-24},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Jung et al/2018/Jung et al. - 2018 - RustBelt securing the foundations of the rust pro.pdf;/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Jung et al/2018/Jung et al. - 2018 - RustBelt securing the foundations of the rust pro2.pdf},
   journal = {Proceedings of the ACM on Programming Languages},
   language = {en},
+  number = {POPL}
+}
+
+@article{jungStackedBorrowsAliasing2019,
+  title = {Stacked Borrows: An Aliasing Model for {{Rust}}},
+  shorttitle = {Stacked Borrows},
+  author = {Jung, Ralf and Dang, Hoang-Hai and Kang, Jeehoon and Dreyer, Derek},
+  year = {2019},
+  month = dec,
+  volume = {4},
+  pages = {41:1--41:32},
+  doi = {10.1145/3371109},
+  url = {https://doi.org/10.1145/3371109},
+  urldate = {2020-11-12},
+  abstract = {Type systems are useful not just for the safety guarantees they provide, but also for helping compilers generate more efficient code by simplifying important program analyses. In Rust, the type system imposes a strict discipline on pointer aliasing, and it is an express goal of the Rust compiler developers to make use of that alias information for the purpose of program optimizations that reorder memory accesses. The problem is that Rust also supports unsafe code, and programmers can write unsafe code that bypasses the usual compiler checks to violate the aliasing discipline. To strike a balance between optimizations and unsafe code, the language needs to provide a set of rules such that unsafe code authors can be sure, if they are following these rules, that the compiler will preserve the semantics of their code despite all the optimizations it is doing. In this work, we propose Stacked Borrows, an operational semantics for memory accesses in Rust. Stacked Borrows defines an aliasing discipline and declares programs violating it to have undefined behavior, meaning the compiler does not have to consider such programs when performing optimizations. We give formal proofs (mechanized in Coq) showing that this rules out enough programs to enable optimizations that reorder memory accesses around unknown code and function calls, based solely on intraprocedural reasoning. We also implemented this operational model in an interpreter for Rust and ran large parts of the Rust standard library test suite in the interpreter to validate that the model permits enough real-world unsafe Rust code.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Jung et al/2019/Jung et al. - 2019 - Stacked borrows an aliasing model for Rust.pdf},
+  journal = {Proceedings of the ACM on Programming Languages},
+  keywords = {alias analysis,operational semantics,program transformation,Rust},
   number = {POPL}
 }
 
@@ -244,6 +401,7 @@
   year = {2020},
   publisher = {{Universit\"at des Saarlandes}},
   address = {{Saarbr\"ucken}},
+  url = {http://dx.doi.org/10.22028/D291-31946},
   language = {en},
   type = {Doctor of {{Engineering}}}
 }
@@ -258,6 +416,8 @@
   pages = {1--31},
   issn = {2475-1421, 2475-1421},
   doi = {10.1145/3236773},
+  url = {https://dl.acm.org/doi/10.1145/3236773},
+  urldate = {2020-10-31},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Kaiser et al/2018/Kaiser et al. - 2018 - Mtac2 typed tactics for backward reasoning in Coq2.pdf},
   journal = {Proceedings of the ACM on Programming Languages},
   language = {en},
@@ -274,6 +434,8 @@
   pages = {192--203},
   issn = {0362-1340},
   doi = {10.1145/1090189.1086390},
+  url = {https://doi.org/10.1145/1090189.1086390},
+  urldate = {2020-09-10},
   abstract = {We design and implement a library for adding backtracking computations to any Haskell monad. Inspired by logic programming, our library provides, in addition to the operations required by the MonadPlus interface, constructs for fair disjunctions, fair conjunctions, conditionals, pruning, and an expressive top-level interface. Implementing these additional constructs is easy in models of backtracking based on streams, but not known to be possible in continuation-based models. We show that all these additional constructs can be generically and monadically realized using a single primitive msplit. We present two implementations of the library: one using success and failure continuations; and the other using control operators for manipulating delimited continuations.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Kiselyov et al/2005/Kiselyov et al. - 2005 - Backtracking, interleaving, and terminating monad .pdf},
   journal = {ACM SIGPLAN Notices},
@@ -300,6 +462,8 @@
   pages = {1--30},
   issn = {24751421},
   doi = {10.1145/3236772},
+  url = {http://dl.acm.org/citation.cfm?doid=3243631.3236772},
+  urldate = {2020-03-28},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Krebbers et al/2018/Krebbers et al. - 2018 - MoSeL a general, extensible modal framework for i.pdf},
   journal = {Proceedings of the ACM on Programming Languages},
   language = {en},
@@ -308,11 +472,31 @@
 
 @misc{ListTDoneRight,
   title = {{{ListT}} Done Right - {{HaskellWiki}}},
+  url = {https://wiki.haskell.org/ListT_done_right},
+  urldate = {2020-09-10},
   abstract = {The Haskell hierarchical libraries implement a ListT monad transformer. There are, however, some problems with that implementation.     ListT imposes unnecessary strictness.     ListT isn't really a monad transformer, ie. ListT m isn't always a monad for a monad m. See the \#Examples below for demonstrations of these problems.},
   file = {/home/buzzer/.local/share/Zotero/storage/6JJBPKFA/ListT_done_right.html},
-  howpublished = {https://wiki.haskell.org/ListT\_done\_right},
   journal = {HaskellWiki},
   type = {Wiki}
+}
+
+@misc{LolliLinearLogic,
+  title = {Lolli: {{A Linear Logic Programming Language}}},
+  url = {http://www.lix.polytechnique.fr/~dale/lolli/},
+  urldate = {2020-11-15},
+  file = {/home/buzzer/.local/share/Zotero/storage/GXLKNBPP/lolli.html}
+}
+
+@inproceedings{lopezImplementingEfficientResource2004,
+  title = {Implementing {{Efficient Resource Management}} for {{Linear Logic Programming}}},
+  author = {L{\'o}pez, Pablo and Polakow, Jeffrey},
+  year = {2004},
+  month = jan,
+  volume = {3452},
+  pages = {528--543},
+  doi = {10.1007/978-3-540-32275-7_35},
+  abstract = {The Tag-Frame system of resource management [1] reunited two divergent threads of linear logic programming research by achieving the efficient proof search behaviour of abstract systems, such as [2], while using a low-level tag-based approach, as in [3], suitable for specifying an abstract machine. However, Tag-Frame relies on set operations which are linear in the size of the sets, and is not as efficient, in general, as it could be. We present a new tag-based derivation system which relies solely on low-level concepts to implement efficient resource management, where most linear time operations have been replaced by constant time ones. Though motivated and informed by the Tag-Frame system, we derive our system directly from, and prove its correctness with respect to the system of Cervesato et al. [2]. An abstract machine based on the new system has been implemented by Tamura and Banbara, and its performance compared to their previous machine.},
+  file = {/home/buzzer/.local/share/Zotero/storage/QMJMIGFP/López and Polakow - 2004 - Implementing Efficient Resource Management for Lin.pdf}
 }
 
 @inproceedings{malechaExtensibleEfficientAutomation2016,
@@ -344,10 +528,19 @@
   publisher = {{Springer Berlin Heidelberg}},
   address = {{Berlin, Heidelberg}},
   doi = {10.1007/978-3-642-03359-9_24},
+  url = {http://link.springer.com/10.1007/978-3-642-03359-9_24},
+  urldate = {2020-03-29},
   abstract = {We present a comprehensive set of tactics that make it practical to use separation logic in a proof assistant. These tactics enable the verification of partial correctness properties of complex pointer-intensive programs. Our goal is to make separation logic as easy to use as the standard logic of a proof assistant. We have developed tactics for the simplification, rearranging, splitting, matching and rewriting of separation logic assertions as well as the discharging of a program verification condition using a separation logic description of the machine state. We have implemented our tactics in the Coq proof assistant, applying them to a deep embedding of Cminor, a C-like intermediate language used by Leroy's verified CompCert compiler. We have used our tactics to verify the safety and completeness of a Cheney copying garbage collector written in Cminor. Our ideas should be applicable to other substructural logics and imperative languages.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/McCreight/2009/McCreight - 2009 - Practical Tactics for Separation Logic.pdf},
   isbn = {978-3-642-03358-2 978-3-642-03359-9},
   language = {en}
+}
+
+@misc{MultiplicitiesIdris2Documentation,
+  title = {Multiplicities \textemdash{} {{Idris2}} Documentation},
+  url = {https://idris2.readthedocs.io/en/latest/tutorial/multiplicities.html},
+  urldate = {2020-11-15},
+  file = {/home/buzzer/.local/share/Zotero/storage/49IMJC2A/multiplicities.html}
 }
 
 @inproceedings{nanevskiStructuringVerificationHeapmanipulating2010,
@@ -361,6 +554,8 @@
   publisher = {{Association for Computing Machinery}},
   address = {{New York, NY, USA}},
   doi = {10.1145/1706299.1706331},
+  url = {https://doi.org/10.1145/1706299.1706331},
+  urldate = {2020-11-06},
   abstract = {Most systems based on separation logic consider only restricted forms of implication or non-separating conjunction, as full support for these connectives requires a non-trivial notion of variable context, inherited from the logic of bunched implications (BI). We show that in an expressive type theory such as Coq, one can avoid the intricacies of BI, and support full separation logic very efficiently, using the native structuring primitives of the type theory. Our proposal uses reflection to enable equational reasoning about heaps, and Hoare triples with binary postconditions to further facilitate it. We apply these ideas to Hoare Type Theory, to obtain a new proof technique for verification of higher-order imperative programs that is general, extendable, and supports very short proofs, even without significant use of automation by tactics. We demonstrate the usability of the technique by verifying the fast congruence closure algorithm of Nieuwenhuis and Oliveras, employed in the state-of-the-art Barcelogic SAT solver.},
   file = {/home/buzzer/.local/share/Zotero/storage/63ZN25YW/Nanevski et al. - Structuring the Veriﬁcation of Heap-Manipulating P.pdf},
   isbn = {978-1-60558-479-9},
@@ -379,6 +574,8 @@
   publisher = {{Springer Berlin Heidelberg}},
   address = {{Berlin, Heidelberg}},
   doi = {10.1007/3-540-44802-0_1},
+  url = {http://link.springer.com/10.1007/3-540-44802-0_1},
+  urldate = {2020-04-14},
   abstract = {We describe an extension of Hoare's logic for reasoning about programs that alter data structures. We consider a low-level storage model based on a heap with associated lookup, update, allocation and deallocation operations, and unrestricted address arithmetic. The assertion language is based on a possible worlds model of the logic of bunched implications, and includes spatial conjunction and implication connectives alongside those of classical logic. Heap operations are axiomatized using what we call the ``small axioms'', each of which mentions only those cells accessed by a particular command. Through these and a number of examples we show that the formalism supports local reasoning: A specification and proof can concentrate on only those cells in memory that a program accesses.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/O’Hearn et al/2001/O’Hearn et al. - 2001 - Local Reasoning about Programs that Alter Data Str.pdf},
   isbn = {978-3-540-42554-0 978-3-540-44802-0},
@@ -394,6 +591,8 @@
   pages = {271--307},
   issn = {0304-3975},
   doi = {10.1016/j.tcs.2006.12.035},
+  url = {https://doi.org/10.1016/j.tcs.2006.12.035},
+  urldate = {2020-11-05},
   abstract = {In this paper we show how a resource-oriented logic, separation logic, can be used to reason about the usage of resources in concurrent programs.},
   journal = {Theoretical Computer Science},
   keywords = {Concurrency,Logics of programs,Separation logic},
@@ -409,6 +608,8 @@
   pages = {86--95},
   issn = {0001-0782},
   doi = {10.1145/3211968},
+  url = {https://doi.org/10.1145/3211968},
+  urldate = {2020-11-05},
   abstract = {Separation logic is a key development in formal reasoning about programs, opening up new lines of attack on longstanding problems.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/O'Hearn/2019/O'Hearn - 2019 - Separation logic.pdf;/home/buzzer/my-dir/personal/Dropbox/stuff/papers/O'Hearn/2019/O'Hearn - 2019 - Separation logic2.pdf},
   journal = {Communications of the ACM},
@@ -420,6 +621,8 @@
   author = {P{\'e}drot, Pierre-Marie},
   year = {2016},
   month = feb,
+  url = {http://coqhott.gforge.inria.fr/blog/coq-tactic-engine/},
+  urldate = {2020-09-10},
   abstract = {This post describes the new tactic engine designed by Arnaud Spiwack which has replaced the old implementation beginning from Coq 8.5. To replace this work in its context, we first recall the history of tactics in Coq, both from the point of view of the user and the developer. There will be more OCaml code than Coq code, so please bear with me. Hopefully this will clarify things up for people outside of the c\'enacle of Coq developers, and provide hindsights into the current design choices.},
   file = {/home/buzzer/.local/share/Zotero/storage/L9QMVCYB/coq-tactic-engine.html},
   journal = {CoqHoTT-minute},
@@ -431,6 +634,8 @@
   author = {P{\'e}drot, Pierre-Marie},
   year = {2016},
   month = jun,
+  url = {https://deepspec.org/events/workshop2016/Pedrot.pdf},
+  urldate = {2020-09-10},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pédrot/2016/Pédrot - 2016 - Towards Ltac 2.0.pdf}
 }
 
@@ -441,6 +646,7 @@
   year = {2019},
   pages = {3},
   address = {{Cascais, Portugal}},
+  url = {https://popl19.sigplan.org/details/CoqPL-2019/8/Ltac2-Tactical-Warfare},
   abstract = {We present Ltac2, a proposal for the replacement of the Ltac tactic language that is shipped with Coq as the default interface to build up proofs interactively. Ltac2 is primarily motivated by two antagonistic desires, namely extending the expressivity and regularity of the historical tactic language of Coq while maintaining a strong backward compatibility. We thereafter give a bird's eye view of the features and semantics of the current state of Ltac2.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pédrot/2019/Pédrot - 2019 - Ltac2 Tactical Warfare.pdf},
   language = {en}
@@ -451,7 +657,22 @@
   author = {P{\'e}drot, Pierre-Marie},
   year = {2016},
   month = mar,
+  address = {{Inria Center in Sophia-Antipolis}},
+  url = {https://github.com/coq/coq/wiki/files/CoqIW2016/ltac-internals.pdf},
+  urldate = {2020-12-11},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pédrot/2016/Pédrot - 2016 - Ltac Internals.pdf},
+  language = {en}
+}
+
+@book{pfenningLogicProgrammingLecture2007,
+  title = {Logic Programming (Lecture Notes)},
+  author = {Pfenning, Frank},
+  year = {2007},
+  month = jan,
+  address = {{Carnegie Mellon University}},
+  url = {https://www.cs.cmu.edu/~fp/courses/lp/lectures/lp-all.pdf},
+  urldate = {2020-11-16},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pfenning/2007/Pfenning - 2007 - Logic programming.pdf},
   language = {en}
 }
 
@@ -464,6 +685,8 @@
   publisher = {{Springer Netherlands}},
   address = {{Dordrecht}},
   doi = {10.1007/978-94-017-0091-7},
+  url = {http://link.springer.com/10.1007/978-94-017-0091-7},
+  urldate = {2020-10-05},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pym/2002/Pym - 2002 - The Semantics and Proof Theory of the Logic of Bun.pdf},
   isbn = {978-90-481-6072-3 978-94-017-0091-7},
   series = {Applied {{Logic Series}}}
@@ -495,14 +718,60 @@
   keywords = {address arithmetic,Arithmetic,Artificial intelligence,Bibliographies,computational complexity,Computer languages,Computer science,data structures,Data structures,formal logic,heap,Hoare logic,imperative programming language,Logic arrays,Logic programming,low-level imperative programs,program logic,Programmable logic arrays,reasoning,recursive procedures,Reflection,separation logic,shared mutable data structures}
 }
 
+@article{ringerQEDLargeSurvey2019,
+  title = {{{QED}} at {{Large}}: {{A Survey}} of {{Engineering}} of {{Formally Verified Software}}},
+  shorttitle = {{{QED}} at {{Large}}},
+  author = {Ringer, Talia and Palmskog, Karl and Sergey, Ilya and Gligoric, Milos and Tatlock, Zachary},
+  year = {2019},
+  volume = {5},
+  pages = {102--281},
+  issn = {2325-1107, 2325-1131},
+  doi = {10.1561/2500000045},
+  url = {http://arxiv.org/abs/2003.06458},
+  urldate = {2020-11-12},
+  abstract = {Development of formal proofs of correctness of programs can increase actual and perceived reliability and facilitate better understanding of program specifications and their underlying assumptions. Tools supporting such development have been available for over 40 years, but have only recently seen wide practical use. Projects based on construction of machine-checked formal proofs are now reaching an unprecedented scale, comparable to large software projects, which leads to new challenges in proof development and maintenance. Despite its increasing importance, the field of proof engineering is seldom considered in its own right; related theories, techniques, and tools span many fields and venues. This survey of the literature presents a holistic understanding of proof engineering for program correctness, covering impact in practice, foundations, proof automation, proof organization, and practical proof development.},
+  archivePrefix = {arXiv},
+  eprint = {2003.06458},
+  eprinttype = {arxiv},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Ringer et al/2019/Ringer et al. - 2019 - QED at Large A Survey of Engineering of Formally .pdf;/home/buzzer/.local/share/Zotero/storage/8URS22FC/2003.html},
+  journal = {Foundations and Trends\textregistered{} in Programming Languages},
+  keywords = {Computer Science - Logic in Computer Science,Computer Science - Programming Languages,D.2.4,F.3.1,I.2.3},
+  number = {2-3}
+}
+
 @inproceedings{spiwackAbstractTypeConstructing2010,
   title = {An Abstract Type for Constructing Tactics in {{Coq}}},
   booktitle = {Proof {{Search}} in {{Type Theory}}},
   author = {Spiwack, Arnaud},
   year = {2010},
   month = jul,
+  url = {https://hal.inria.fr/inria-00502500},
+  urldate = {2020-09-10},
   abstract = {The Coq proof assistant is a large development, a lot of which happens to be more or less dependent on the type of tactics. To be able to perform tweaks in this type more easily in the future, we propose an API for building tactics which doesn't need to expose the type of tactics and yet has a fairly small amount of primitives. This API accompanies an entirely new implementation of the core tactic engine of Coq which aims at handling more gracefully existential variables (aka. metavariables) in proofs - like in more recent proof assistants like Matita and Agda2. We shall, then, leverage this newly acquired independence of the concrete type of tactics from the API to add backtracking abilities.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Spiwack/2010/Spiwack - 2010 - An abstract type for constructing tactics in Coq.pdf},
+  language = {en}
+}
+
+@misc{std++developersandcontributorsStdpp,
+  title = {Stdpp},
+  author = {{std++ developers and contributors}},
+  url = {https://gitlab.mpi-sws.org/iris/stdpp},
+  urldate = {2020-11-12},
+  abstract = {An extended "Standard Library" for Coq. [coqdoc]},
+  copyright = {BSD-3-Clause},
+  file = {/home/buzzer/.local/share/Zotero/storage/3U3XJ5AK/stdpp.html}
+}
+
+@misc{tassiElpiExtensionLanguage2018,
+  title = {Elpi: An Extension Language for {{Coq}} ({{Metaprogramming Coq}} in the {{Elpi $\lambda$Prolog}} Dialect)},
+  shorttitle = {Elpi},
+  author = {Tassi, Enrico},
+  year = {2018},
+  month = jan,
+  url = {https://hal.inria.fr/hal-01637063},
+  urldate = {2020-11-12},
+  abstract = {Elpi is dialect of {$\lambda$}Prolog that can be used as an extension language for Coq. It lets one define commands and tactics in a high level programming language tailored to the manipulation of syntax trees containing binders and existentially quantified meta variables.},
+  file = {/home/buzzer/.local/share/Zotero/storage/Q98U4F5C/Tassi - 2018 - Elpi an extension language for Coq (Metaprogrammi.pdf;/home/buzzer/.local/share/Zotero/storage/GILRPKAS/hal-01637063.html},
   language = {en}
 }
 
@@ -512,10 +781,24 @@
   year = {2020},
   month = jul,
   doi = {10.5281/zenodo.4021912},
+  url = {https://zenodo.org/record/4021912},
+  urldate = {2020-10-06},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/The Coq Development Team/2020/The Coq Development Team - 2020 - The Coq Proof Assistant, version 8.12.0.pdf},
   howpublished = {Zenodo},
   keywords = {formal proofs,mathematical software,proof assistant},
   language = {eng}
+}
+
+@misc{uwplse-structtactdevelopmentteamStructTact2020,
+  title = {{{StructTact}}},
+  author = {{UW PLSE - StructTact Development Team}},
+  year = {2020},
+  month = jul,
+  url = {https://github.com/uwplse/StructTact},
+  urldate = {2020-11-12},
+  abstract = {Coq utility and tactic library. Contribute to uwplse/StructTact development by creating an account on GitHub.},
+  copyright = {BSD-2-Clause License         ,                 BSD-2-Clause License},
+  keywords = {coq,coq-library,tactics}
 }
 
 @inproceedings{zilianiMtacMonadTyped2013,
@@ -528,6 +811,8 @@
   publisher = {{ACM Press}},
   address = {{Boston, Massachusetts, USA}},
   doi = {10.1145/2500365.2500579},
+  url = {http://dl.acm.org/citation.cfm?doid=2500365.2500579},
+  urldate = {2020-10-31},
   abstract = {Effective support for custom proof automation is essential for largescale interactive proof development. However, existing languages for automation via tactics either (a) provide no way to specify the behavior of tactics within the base logic of the accompanying theorem prover, or (b) rely on advanced type-theoretic machinery that is not easily integrated into established theorem provers.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Ziliani et al/2013/Ziliani et al. - 2013 - Mtac a monad for typed tactic programming in Coq.pdf},
   isbn = {978-1-4503-2326-0},
