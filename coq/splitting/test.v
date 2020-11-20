@@ -50,6 +50,7 @@ Proof.
   i_exact_spatial '(INamed "qq").
 Qed.
 
+Set Ltac2 Backtrace.
 Lemma test_one (P Q R : PROP): ⊢ (R ∗ Q) -∗ P -∗ P ∗ (Q ∗ R).
 Proof.
   i_start_split_proof ().
@@ -217,6 +218,26 @@ Proof.
   i_and_destruct '(INamed "H") '(INamed "HP") '(INamed "HE").
   i_exist_destruct '(INamed "HE") as x '(INamed "HE").
   i_or_destruct '(INamed "HE") '(INamed "H1") '(INamed "H2") ;; i_exists x.
-  - i_left (). i_split () ;; i_assumption ().
-  - i_right (). i_split () ;; i_assumption ().
+  - i_left (). i_split ().
+    + i_exact '(INamed "HP").
+    + i_cleanup (). i_assumption ().
+  - i_right (). i_split () ; i_assumption ().
+Qed.
+
+Lemma test_seventeen (P Q R T : PROP) :
+  (P ∧ Q) -∗ R -∗ T -∗ ((R ∗ Q) ∗ T).
+Proof.
+  i_intro_named "pq".
+  i_intro_named "r".
+  i_intro_named "t".
+  i_split ().
+  i_split ().
+  i_and_destruct_split '(INamed "pq") '(INamed "p") '(INamed "q").
+  i_exact '(INamed "r").
+  i_cleanup ().
+  i_and_destruct_split '(INamed "pq") '(INamed "p") '(INamed "q").
+  Focus 2.
+  i_exact '(INamed "q").
+  i_cleanup ().
+  i_assumption ().
 Qed.

@@ -9,3 +9,4 @@ splitting_imatch.v
 splitting_ltac2_tactics.v
 tactics.v
 test.v
+isolver.v

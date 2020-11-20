@@ -16,7 +16,7 @@ Proof.
   i_intro_intuitionistic_ident '(INamed "p").
   (* i_split ().*)
   iLazyMatch! goal with
-  | [h1 : <?> ?p |- _] => Message.print (oc p)
+  | [ h : _, _ : sep, _ : sep, h1 : _ |- _] => h1
   end.
 
   iMatch! goal with

@@ -53,7 +53,7 @@ Proof.
   i_intro_constr '(INamed "pq").
   i_intro_constr '(INamed "qq").
   i_and_destruct '(INamed "pq") '(INamed "p") '(INamed "q").
-  i_split_l '(["q"; "qq"]).
+  i_split_l ["q"; "qq"].
   i_assumption ().
   i_stop_proof ().
 
@@ -103,7 +103,7 @@ Proof.
   i_intro_named "H".
   i_and_destruct '(INamed "H") '(INamed "HP") '(INamed "HE").
   i_exist_destruct '(INamed "HE") as x '(INamed "HE").
-  i_or_destruct '(INamed "HE") '(INamed "H1") '(INamed "H2") ;; (i_exists x).
-  - i_left (). i_split_l '(["HP"]) ;; i_assumption ().
-  - i_right (). i_split_l '(["HP"]) ;; i_assumption ().
+  i_or_destruct '(INamed "HE") '(INamed "H1") '(INamed "H2") ;; i_exists x.
+  - i_left (). i_split_l ["HP"]. i_assumption ().
+  - i_right (). i_split_l ["HP"] ;; i_assumption ().
 Qed.

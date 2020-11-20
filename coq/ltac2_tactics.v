@@ -149,7 +149,7 @@ Ltac2 i_split_l_named (hs : constr) :=
   let listed := constr:(fmap (INamed) $hs) in
   i_split_l_pure listed.
 
-Ltac2 i_split_l (hs : constr) := i_split_l_named hs.
+Ltac2 Notation "i_split_l" hs(constr) := i_split_l_named hs.
 
 Ltac2 i_split_r_pure (hs : constr) :=
   failwith (i_start_proof) ("couldn't start proof in i_split_r");
@@ -168,7 +168,7 @@ Ltac2 i_split_r_named (hs : constr) :=
   let listed := constr:(fmap (INamed) $hs) in
   i_split_r_pure listed.
 
-Ltac2 i_split_r (hs : constr) := i_split_r_named hs.
+Ltac2 Notation "i_split_r" hs(constr) := i_split_r_named hs.
 
 Ltac2 i_and_destruct h k l :=
   refine '(tac_and_destruct _ $h _ $k $l _ _ _ _ _ _ _) >

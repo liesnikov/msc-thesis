@@ -118,6 +118,19 @@ Ltac2 rec i_match_ihyps_list
      end.
 
 Ltac2 Type ('a, 'b, 'c) trisum := [First ('a) | Second ('b) | Third ('c)].
+Ltac2 Type ('a, 'b) match_ident := [CoqId ('a) | IpmId ('b) ].
+
+Ltac2 coq_id x :=
+  match x with
+  | CoqId a => a
+  | _ => Control.zero No_value
+  end.
+
+Ltac2 ipm_id x :=
+  match x with
+  | IpmId a => a
+  | _ => Control.zero No_value
+  end.
 
 Ltac2 split_pat_list_with_sep plist :=
   let bogus := '(1) in (* placeholder constr *)
@@ -170,7 +183,8 @@ Ltac2 i_match_ihyps
          match (split_pat_list_with_sep pats) with
          | First pats =>
            (* there is just one partition, match all hypotheses *)
-           i_match_ihyps_list pats (List.append penvl senvl)
+           let (ids, bins, ctxs) := i_match_ihyps_list pats (List.append penvl senvl) in
+           (List.map (fun x => IpmId x) ids, bins, ctxs)
          | Second split_pats =>
            (* two partitions, match intuitionistic and spatial envs separately *)
            let (ppats, spats) := split_pats in
@@ -178,16 +192,28 @@ Ltac2 i_match_ihyps
              i_match_ihyps_list ppats penvl in
            let (ids2, bins2, ctxs2) :=
              i_match_ihyps_list spats senvl in
-           (List.append ids1 ('(sep) :: ids2),
+           (List.map (fun x => IpmId x) (List.append ids1 ('(sep) :: ids2)),
             List.append bins1 bins2,
             List.append ctxs1 (None :: ctxs2))
-         | Third lll =>
+         | Third coq_intuitit_spat =>
            (* three partitions, match coq env, intuitionistic and spatial envs *)
-           iriception "Not implemented"
+           let (coqp, intuitp, spatp) := coq_intuitit_spat in
+           let (ids1, ctxs1, bins1, _) :=
+             Pattern.matches_goal false coqp (Pattern.MatchPattern, pattern:(_)) in
+           let (ids2, bins2, ctxs2) :=
+             i_match_ihyps_list intuitp penvl in
+           let (ids3, bins3, ctxs3) :=
+              i_match_ihyps_list spatp senvl in
+           let coq_ids := List.map (fun x => CoqId x) (utils.Array.to_list ids1) in
+           let ipm_ids := List.map (fun x => IpmId x) (List.append ('(sep) :: ids2) ('(sep) :: ids3)) in
+           let ctxs_list := List.map (fun x => Some x) (utils.Array.to_list ctxs1) in
+           (List.append coq_ids ipm_ids,
+            List.append [bins1] (List.append bins2 bins3),
+            List.append ctxs_list (List.append (None :: ctxs2) (None::ctxs3)))
          end in
      let bins' := List.flat_map (fun x => to_list x) bins in
      let ctxs' := List.flat_map (Option.map_default (fun e => [e]) []) ctxs in
-     (of_list ids   bogus,
+     (of_list ids  (IpmId bogus),
       of_list bins' bogus,
       of_list ctxs' (Pattern.empty_context())).
 
@@ -246,6 +272,7 @@ Ltac2 i_match_goal pats :=
   interp pats.
 
 Ltac2 i_match_one_goal pats := Control.once (fun _ => i_match_goal pats).
+
 Ltac2 Notation "iMatch!" "goal" "with" m(goal_matching) "end" :=
   i_match_one_goal m.
 

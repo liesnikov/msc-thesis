@@ -111,25 +111,38 @@ Ltac2 pm_reduce_force () := pm_reduce_force0 true.
 Ltac2 pm_force_reflexivity () :=
   pm_reduce_force (); exact eq_refl.
 
+Ltac2 rec simplify_expression (e : constr) :=
+  let (old, new, c) := lazy_match! e with
+    | context c [negb true] =>
+      (Pattern.instantiate c '(negb true), Pattern.instantiate c '(false), true)
+    | context c [negb false] =>
+      (Pattern.instantiate c '(negb false), Pattern.instantiate c '(true), true)
+    | context c [andb false ?v] =>
+      (Pattern.instantiate c '(andb false $v), Pattern.instantiate c '(false), true)
+    | context c [andb ?v false] =>
+      (Pattern.instantiate c '(andb $v false), Pattern.instantiate c '(false), true)
+    | context c [andb true ?v] =>
+      (Pattern.instantiate c '(andb true $v), Pattern.instantiate c v, true)
+    | context c [andb ?v true] =>
+      (Pattern.instantiate c '(andb $v true), Pattern.instantiate c v, true)
+    | _ => (e, e, false)
+    end in
+  match c with
+  | true =>
+    ltac1:(c1 c2 |- change_no_check c1 with c2) (Ltac1.of_constr old) (Ltac1.of_constr new);
+    simplify_expression new
+  | false => ()
+  end.
+
 Ltac2 pm_prettify () :=
   let env_expressions :=
     failwith
     (fun () => lazy_match! goal with
-    | [|- context [@envs_entails _ (@Envs _ ?gp ?gs _) _]] =>
-      List.map (fun xyz => match xyz with (x,_,_) => x end)
-               (List.append (env_to_list gp) (env_to_list gs))
-    end) "coulnd't take apart env" in
-  let check_if_evals (c : coq_boolean) :=
-    let ce := Std.eval_hnf c in
-    lazy_match! ce with
-    | false => true
-    | true => true
-    | _ => false
-    end in
-  let _ :=
-    List.map (fun c => (ltac1:(c |- let c1 := (eval compute in c) in
-                                change_no_check c with c1) (Ltac1.of_constr c)))
-             (List.filter check_if_evals env_expressions) in
+      | [|- context [@envs_entails _ (@Envs _ ?gp ?gs _) _]] =>
+        List.map (fun xyz => match xyz with (x,_,_) => x end)
+                 (List.append (env_to_list gp) (env_to_list gs))
+      end) "coulnd't take apart env" in
+  List.map (simplify_expression) (env_expressions);
   ltac2_tactics.pm_prettify ().
 
 Ltac2 i_solve_tc := ltac2_tactics.i_solve_tc.
@@ -167,6 +180,10 @@ Ltac2 try_only_selected sel condition e :=
                     condition
                     (fun x => try (unify_constr_true x))
                     (fun x => try (unify_constr_false x)) e.
+
+Ltac2 try_only_selected_all condition e :=
+  try_only_selected Spatial condition e;
+  try_only_selected Intuitionistic condition e.
 
 Ltac2 ensure_selected sel condition e :=
   select_hypothesis sel
@@ -393,7 +410,7 @@ Ltac2 Notation "i_intro_named" x(constr) := i_intro_named0 x.
 Ltac2 i_exact_spatial h :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
-    only_selected Spatial (Constr.equal h) e;
+    try_only_selected Spatial (Constr.equal h) e;
     (* try to clear intuitionisctic hyps too *)
     try_only_selected Intuitionistic (fun x => false) e
   end;
@@ -448,16 +465,16 @@ Ltac2 i_assumption0 () :=
     | Esnoc ?gg (_,?j) ?pp =>
       first [ (*assert (FromAssumption $p $pp $q) as $h > [i_solve_tc ()|];*)
               match p with
-              | false => i_exact_spatial j
               | true => i_exact_intuitionistic j
+              | false => i_exact_spatial j
               end
-            | assert_as_id '($pp = False%I) h > [reflexivity];
+            | assert_as_id '($pp = False%I) h > [reflexivity| ()];
               match p with
               | true => (* means intuitionistic *)
-                only_selected Intuitionistic (Constr.equal j) gamma;
+                try_only_selected Intuitionistic (Constr.equal j) gamma;
                 try_only_selected Spatial (fun _ => false) gamma
               | false => (* means spatial *)
-                only_selected Spatial (Constr.equal j) gamma;
+                try_only_selected Spatial (Constr.equal j) gamma;
                 try_only_selected Intuitionistic (fun _ => false) gamma
               end;
               let pf := match p with true => '(true) | _ => '(false) end in
@@ -524,7 +541,7 @@ Ltac2 i_specialize_assert (f : ident_ltac2) :=
   | pm_force_reflexivity ()
   | i_solve_tc ()
   | pm_reduce (); i_solve_tc ()
-  | pm_reduce (); split > [i_cleanup ()| i_cleanup ()]].
+  | pm_reduce (); split].
 
 Ltac2 i_apply_one (h : ident_ltac2) :=
   lazy_match! goal with
@@ -558,6 +575,7 @@ Ltac2 i_apply_ident (f : ident_ltac2) :=
 Ltac2 i_and_destruct (x : ident_ltac2)
                      (y : ident_ltac2)
                      (z : ident_ltac2) :=
+  i_start_split_proof ();
   refine '(tac_and_destruct _ $x _ $y $z _ _ _ _ _ _ _ _) >
   [ () | () | () | () | ()
   | pm_reflexivity ()
