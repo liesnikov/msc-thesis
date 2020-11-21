@@ -510,6 +510,32 @@ Lemma envs_lookup_with_constr_sound Δ i p c P:
   of_envs Δ ⊢ (if c then □?p P else emp) ∗ of_envs (envs_delete true i p Δ).
 Proof. apply envs_lookup_with_constr_sound'. Qed.
 
+Lemma envs_lookup_sound_2 Δ i p P :
+  envs_wf Δ → envs_lookup_true i Δ = Some (p,P) →
+  □?p P ∗ of_envs (envs_delete true i p Δ) ⊢ of_envs Δ.
+Proof.
+  rewrite /envs_lookup !of_envs_eq=>Hwf H.
+  rewrite [⌜envs_wf Δ⌝%I]pure_True // left_id.
+  destruct Δ as [Γp Γs], (Γp !!! i) eqn:?; simplify_eq/=.
+  rewrite Heqo in H. inversion H; subst.
+  - rewrite (env_lookup_perm Γp) //= intuitionistically_and
+      and_sep_intuitionistically and_elim_r.
+    by cancel [□ P]%I.
+  - rewrite Heqo in H.
+    destruct (Γs !!! i) eqn:?; simplify_eq/=.
+    rewrite (env_lookup_perm Γs) //= and_elim_r.
+    by cancel [P].
+Qed.
+
+Lemma envs_lookup_split Δ i p P :
+  envs_lookup_true i Δ = Some (p,P) → of_envs Δ ⊢ □?p P ∗ (□?p P -∗ of_envs Δ).
+Proof.
+  intros. apply pure_elim with (envs_wf Δ).
+  { rewrite of_envs_eq. apply and_elim_l. }
+  intros. rewrite {1}envs_lookup_sound//.
+  apply sep_mono_r. apply wand_intro_l, envs_lookup_sound_2; done.
+Qed.
+
 Lemma envs_app_sound Δ Δ' p Γ :
   envs_app p Γ Δ = Some Δ' →
   of_envs Δ ⊢ (if p then □ [∧] Γ else [∗] Γ) -∗ of_envs Δ'.
