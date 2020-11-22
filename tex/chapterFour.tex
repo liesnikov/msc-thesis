@@ -96,7 +96,7 @@ The resulting system of equations allows us to conclude that \(c_1\) and \(c_3\)
 
 This gives us a total assignment: \(\set {c_1 \mapsto , c_2 \mapsto , c_3 \mapsto , c'_1 \mapsto , c'_2 \mapsto , c'_3 \mapsto }\), which means as soon as we're done with the left derivation it's clear what resources should go to the right one.
 
-\subsection{\coqe{iSplit} in action}
+\subsection{\texttt{iSplit} in action}
 \label{sec:isplit-in-action}
 
 Let's now turn to the example from the previous chapter.
@@ -942,7 +942,7 @@ We change the definition of identifier to also include counter in the named cons
 The upside of such approach is that the problem described above doesn't appear at all.
 The downside, however, is that management of non-duplication of hypothesis names is now on Ltac2, which can also complicate Coq lemmas.
 
-\section{Reflection on the use of Ltac2}
+\section{Reflection on Ltac2 usage}
 
 Ltac2 proved to be flexible and expressive enough to accommodate our development of modified proof mode for MoSeL.
 And while Ltac2 comes without a library to manage existential variables, the set of primitives provided turned out to be sufficient for us to develop our own small library for evar management.

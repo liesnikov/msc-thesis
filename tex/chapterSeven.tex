@@ -1,6 +1,8 @@
 \chapter{Related work}
 \label{cha:related-work}
 
+Let us start with a short historical account for tactics for separation logics.
+
 One of the first advances on finding out what tactics can look like for separation logic was done by \citet{appel2006tactics}.
 It built on existing work which embedded separation logic in Coq and developed a set of tactics for stepping through atomic operations, assertion operations and some automation tactics, like \coqe{sep_trivial}.
 This was followed by a paper by \citet{mccreightPracticalTacticsSeparation2009}.
@@ -8,47 +10,97 @@ It presented a comprehensible set of tactics in Coq, applied them to Cminor, a C
 Afterwards, ``Charge!'' framework \cite{bengtsonCharge2012} developed language- and memory-model independent tactic language, also in Coq.
 It provided automation for first-order propositions in separation logic and brought tactics closer to native tactic language of Coq.
 
-\subsection{look at IPM/solving constraints related}
+This was followed by VST-Floyd~\cite{caoVSTFloydSeparationLogic2018} and MoSeL\cite{krebbersInteractiveProofsHigherorder2017, krebbersMoSeLGeneralExtensible2018}, both of which we covered briefly in the introduction.
+This thesis was built on MoSeL and followed its design choices closely, where possible, to ensure both continuity and integration into existing infrastructure.
 
-\subsection{programmable tactics}
-
-compare with other tactic languages
-Mtac2 gives stronger types to tactics, what can you say about the tactics
-
-\subsection{Context management}
-\label{sec:context-management}
-
+Now we proceed with discussion of work related to the contributions of the thesis.
+There are three key points which we are going to discuss.
 \begin{itemize}
-\item Harland and Pym
-
-\subsubsection{Strategies and evar instantiation}
-\label{subsubsec:strategies_and_evars}
-
-In their paper, \citet{harlandResourceDistributionBooleanConstraints2003} propose to decouple generation of equational constraints and search for their solution.
-We, on the other hand, don't generate equations at all and apply all derived unifications from generated constraints immediately.
-
-Our approach doesn't fit any of the strategies described in the paper exactly, but is closest to the ``lazy'' strategy.
-
-In the ``lazy'' strategy one branch is pursued till the maximum depth is reached, then constraints for the expressions are generated in form of equations.
-These are provided to a solver, which outputs and assignment \(I\) for variables present in the expression and the solution is propagated to other branches.
-
-``Eager distribution'' strategy requires exploring all branches until the very bottoms and only after that querying constraint solver with all equations.
-This is the only strategy that our approach doesn't accommodate at all, since we solve constraints immediately.
-
-Since Iris Proof Mode is accommodated by Coq, we get some flexibility for free, which isn't necessarily present in the strategies described above.
-In particular, since goals in Iris Proof Mode are Coq goals too, the user can jump from one goal to another at any moment, which resembles ``intermediate'' distribution.
-
-We also provide users with an ability to impose arbitrary constraints at any given moment.
-This is useful if the constraints don't necessarily enforce presence or absence of the resource, but the user doesn't want to postpone the decision of resource distribution.
-Which makes Iris Proof Mode with constraints strictly subsume regular one.
-  
-\item Idris \cite{MultiplicitiesIdris2Documentation}
-
-\item Tag-based approaches \citet{hodasTagFrameSystemResource2002} \citet{lopezImplementingEfficientResource2004}
-  \href{http://www-cgi.cs.cmu.edu/afs/cs/user/fp/www/courses/lp/lectures/15-resources.pdf}{pfenning lectures}
-  implemented in Lolli \cite{LolliLinearLogic}
+\item How did the language choice impact us for the purposes of this thesis?
+\item What are other approaches to resource management and resource distribution problem?
+\item How does our approach to automation compare to existing work?
 \end{itemize}
 
+\section{Other tactic languages}
+\label{sec:other-tact-lang}
+
+\begin{itemize}
+\item Mtac2~\cite{kaiserMtac2TypedTactics2018a} is tactic language, which focuses on stronger types for meta-programs and features support for backwards-style reasoning.
+  Fortunately, Mtac2 paper~\cite{kaiserMtac2TypedTactics2018a} features a reimplementation of some Iris Proof Mode tactics as a case-study.
+  Mtac2 is able to provide some benefits, which are unique to it.
+  In particular, Ltac2 does not ensure that goal type and lemma types match, likewise it doesn't help with ``lemma-argument'' mismatch and ``subgoal-tactic'' mismatch problems (names are from the Mtac2 paper~\cite[Section~5.4]{kaiserMtac2TypedTactics2018a}).
+  And this problems are not only not aided by Ltac2, they stay precisely the same, as they were for Ltac1, since Ltac2 does feature type system, but it is too weak to capture Coq goals.
+  However, Ltac2 is able to aid ``non-modular error handling'' problem, which me praise Ltac2 for in the relevant chapter~\ref{sec:impr-from-transl}.
+
+  From the above it might seem like Ltac2 pales in comparison to Mtac2, but typed tactics come at a cost.
+  And while Mtac2 claims that extra work required is quickly amortized, in our development the problems Mtac2 aims to solve were only minor annoyances and the backtracking constructs and notation capabilities of Ltac2 turned out to be invaluable, while they aren't available in Mtac2.
+\item MetaCoq~\cite{sozeauMetaCoqProject2020} is framework for certified meta-programming inside Coq.
+  MetaCoq's focus isn't placed on tactic languages, but since it features the generation of proof terms, it can be used as one (e.g.\ see reimplementation of \coqe{tauto}~\cite[Section~4.2]{sozeauMetaCoqProject2020}).
+  The biggest advantage of using MetaCoq as a tactic language is full access to the raw terms of Coq, which means that with enough work put in, it is possible to program practically any tactic.
+  However, MetaCoq doesn't interface with existing tactics and has unification algorithm yet to be implemented.
+  This makes endeavors such as reimplementation of MoSeL in MetaCoq infeasible for us, since unlike the example presented in the paper, we have to rely on many existing tactics with MoSeL.
+\item Rtac~\cite{malechaExtensibleEfficientAutomation2016} is a tactic language that is build around the idea of computational reflection.
+  Rtac provides the user with ability to create automation tactics, that can be proven sound in a straightforward way, while also featuring superb performance compared to Ltac.
+  And while this could be utilized to implement solver like \coqe{i_solver}, Rtac is missing several critical for our implementation features, like constructs to work with existential variables, that lie at the heart of the new implementation of MoSeL or, again, notational machinery.
+\item The last tactic language we consider is Elphi~\cite{tassiElpiExtensionLanguage2018}.
+  It supports advanced logical programming, transformations of Coq terms and even gives an example of pattern-matching goals.
+  But it doesn't provide support for existential variables, which seem to be the solution for resource distribution and has a downside of being completely different syntactically and semantically, which serves as a handicap for user-developed automation.
+\end{itemize}
+
+\section{Resource managment and distribution}
+\label{sec:reso-managm-distr}
+We based our solution on the one developed by~\citet{harlandResourceDistributionBooleanConstraints2003}.
+However, there are significant differences in our approach, which we will discuss now.
+But, equally importantly, introduction of Boolean constraints to the logic is not the only solution to resource managment problem, so we give an overview of other existing solutions.
+
+\begin{itemize}
+\item In the implementation of the new proof mode for MoSeL, we mostly followed the rules presented in ``Resource-Distribution via Boolean Constraints''~\cite{harlandResourceDistributionBooleanConstraints2003}.
+  The paper also presents strategies to solve imposed constraints and their solution is based on decoupling generation of equational constraints and search for their solution.
+  We previously mentioned that our approach doesn't consider equations at all and operates on one expression at a time instead the moment new information about the resource is available, but it can still be cast as a strategy to solve constraints in terms for the original paper.
+   It doesn't fit in any of the strategies described in the paper exactly, but is closest to the ``lazy'' strategy.
+  In the ``lazy'' strategy one branch is pursued till the maximum depth is reached, then constraints for the expressions are generated in form of equations.
+These are provided to a solver, which outputs and assignment for variables present in the expression and the solution is propagated to other branches.
+
+  ``Eager distribution'' strategy requires exploring all branches until the very bottoms and only after that querying constraint solver with all equations.
+  This is the only strategy that our approach doesn't accommodate at all, since we solve constraints immediately.
+
+  Since MoSeL is implemented in Coq, we also get some flexibility for free, which isn't necessarily present in the strategies described in the paper.
+  In particular, since goals in Iris Proof Mode are Coq goals too, the user can jump from one goal to another at any moment, which resembles ``intermediate'' distribution.
+\item One alternative to Boolean-expression resembles ``continuation-style'' environments, which we described in section~\ref{subsec:environments}.
+  This approach is described in the lecture notes by~\citet{pfenningLogicProgrammingLecture2007} and is implemented in Lolli~\cite{LolliLinearLogic}.
+  The idea is to track used resources in one branch and then discard them once proof enters the other branch.
+  In order to ensure efficiency this approach has been subsumed by ``tag frames''\cite{hodasTagFrameSystemResource2002, lopezImplementingEfficientResource2004}.
+  However, while such approach is more efficient it is also less general, since it requires ones to use depth-first search (or ``lazy'' strategy, in terms of \citet{harlandResourceDistributionBooleanConstraints2003}).
+  And besides, as we mentioned earlier~\ref{subsec:environments}, such approach would be unfit for implementation in MoSeL due to higher-order nature of the logic.
+\item While the last comparison is not strictly related to separation logic, a very similar problem to resource distribution is encountered in languages with linear type systems and multiplicities.
+  In particular, Idris 2 (\cite{MultiplicitiesIdris2Documentation}) builds on quantitative type theory and therefore has to track argument usage.
+  The mechanism is based on count appearance in proof terms.
+  Moreover, as any transformation of an argument will necessarily appear in the proof term, and therefore counts as usage, there is no need for more complex rules that try to preserve both the original resources and transformed ones.
+  Developers of the language also have an advantage of working directly with the core representation of the language, which means they don't encounter problems with information access limitation, as we did in section~\ref{subsec:hanging-obligations}.
+\end{itemize}
+
+\section{Existing approaches to automation}
+\label{sec:exist-appr-autom}
+
+The development of the new \coqe{iSplit} tactic and \coqe{iMatch} can be seen within a bigger strive for automation of MoSeL.
+In this section we compare our approach to the existing developments.
+
+\begin{itemize}
+\item Perhaps, the easiest to compare to is RefinedC~\cite{sammlerRefinedCExtensibleRefinement2020}, since it also builds on Iris.
+  RefinedC is able to achieve fully automatic proofs through the combination of carefully restricting the logic it operates and designing a procedure, which is able to solve precisely this subset.
+  Their approach is goal-directed and they solve the problems connected to magic wand \(\wand\) and separating conjunction \(*\) by requiring the left sides of the connectives to be more restricted and ``smaller'' than the general class of propositions.
+  Concretely, this ``smaller'' class only contains pure propositions, atomic goals, separating conjunctions and existentials.
+  This gives them ability to inspect the goal and infer from it what resources, should be attributed to the left branch of the proof.
+  Unfortunately for us, this approach only works for their subset -- we can not hope to design similar procedure for separation logic in general.
+\item As mentioned in the introduction, the other major contribution to tactic-based interactive proofs developed in last several years is VST-Floyd~\cite{caoVSTFloydSeparationLogic2018}.
+  They are able to implement support for significantly automated forward-style proofs, which rely on symbolic execution of the programs proven correct using different techniques, such as framing, utilizing weak form of abduction.
+  They also present an automation tactic, called \coqe{entailer}, which aims to prove or simplify the goal while not producing unprovable goals.
+  Its implementation to a big extent relies on the fact that goals are kept normalized and framing techniques and heuristics written as hints for for automation tactics.
+  Framing, however, is already supported in MoSeL and canonical forms of goals in MoSeL are not restrictive enough for the kinds of automation that VST-Floyd performs.
+  As far as we can tell, VST-Floyd doesn't focus on resource distribution problem and instead relies on framing, which, as they say themselves ``is not always the right tactic'', even though it is quite effective in most of the cases.
+\item Finally, Bedrock~\cite{chlipalaMostlyautomatedVerificationLowlevel2011, chlipalaBedrockStructuredProgramming2013} provides support for mostly automated proofs, where the user is expected to write helper lemmas, but they mostly don't concern the code itself aesnd rather focus on the data structures.
+  However, as with other approaches, one of the keys to automation turns out to be restriction of the logic, as it supports higher-order logic only with respect to the pointers that can store programs and not in the Iris sense.
+\end{itemize}
 %%% Local Variables:
 %%% mode: latex
 %%% TeX-master: "thesis"

@@ -1,17 +1,10 @@
-\chapter{Reimplementation of IPM in Ltac2}
+\chapter{Reimplementation of MoSeL in Ltac2}
 \label{chap:reimplementation_ipm}
 
-In the previous two chapters we covered both basics of separation logic and one of the tactic languages of Coq -- Ltac2.
-This chapter is, to some extent, combining these two parts: we explain details of the implementation of Iris Proof Mode in Coq.
-
-The original implementation of Iris Proof Mode is due to
-\citet{krebbersInteractiveProofsHigherorder2017}.
+The original implementation of Iris Proof Mode is due to \citet{krebbersInteractiveProofsHigherorder2017}.
 It was later extended to MoSeL by \citet{krebbersMoSeLGeneralExtensible2018}, a general framework for modal separation logics in Coq.
-This thesis builds on MoSeL and follows both its ideas and implementation closely.
-However, while the original work was done using Ltac1, here we present a translation to Ltac2.
-
-MoSeL itself, as evident from the title of the original paper, is a framework for separtion logic in Coq, which allows for easier formally verified proofs.
-The idea is to embed separation logic in Coq and provide necessary infrastructure for a user to apply their intuitions and skills with tactics.
+However, while the original work was done using Ltac1, here we present a translation of MoSeL to Ltac2.
+In the translation we follow both its ideas and implementation closely.
 
 The structure of the chapter is as follows:
 \begin{itemize}
@@ -21,38 +14,208 @@ The structure of the chapter is as follows:
 \item Finally, we share some experiences from the translation of Ltac1 implementation to Ltac2.
 \end{itemize}
 
-\section{Separation logic as BI logic}
+\section{Introduction to separation logic}
 \label{sec:separation-logic-intro}
-\paragraph{We will now describe the basics of the separation logic.}
-Separation logic is an extension of Hoare logic which includes several new operators, the most important two being separating conjunction \((*)\) and separating implication or ``magic wand'' \((\wand)h\).
 
+We will now describe the basics of the separation logic.
+Separation logic is an extension of Hoare logic which includes several new operators, the most important two being separating conjunction \((*)\) and separating implication or ``magic wand'' \((\wand)\).
 Separation logic is also built on Bunched Implications logic.
+
 A BI logic is a set of propositions \Prop with an entailment predicate \(\vdash\) and the following connectives:
 \begin{enumerate}
 \item embedding of ``pure'' propositions from meta-logic, which don't concern resources: \(\pure { } : \textbf{Prop} \to \Prop\)
-\item \True, neutral element for non-separating conjunction \(\wedge : \Prop \to \Prop \to \Prop\)
-\item \False, neutral element for non-separating disjunction \(\vee : \Prop \to \Prop \to \Prop\)
-\item \emp, neutral element for separating conjunction \(* : \Prop \to \Prop \to \Prop\)
+\item \True, a neutral element for non-separating conjunction \(\wedge : \Prop \to \Prop \to \Prop\)
+\item \False, a neutral element for non-separating disjunction \(\vee : \Prop \to \Prop \to \Prop\)
+\item \emp, a neutral element for separating conjunction \(* : \Prop \to \Prop \to \Prop\)
 \item \(\imp\) and \(\wand\), two implication-like connectives, where only the latter is separating.
 \item quantifiers, since the logic is higher-order: \(\forall, \exists : \forall A, (A \to \Prop) \to \Prop\)
 \end{enumerate}
 
 Apart from the laws concerning neutral elements mentioned above, there are laws concerning introduction and elimination of connectives, as well as the usual properties like commutativity and associativity.
 
-The semantics for the classical separation logic \cite{reynoldsSeparationLogicLogic2002, ohearnLocalReasoningPrograms2001} describes predicates on heaps, and in that case a separating conjunction \(P * Q\) means that the heap can be divided in two heaplets, such that they don't share any memory and each one satisfies one the propositions respectively.
+The connectives that differentiate BI logic from regular one are separating conjunction (\(*\)) and magic wand (\(\wand\)).
+Intuition behind BI logic is somewhat simpler to understand by example.
+In classical separation logic \cite{reynoldsSeparationLogicLogic2002, ohearnLocalReasoningPrograms2001}, a prototypical instance of a BI logic, propositions predicates on memory heaps.
+In that case a separating conjunction \(P \ast Q\) means that the heap can be divided in two heaplets, such that they don't share any memory and each one satisfies one the propositions respectively.
 Separating implication \(P \wand Q\) means that any heaplet that satisfies \(P\) also satisfies \(Q\).
+Lastly, the neutral element \emp simply means that a heaplet is empty.
+Non-separating conjunction \(P \wedge Q \)in that case means that the heaplet satisfies both \(P\) and \(Q\) simultaneously.
+
+Entailment predicate for BI takes a ``bunch'' for the context and a proposition for the goal.
+Bunches can be formed by two connectives -- ``additive'', which is represented as a semincolon, and ``multiplicative'', which is represented by a comma.
+The bunches are introduced by the following two introduction rules:
+\begin{equation*}
+  \infer[\imp R]
+        {\Gamma \vdash P \imp Q}
+        {\Gamma ; P \vdash Q}
+  \quad \quad
+  \infer[\wand R]
+        {\Gamma \vdash P \wand Q}
+        {\Gamma , P \vdash Q}
+\end{equation*}
+Intuitively, additive bunch corresponds to the non-separating conjunction, while the multiplicative bunch -- to the separating one, respectively.
+\begin{equation*}
+  \infer{P \wedge Q \vdash R}
+        {P ; Q \vdash R}
+  \quad \quad
+  \infer{P \ast Q \vdash R}
+        {P, Q \vdash R}
+\end{equation*}
+The important distinction, however, is that additive bunches admit the rules of Weakening and Contraction, while in classical BI multiplicative bunches do not.
+This is also reflected by the introduction rules for conjunctions:
+\begin{equation*}
+  \infer[\wedge R]
+        {\Gamma \vdash P \wedge Q}
+        {\Gamma \vdash P &
+         \Gamma \vdash Q }
+  \quad \quad
+  \infer[\ast R]
+        {\Gamma, \Delta \vdash P \ast Q}
+        {\Gamma \vdash P &
+         \Delta \vdash Q }
+\end{equation*}
+
+For more careful treatment of BI logic the user is referred to the original works \cite{ohearnLogicBunchedImplications1999, pymSemanticsProofTheory2002a}.
+We are, however, more interested in the separation logic, which uses BI logic to describe programs.
+
+\paragraph{Classical separation logic.}
+We mentioned it as an intuitive explanation behind BI logic and we describe it slightly more detailed.
+In classical separation logic \cite{ohearnLocalReasoningPrograms2001, reynoldsSeparationLogicLogic2002}, propositions are predicates over memory heaps, so we take memory to be a map from locations to values: \(\sigma \in \textit{State} \delequal \mathbb{N} \xrightarrow[]{\text{fin}} Val\) and then propositions are modeled as \(P \in \Prop \delequal \textit{State} \imp \textbf{Prop}\).
+
+The connectives are then defined in such a way to preserve these semantics:
+\begin{itemize}
+\item \(\emp \delequal \lambda \sigma. \sigma = \emptyset\)
+\item \(\l \mapsto v \delequal \lambda \sigma. \sigma = [l \leftarrow v]\)
+\item \(P \wedge Q \delequal \lambda \sigma. P (\sigma) \wedge Q (\sigma)\)
+\item \(P \ast Q \delequal \exists \sigma_1, \sigma_2. \sigma = \sigma_1 \uplus \sigma_2 \wedge P(\sigma_1) \wedge Q(\sigma_2)\)
+\end{itemize}
+
+\paragraph{Intuitionistic separation logic.}
+Another canonical instance of BI logic is intuitionistic separation logic \cite{reynoldsIntuitionisticReasoningShared2000}.
+Unlike in classical SL, here propositions are modeled by predicates, which are monotone with respect to inclusion order \(\subseteq\) on heaps and implications in \textbf{Prop}.
+To reflect this, definitions of connectives has to be changed:
+\begin{itemize}
+\item \(\emp \delequal \lambda \sigma. \True \)
+\item \(\l \mapsto v \delequal \lambda \sigma. [l \leftarrow v] \subseteq \sigma \)
+\end{itemize}
+
+Intuitionistic logics are better suited for reasoning about programs with garbage collection, since, due to monotonicity, they allow us to ``forget'' about some parts of the memory: \(l \mapsto v \ast P \vdash P\), for any \(P\).
+
+\paragraph{Affine logics.}
+This ability to ``forget'' can also be expressed in the BI logics directly.
+There, it corresponds to the presence of weakening rule for multiplicative bunches.
+Logics, which admit such a rule are called \emph{affine}.
+The inclusion of this rule can also be expressed as an axiom.
+\[\infer{P \ast Q\vdash Q}{}\]
+Intuitionistic separation logic is an affine BI, while classical is not.
+However, classical logic can contain resources, which can still be ``dropped''.
+They are called affine too and the simplest example of such a resource is \emp.
+
+\paragraph{Modalities}
+MoSeL also features support for modalities in BI logic, but as we are not going to use them in an advanced way, we will describe them briefly when they appear.
+
+\section{MoSeL by example}
+\label{sec:mosel-example}
+
+We shall now show what proofs in MoSeL look like.
+Consider the following entailment:
+\(P \ast (\exists a. (\Phi a) \vee (\Psi a)) \wand \exists a, (P \ast \Phi a) \vee (P \ast \Psi a)\) from the original MoSeL paper\cite{krebbersMoSeLGeneralExtensible2018}.
+
+\begin{coq}
+Lemma example {A : Type} (P : PROP) (Phi Psi : A → PROP) :
+  P * (exists a, (Phi a) \/ (Psi a)) -* exists a, (P * Phi a) \/ (P * Psi a).
+\end{coq}
+
+This proof is done using Ltac1 tactics, at the end of this chapter we are going to show what it looks like in our implementation (full script is in figure~\ref{fig:mosel-example-full}).
+As the goal starts with an implication, we can use \coqe{iIntros} tactic, which is a separation-logic alternative to \coqe{intros}.
+Intuitively, we use some form of a rule for introduction of magic wand \(\wand R\).
+MoSeL supports intropatterns, which allow us to destruct introduced hypotheses on the fly, so we are going to utilize them.
+So, after the command \coqe{iIntros "[HP H]"} proof state becomes the following:
+
+\begin{minipage}[t]{\linewidth}
+\texttt{"HP" : P\\
+"H" : \(\exists\) a : A. \((\Phi a)\) \(\vee\) \((\Psi a)\)\\
+------------------------------*\\
+\(\exists\) a : A, P * \(\Phi a\) \(\vee\) P * \(\Psi a\)}
+\end{minipage}
+
+Now we have two hypotheses in the context and in Coq proof the natural thing to do would be to destruct \(H\), so that's what we do with another command: \coqe{iDestruct "H" as (x) "[H1|H2]".}
+This introduces \coqe{x : A} into the Coq context and leads us to the following two subgoals, one for each constructor of disjunction:
+
+\begin{minipage}[t]{\linewidth}
+\begin{tabular}{l l}
+  \parbox[t]{0.5\textwidth}{\texttt{"HP" : P\\
+  "H1" : $\Phi$ x\\
+  --------------------------*\\
+  \(\exists\) a : A, P * \(\Phi a\) \(\vee\) P * \(\Psi a\)}} &
+  \parbox[t]{0.5\textwidth}{\texttt{"HP" : P\\
+  "H2" : $\Psi$ x\\
+  --------------------------*\\
+  \(\exists\) a : A, P * \(\Phi a\) \(\vee\) P * \(\Psi a\)}}
+\end{tabular}
+\end{minipage}
+
+Again, both of these tactics are based on the rules for BI logic, in particular: elimination rule for existentials and for disjunction.
+The latter looks as follows:
+
+\[\infer{\Gamma, P \vee Q \vdash R}
+        {\Gamma, P \vdash R &
+         \Gamma, Q \vdash R }\]
+
+After this we perform very similar actions in both branches of the proof, so we are going to describe only the first branch.
+We are now faced with a goal that requires us to present an element of type \coqe{A}, such that the disjunction holds.
+Both the existential and the disjunction are handled by their respective constructors.
+In MoSeL, there we use to specific tactics: \coqe{iExists x. iLeft.}, which leads to the following goal:
+
+\begin{minipage}[t]{\linewidth}
+\texttt{"HP" : P\\
+"H1" : $\Phi$ x\\
+--------------*\\
+P * $\Phi$ x}
+\end{minipage}
+
+Now the rule for introduction for separating conjunction requires us to split resources between the conjuncts, exactly as required by the introduction rule (\(\wand R\)).
+This is done with \coqe{iSplit} tactic, where we supply a list of resources that goes into left or right branch: \coqe{iSplitL "HP"}.
+In this case we specify that only \coqe{"HP"} is distributed to the left branch of the proof, which leaves the right branch with \coqe{"H1"}.
+
+\begin{minipage}[t]{\linewidth}
+\begin{tabular}{l l}
+  \parbox[t]{0.5\textwidth}{\texttt{"HP" : P\\
+  ---------------*\\
+  P}} &
+  \parbox[t]{0.5\textwidth}{\texttt{"H1" : $\Phi$ x\\
+  ---------------*\\
+  $\Phi$ x }}
+\end{tabular}
+\end{minipage}
 
 
-\todo{explain details of BI here}
+Now, the goals have become trivial and \coqe{iAssumption} is able to solve both of them for us.
+And while it might seem too simple, throughout this chapter we are going to focus on it and to see how it is implemented in detail.
 
+The ``second'' branch of the proof goes exactly the same way, with the only difference that we have to chose the right disjunct to prove.
 
-\subsection{Modalities}
-\label{sec:modalities-intro}
-\todo{write this}
+\begin{figure}
+\begin{coq}
+Lemma example {A : Type} (P : PROP) (Phi Psi : A → PROP) :
+  P * (exists a, (Phi a) \/ (Psi a)) -* exists a, (P * Phi a) \/ (P * Psi a).
+Proof.
+  iIntros "[HP H]".
+  iDestruct "H" as (x) "[H1|H2]".
+  - iExists x. iLeft. iSplitL "HP"; iAssumption.
+  - iExists x. iRight. iSplitL "HP"; iAssumption.
+Qed.
+\end{coq}
+  \caption{An example of proof using MoSeL}
+  \label{fig:mosel-example-full}
+\end{figure}
 
 \section{MoSeL from theoretical perspective}
 \label{sec:ipm_theory}
-There are several options for embedding one (object) logic into another (meta) logic, but among them two most commonly used ones are ``shallow embedding'' and ``deep embedding''.
+
+We just saw the BI logic on paper and formal proof in Coq, so in this section we give more formal presentation for MoSeL.
+Embedding object logic in meta-logic is an old problem.
+The two most common solutions are ``shallow embedding'' and ``deep embedding''.
 
 The first one corresponds to mapping propositions in the object logic directly to their semantics in meta-logic.
 I.e.\ for classical separation logic we would map propositions to predicates over heaps.
@@ -66,47 +229,52 @@ Instead, MoSeL opts for abstraction of inference rules of the separation logic.
 From a user perspective, this gives them both connectives and their inference rules, as well as some properties.
 For separating conjunction user gets the usual commutativity, associativity and distributivity properties, as well as what MoSeL calls \textsc{sep-mono} rule:
 \[(P_1 \vdash Q_1) \text{ and } (P_2 \vdash Q_2) \,\, \implies \,\, P_1 * P_2 \vdash Q_1 * Q_2\]
-where ``and'' on the left-hand side and top-most implication are in the meta-logic.
+where the ``and'' on the left-hand side and the implication are in the meta-logic.
 
-However, while this allows axiomatic reasoning in object-logic, it still doesn't support tactics, which Coq users are used to.
-For example, take the following entailment in affine separation logic:
-\(P * Q * R \vdash R\).
-A user would want to simply apply an ``assumption'' tactic (which we will use as a running example in this chapter), since relevant resource is clearly in the context and the rest can be discarded, using the following rule:
+But while this allows axiomatic reasoning about object-logic entailments in meta-logic, it still doesn't support tactics, which Coq users are used to.
+For example, the proof we just performed above would require us not only to apply all the rules by hand, which already is going to make the proof quite a bit bigger, but also to
+use commutativity and associativity rules to reorder hypotheses in the context.
 
-\[ \infer[\textsc{affine}]{P \vdash \emp}{\text{for any } P } \]
+\subsection{MoSeL environments}
+\label{sec:mosel-environments}
 
-But without tactics this becomes cumbersome.
-One solution would be convert right side of the entailment to \(\emp * (\emp * R)\) via double application of the property of \emp being neutral element for separating conjunction.
-Then use \textsc{sep-mono} rule twice and ``drop'' both \(P\) and \(Q\) on the respective branches of the proofs using \textsc{affine} rule.
-
-Naive implementation of tactics, however, would meet a problem: Coq tactics have an advantage of working in a structured context, instead of having an arbitrary bunch on the left-hand side of the entailment.
-\citet{krebbersInteractiveProofsHigherorder2017} chose to restrict the context and instead of using arbitrary bunch, they propose a new entailment predicate:
-
+Simply embedding SL in Coq, however, is not enough to implement tactics.
+In fact, Coq tactics have a significant advantage of working in a structured context, instead of having an arbitrary bunch on the left-hand side of the entailment.
+To this end, \citet{krebbersInteractiveProofsHigherorder2017} chose to restrict the context and instead of using arbitrary bunch, they propose a new entailment predicate:
 \[\entailsOneD Q \defeq \Sep \Pi \vdash Q\]
 where \(\SpatD\) is a list of pairs of identifiers and separation logic propositions \(\SpatD \defeq \left[i_1 : P_1, \ldots , i_n : P_n \right]\) and \(\Sep\) is an iterated separating conjunction.
 
 If we substitute the definition of \(\SpatD\) and \(\Sep\), the entailment takes the following form:
 \[\left( \entailsOne {i_1 : P_1, \ldots , i_n : P_n} Q \right) \defeq
   \left( P_1 * \ldots P_n \vdash Q \right)\]
+This entailment predicate is precisely what gets rendered as a conventional proof state, that we have seen above.
+Elements of the context end up above the line, one line per each hypothesis, and the goal is below it.
 
 In fact, the definition is slightly more general, as it incorporates two contexts: \(\IntuD\) and \(\SpatD\)
 \[\entailsD Q\]
-Where \(\IntuD\) is also a list of resources, but in the definition of the entailment it gets mapped to iterated non-separating conjunction with intuitionistic modality \(\intuit\):
+Where \(\IntuD\) is also a list of resources, but in the definition of the entailment it gets mapped to iterated non-separating conjunction with intuitionistic modality \(\intuit\).
+The modality captures resources, which can be both discarded and duplicated.
 
 \[\entailsD Q \defeq \intuit \left(\bigwedge \IntuD\right) * \left(\Sep \SpatD\right) \vdash Q\]
 
-This allows easier introduction of new derivation rules, that are much closer to Coq tactics.
-
-\subsection{Rules for regular IPM}
+\subsection{Rules for MoSeL}
 \label{sec:rules-regular-ipm}
 
-Now that we have formalized Iris Proof Mode entailment, we can also render some tactics as derivation rules, instead of just Coq proof state transformers.
-We aren't going to give a complete list of tactics, but just a few to illustrate the translation.
+While stepping through the proof above we have hinted at the correspondence between tactics and formal rules.
+However, the rules we listed then were rules for BI, and not for MoSeL entailment.
+So, in this section, we present the rules, which are used in the tactics.
+We aren't going to give a complete list, but just a few for the purpose of illustration.
+
+It is important, however, that MoSeL tactics are not just rules.
+Instead, they are broken down in two pieces: a Coq function, that maps one entailment to another, and an Ltac2 wrapper around it, which applies the function and performs bookkeeping of the goals generated.
+What we present here is closer to the the Coq lemmas, but they also incorporate some parts of the bookkeeping.
+We discuss the technical part of the implementation further in section~\ref{sec:implementation-of-ipm}.
 
 Regular introduction rules don't change that much, except now the context has to stay in a particular shape.
 
 \begin{itemize}
 \item To introduce a magic wand we extend the spatial context with a new resource.
+  This corresponds to a simple variant of \coqe{iIntros} tactic.
   \[\infer[\textsc{Tac-wand-intro}]
       {\entailsD P \wand Q}
       {\entails {\IntuD} {\SpatD, i : P} {Q} &
@@ -118,14 +286,13 @@ Regular introduction rules don't change that much, except now the context has to
       {\entails {\IntuD, i : P} {\SpatD} {Q} &
        i \text{ is a fresh identifier}}
   \]
-\item The rule for separating conjunction also stays very similar to the original one
+\item The rule for separating conjunction also stays very similar to the original one and corresponds to the \coqe{iSplit} rule.
   \[\infer[\textsc{Tac-sep-intro}]
       {\entailsD P * Q}
       {\entails {\IntuD} {\SpatD_1} P &
        \entails {\IntuD} {\SpatD_2} Q &
        \SpatD \equiv \SpatD_1 {+\hspace{-0.5em}+} \SpatD_2}
    \]
-   \todo{swap for real append operator}
    Where \({+\hspace{-0.5em}+}\) is \coqe{append} operator for lists and \(\equiv\) is list equivalence modulo permutations.
 
    Note that intuitionistic context doesn't have to be split, since resources in it are duplicable, hence we can access them in both branches of the proof.
@@ -140,11 +307,9 @@ Regular introduction rules don't change that much, except now the context has to
         {\entails {\IntuD} {[\,]} P}
         {i : P \in \IntuD}
   \end{align*}
-  In the first case here there aren't any requirements for the intuitionistic context, since resources in it are affine by definition.
-  This doesn't hold for spatial context in general unless the logic we're working is affine.
-
-  However, both of the variants put significant restrictions on spatial context, which can be lifted slightly.
-  As noted above, one could create a specialized tactic for affine logic, but instead MoSeL asks for the rest of the context to only contain affine resources, so the tactic becomes:
+  In the first case here there aren't any requirements for the intuitionistic context, since resources in it are affine by definition, but we have to require a particular shape of spatial context unless the logic is affine.
+  This requirement on the shape can be lifter.
+  Instead of asking for the logic to be affine, MoSeL asks for the rest of the context to only contain affine resources, so the tactic becomes:
   \begin{align*}
       \infer%[\textsc{tac-exact-spatial}]
         {\entailsD P}
@@ -152,11 +317,11 @@ Regular introduction rules don't change that much, except now the context has to
          \SpatD \backslash (i : P) \text{ is affine}}
     & \hspace{5em}
     & \infer%[\textsc{tac-exact-intuitionistic}]
-        {\entails {\IntuD} {[\,]} P}
+        {\entailsD P}
         {i : P \in \IntuD &
          \SpatD \text{ is affine}}
   \end{align*}
-  We call a context affine if it only contains affine resources and stick to convention that in affine logic all resources are affine.
+  We call a context affine if it only contains affine resources and stick to the convention that in affine logic all resources are affine.
 \item Generalization of the tactic above to behave more like \coqe{assumption} is trivial -- instead of asking for a specific \(i : P\) to be in the context, we ignore identifiers entirely and the assumption becomes that there is some \(P\) in the context
   \begin{align*}
       \infer%[\textsc{tac-assumption-spatial}]
@@ -166,12 +331,12 @@ Regular introduction rules don't change that much, except now the context has to
     & \hspace{5em}
     & \infer%[\textsc{tac-assumption-spatial}]
         {\entailsD P}
-        {P \in \IntuD &
+        {\exists i. i : P \in \IntuD &
          \SpatD \text{ is affine}}
   \end{align*}
 
   The rules above are still slightly simplified, since we can ask either for context to be affine, or for the goal to be absorbing.
-  The details can be found in \citet[Section 2.3]{krebbersMoSeLGeneralExtensible2018}.
+  The details can be found in the MoSel paper~\cite[Section 2.3]{krebbersMoSeLGeneralExtensible2018}.
 \end{itemize}
 
 % \begin{itemize}
@@ -214,14 +379,14 @@ Regular introduction rules don't change that much, except now the context has to
 % \item Rewrite
 % \end{itemize}
 
-\subsection{Implementation of IPM}
+\section{MoSeL from implementation perspective}
 \label{sec:implementation-of-ipm}
 
 Now that we have seen Iris Proof Mode from theoretical perspective, let's turn to Coq implementation.
 
-We start with an overview of components of the implementation and build \coqe{iAssumption} tactic in the end.
+We start with an overview of components (figure~\ref{fig:ipm-diagram}) of the implementation and build \coqe{iAssumption} tactic in the end.
 
-\begin{figure}[H]
+\begin{figure}
   \includegraphics[width=0.5\linewidth]{ipm-diagram}
   \caption{structure of the implementation of IPM}
   \label{fig:ipm-diagram}
@@ -233,9 +398,9 @@ We start with an overview of components of the implementation and build \coqe{iA
 \item On top of the BI interface MoSeL defines environments and entailment predicates. These are used to make proofs of ``Coq tactics'' easier and typeclasses allow for more general unification and proof search.
 \item ``Coq tactics'' themselves are verified transformations of the goal, the simplest instance being \coqe{tac_ex_falso}, which looks as follows:\\
 \coqe{Lemma tac_ex_falso Delta Q : envs_entails Delta False → envs_entails Delta Q.}.
-\item These transformations are then applied by Ltac2 programs, which can combine them, use specialized tactics for the subgoals they generate and handle errors.
+\item These transformations are then applied by Ltac1 (or Ltac2, in the reimplementation) programs, which can combine them, use specialized tactics for the subgoals they generate and handle errors.
+  This is described in section~\ref{sec:ltac2-tactics-mosel}.
 \end{itemize}
-
 
 \subsubsection{BI interface}
 \label{subsubsec:bi-interface}
@@ -298,9 +463,9 @@ Record envs (PROP : bi) := Envs {
   env_spatial : env PROP;
   env_counter : positive (** A counter to generate fresh hypothesis names *)
 }.
-\end{coq}  
-  \caption{Definition of MoSeL environment in Coq}
-  \label{fig:coq_envs}
+\end{coq}
+\caption{Definition of MoSeL environment in Coq}
+\label{fig:coq_envs}
 \end{figure}
 
 
@@ -397,7 +562,7 @@ Lemma tac_assumption Delta i p P Q :
    if env_spatial_is_nil Delta' then TCTrue
    else TCOr (Absorbing Q) (AffineEnv (env_spatial Delta'))) →
   envs_entails Delta Q.
-\end{coq}  
+\end{coq}
 \caption{\coqe{tac_assumption} definition}
 \label{fig:tac-assumption}
 \end{figure}
@@ -410,8 +575,8 @@ If spatial context is empty, there is nothing to discard, but otherwise either t
 
 No other subgoals are generated, since this is a leaf of a derivation.
 
-\subsubsection{Ltac2 tactics}
-\label{sec:ltac2-tactics}
+\section{Ltac2 tactics in MoSeL}
+\label{sec:ltac2-tactics-mosel}
 
 The final piece of the puzzle is Ltac2 layer.
 While Coq tactics provide verified goal transformations, they require several inputs.
@@ -419,8 +584,7 @@ The balance between what should go into a Coq statement and Ltac2 function is ab
 
 Turning again to \coqe{iAssumption}, the idea is that a user doesn't provide explicit identifier of the resource they have in mind, instead tactic is supposed to find it on its own.
 
-Simply asserting existence of such identifier in a Coq lemma doesn't solve anything, since ultimately we have to apply this transformation to the goal and user will have to provide it, hence universally quantified identifier in the definition of the Coq lemma \ref{fig:tac-assumption}.
-
+Simply asserting existence of such identifier in a Coq lemma doesn't solve anything, since ultimately we have to apply this transformation to the goal and user will have to provide it, hence universally quantified identifier in the definition of the Coq lemma~\ref{fig:tac-assumption}.
 Instead, we go through all elements of the environment in Ltac2 and try to apply the lemma with each one.
 
 \begin{figure}
@@ -451,18 +615,48 @@ Ltac2 i_assumption () :=
 \label{fig:i-assumption-def}
 \end{figure}
 
-The listing is in Figure \ref{fig:i-assumption-def}.
-Since there are two contexts to go through, we factor out recursion into a \coqe{find} function, which takes a Boolean flag \coqe{p} to tell apart spatial and intuitionistic context, context \coqe{g} and proposition \coqe{q}.
+The listing is in figure~\ref{fig:i-assumption-def}.
+Since there are two contexts to go through, we factor out recursion into \coqe{find} function, which takes a Boolean flag \coqe{p} to tell apart spatial and intuitionistic context, context \coqe{g} and proposition \coqe{q}.
 Then we apply \coqe{tac_assumption} defined above~\ref{fig:tac-assumption} and discharge the goals with specialized tactics.
 The first subgoal \coqe{envs_lookup i Delta = Some (p,P)} is computational, so \coqe{pm_reflexivity ()} performs evaluation and tries \coqe{reflexivity} tactic.
 The other two concern type classes, so we use a wrapper around \coqe{typeclasses eauto} to solve them.
 
 The only part which wasn't described so far is \coqe{i_assumption_coq ()}.
-This is an example of tactics composition -- \coqe{i_assumption_coq} is essentially applying a different lemma from \coqe{tac_assumption}, which tries to find an assumption of shape \(\vdash Q\) in the Coq context instead of IPM context.
+This is an example of tactics composition -- \coqe{i_assumption_coq} is applying a different lemma from \coqe{tac_assumption}, which tries to find an assumption of shape \(\vdash Q\) in the Coq context instead of IPM context.
 
 This example also showcases some error handling in the last case, if none of the cases listed before it succeed.
 
-\section{Improvements from translation to Ltac2}
+\subsection{The examplary proof}
+\label{sec:examplary-proof-in-ltac2-mosel}
+
+We now show what the proof looks like in the reimplemented version of MoSeL.
+
+The full listing is in figure~\ref{fig:example-proof-mosel-ltac2}.
+Since we didn't touch environment or rendering of the goals, for the user only tactics changed and everything else stayed the same, including the proof states.
+
+Perhaps, the biggest difference from the Ltac1 version is the lack of notations.
+However, this is not Ltac2's fault, but rather ours -- we didn't focus on them and this aspect can still be improved.
+
+\begin{figure}
+\begin{coq}
+Lemma example {A : Type} (P : PROP) (Phi Psi : A → PROP) :
+  P * (exists a, (Phi a) \/ (Psi a)) -* exists a, (P * Phi a) \/ (P * Psi a).
+Proof.
+  i_intro_named "H".
+  i_and_destruct '(INamed "H") '(INamed "HP") '(INamed "HE").
+  i_exist_destruct '(INamed "HE") as x '(INamed "HE").
+  i_or_destruct '(INamed "HE") '(INamed "H1") '(INamed "H2").
+  - i_exists$\text{~}$x. i_left (). i_split_l ["HP"] ;; i_assumption ().
+  - i_exists$\text{~}$x. i_right (). i_split_l ["HP"] ;; i_assumption ().
+Qed.
+\end{coq}
+\caption{An example of a proof using Ltac2 version of MoSeL}
+\label{fig:example-proof-mosel-ltac2}
+\end{figure}
+
+
+\subsection{Potential and observed improvements from translation to Ltac2}
+\label{sec:impr-from-transl}
 
 While translating implementation from Ltac1 to Ltac2, we encountered several points where Ltac2 was particularly useful.
 

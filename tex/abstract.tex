@@ -1,4 +1,8 @@
-I did things. \todo{Write an abstract.}
+In this thesis, we use a new experimental tactic language -- Ltac2 to reimplement part of the complex system of which provides tactics for separation logic, as originally presented by MoSeL.
+Using this new implementation as a platform for new feature development, we adapt the solution for ``resource distribution'' problem from the work by Harland and Pym to MoSeL entailments, in particular, we adapt old tactics to support postponed decisions about the distribution and and provide a completely new one for introduction of separating conjunction \coqe{iSplit}.
+Utilizing Ltac2's notation mechanisms, we also implement a separation-logic alternative for \coqe{match goal}, which incorporates both multiple contexts from MoSeL proof mode and the new proof mode with postponed resource distribution decisions.
+Finally, we consolidate the new implemented features to implement a simple solver for separation logic.
+In the process we also evaluate Ltac2, reflect on our experiences with development and suggest possible directions for future development of the language.
 
 %%% Local Variables:
 %%% TeX-master: "thesis"

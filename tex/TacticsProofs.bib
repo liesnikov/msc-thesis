@@ -100,7 +100,7 @@
   url = {https://doi.org/10.1145/2542667},
   urldate = {2020-11-06},
   abstract = {In this article, we investigate the logical structure of memory models of theoretical and practical interest. Our main interest is in ``the logic behind a fixed memory model'', rather than in ``a model of any kind behind a given logical system''. As an effective language for reasoning about such memory models, we use the formalism of separation logic. Our main result is that for any concrete choice of heap-like memory model, validity in that model is undecidable even for purely propositional formulas in this language. The main novelty of our approach to the problem is that we focus on validity in specific, concrete memory models, as opposed to validity in general classes of models. Besides its intrinsic technical interest, this result also provides new insights into the nature of their decidable fragments. In particular, we show that, in order to obtain such decidable fragments, either the formula language must be severely restricted or the valuations of propositional variables must be constrained. In addition, we show that a number of propositional systems that approximate separation logic are undecidable as well. In particular, this resolves the open problems of decidability for Boolean BI and Classical BI. Moreover, we provide one of the simplest undecidable propositional systems currently known in the literature, called ``Minimal Boolean BI'', by combining the purely positive implication-conjunction fragment of Boolean logic with the laws of multiplicative *-conjunction, its unit and its adjoint implication, originally provided by intuitionistic multiplicative linear logic. Each of these two components is individually decidable: the implication-conjunction fragment of Boolean logic is co-NP-complete, and intuitionistic multiplicative linear logic is NP-complete. All of our undecidability results are obtained by means of a direct encoding of Minsky machines.},
-  file = {/home/buzzer/.local/share/Zotero/storage/NE2ZDDNV/Brotherston and Kanovich - 2014 - Undecidability of Propositional Separation Logic a.pdf},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Brotherston_Kanovich/2014/Brotherston and Kanovich - 2014 - Undecidability of Propositional Separation Logic a.pdf},
   journal = {Journal of the ACM},
   keywords = {bunched logic,memory models,Separation logic,undecidability},
   number = {2}
@@ -119,6 +119,7 @@
   url = {https://doi.org/10.1007/s10817-018-9457-5},
   urldate = {2020-11-06},
   abstract = {The Verified Software Toolchain builds foundational machine-checked proofs of the functional correctness of C programs. Its program logic, Verifiable C, is a shallowly embedded higher-order separation Hoare logic which is proved sound in Coq with respect to the operational semantics of CompCert Clight. This paper introduces VST-Floyd, a verification assistant which offers a set of semiautomatic tactics helping users build functional correctness proofs for C programs using Verifiable C.},
+  file = {/tmp/cao2018.pdf},
   journal = {Journal of Automated Reasoning},
   language = {en},
   number = {1}
@@ -234,6 +235,21 @@
   number = {ICFP}
 }
 
+@book{gordonEdinburghLCFMechanised1979,
+  title = {Edinburgh {{LCF}}: {{A Mechanised Logic}} of {{Computation}}},
+  editor = {Gordon, Michael J. and Milner, Arthur J. and Wadsworth, Christopher P.},
+  year = {1979},
+  publisher = {{Springer}},
+  address = {{Berlin, Heidelberg}},
+  doi = {10.1007/3-540-09724-4_1},
+  url = {https://doi.org/10.1007/3-540-09724-4_1},
+  urldate = {2020-11-22},
+  isbn = {978-3-540-38526-4},
+  keywords = {Computable Function,Conjunctive Normal Form,Disjunctive Normal Form,Inference Rule,Natural Deduction},
+  language = {en},
+  series = {Lecture {{Notes}} in {{Computer Science}}}
+}
+
 @article{harlandResourceDistributionBooleanConstraints2003,
   title = {Resource-{{Distribution}} via {{Boolean Constraints}}},
   author = {Harland, James and Pym, David},
@@ -280,7 +296,7 @@
   address = {{Berlin, Heidelberg}},
   doi = {10.1007/3-540-45793-3_12},
   abstract = {In programming languages based on linear logic, the program can grow and shrink in a nearly arbitrary manner over the course of execution. Since the introduction of the I/O model of proof search [11, 12], a number of refinements have been proposed with the intention of reducing its degree of non-determinism [3, 4, 12, 13, 14]. Unfortunately each of these systems has had some limitations. In particular, while the resource management systems of Cervesato et al. [3, 4] and the frame system of L\'opez and Pimentel [14] obtained the greatest degree of determinism, they required global operations on the set of clauses which were suitable only for interpreter-based implementations. In contrast the level-tags system of Hodas, et al. relied only on relabeling tags attached to individual formulas, and was hence appropriate as the specification of an abstract machine. However it retained more non-determinism than the resource management systems. This led to a divergence in the operational semantics of the interpreted and compiled versions of the language Lolli. In this paper we propose a tag-frame system which recaptures the behavior of the resource management systems, while being appropriate as a foundation of a compiled implementation.},
-  file = {/tmp/hodas2002.pdf},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Hodas et al/2002/Hodas et al. - 2002 - A Tag-Frame System of Resource Management for Proo.pdf},
   isbn = {978-3-540-45793-0},
   language = {en},
   series = {Lecture {{Notes}} in {{Computer Science}}}
@@ -396,7 +412,7 @@
 }
 
 @doctoralthesis{jungUnderstandingEvolvingRust2020,
-  title = {Understanding and Evolving the Rust Programming Language},
+  title = {Understanding and Evolving the {{Rust}} Programming Language},
   author = {Jung, Ralf},
   year = {2020},
   publisher = {{Universit\"at des Saarlandes}},
@@ -496,7 +512,7 @@
   pages = {528--543},
   doi = {10.1007/978-3-540-32275-7_35},
   abstract = {The Tag-Frame system of resource management [1] reunited two divergent threads of linear logic programming research by achieving the efficient proof search behaviour of abstract systems, such as [2], while using a low-level tag-based approach, as in [3], suitable for specifying an abstract machine. However, Tag-Frame relies on set operations which are linear in the size of the sets, and is not as efficient, in general, as it could be. We present a new tag-based derivation system which relies solely on low-level concepts to implement efficient resource management, where most linear time operations have been replaced by constant time ones. Though motivated and informed by the Tag-Frame system, we derive our system directly from, and prove its correctness with respect to the system of Cervesato et al. [2]. An abstract machine based on the new system has been implemented by Tamura and Banbara, and its performance compared to their previous machine.},
-  file = {/home/buzzer/.local/share/Zotero/storage/QMJMIGFP/López and Polakow - 2004 - Implementing Efficient Resource Management for Lin.pdf}
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/López_Polakow/2004/López and Polakow - 2004 - Implementing Efficient Resource Management for Lin.pdf}
 }
 
 @inproceedings{malechaExtensibleEfficientAutomation2016,
@@ -536,6 +552,16 @@
   language = {en}
 }
 
+@misc{MultipleOccurrencesSame,
+  title = {Multiple Occurrences of the Same Evar in Open\_constr {$\cdot$} {{Issue}} \#9320 {$\cdot$} Coq/Coq},
+  url = {https://github.com/coq/coq/issues/9320},
+  urldate = {2020-11-21},
+  abstract = {Version Coq 8.7.2 and development version Operating system Fedora Description of the problem Due to this question, I considered using open\_constr to create a matching pattern. Goal 2 = 3 -\&gt; Fals...},
+  file = {/home/buzzer/.local/share/Zotero/storage/7P8LRXZQ/9320.html},
+  journal = {GitHub},
+  language = {en}
+}
+
 @misc{MultiplicitiesIdris2Documentation,
   title = {Multiplicities \textemdash{} {{Idris2}} Documentation},
   url = {https://idris2.readthedocs.io/en/latest/tutorial/multiplicities.html},
@@ -557,7 +583,7 @@
   url = {https://doi.org/10.1145/1706299.1706331},
   urldate = {2020-11-06},
   abstract = {Most systems based on separation logic consider only restricted forms of implication or non-separating conjunction, as full support for these connectives requires a non-trivial notion of variable context, inherited from the logic of bunched implications (BI). We show that in an expressive type theory such as Coq, one can avoid the intricacies of BI, and support full separation logic very efficiently, using the native structuring primitives of the type theory. Our proposal uses reflection to enable equational reasoning about heaps, and Hoare triples with binary postconditions to further facilitate it. We apply these ideas to Hoare Type Theory, to obtain a new proof technique for verification of higher-order imperative programs that is general, extendable, and supports very short proofs, even without significant use of automation by tactics. We demonstrate the usability of the technique by verifying the fast congruence closure algorithm of Nieuwenhuis and Oliveras, employed in the state-of-the-art Barcelogic SAT solver.},
-  file = {/home/buzzer/.local/share/Zotero/storage/63ZN25YW/Nanevski et al. - Structuring the Veriﬁcation of Heap-Manipulating P.pdf},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Nanevski et al/2010/Nanevski et al. - 2010 - Structuring the verification of heap-manipulating .pdf},
   isbn = {978-1-60558-479-9},
   keywords = {hoare logic,monads,separation logic,type theory},
   series = {{{POPL}} '10}
@@ -580,6 +606,23 @@
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/O’Hearn et al/2001/O’Hearn et al. - 2001 - Local Reasoning about Programs that Alter Data Str.pdf},
   isbn = {978-3-540-42554-0 978-3-540-44802-0},
   language = {en}
+}
+
+@article{ohearnLogicBunchedImplications1999,
+  title = {The {{Logic}} of {{Bunched Implications}}},
+  author = {O'Hearn, Peter W. and Pym, David J.},
+  year = {1999},
+  volume = {5},
+  pages = {215--244},
+  publisher = {{[Association for Symbolic Logic, Cambridge University Press]}},
+  issn = {1079-8986},
+  doi = {10.2307/421090},
+  url = {https://www.jstor.org/stable/421090},
+  urldate = {2020-11-22},
+  abstract = {We introduce a logic BI in which a multiplicative (or linear) and an additive (or intuitionistic) implication live side-by-side. The propositional version of BI arises from an analysis of the proof-theoretic relationship between conjunction and implication; it can be viewed as a merging of intuitionistic logic and multiplicative intuitionistic linear logic. The naturality of BI can be seen categorically: models of propositional BI's proofs are given by bicartesian doubly closed categories, i.e., categories which freely combine the semantics of propositional intuitionistic logic and propositional multiplicative intuitionistic linear logic. The predicate version of BI includes, in addition to standard additive quantifiers, multiplicative (or intensional) quantifiers {$\forall$} \textsubscript{new} and {$\exists$} \textsubscript{new} which arise from observing restrictions on structural rules on the level of terms as well as propositions. We discuss computational interpretations, based on sharing, at both the propositional and predicate levels.},
+  file = {/home/buzzer/.local/share/Zotero/storage/2QMUV4LW/O'Hearn and Pym - 1999 - The Logic of Bunched Implications.pdf},
+  journal = {The Bulletin of Symbolic Logic},
+  number = {2}
 }
 
 @article{ohearnResourcesConcurrencyLocal2007,
@@ -614,6 +657,16 @@
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/O'Hearn/2019/O'Hearn - 2019 - Separation logic.pdf;/home/buzzer/my-dir/personal/Dropbox/stuff/papers/O'Hearn/2019/O'Hearn - 2019 - Separation logic2.pdf},
   journal = {Communications of the ACM},
   number = {2}
+}
+
+@misc{PatternEvarValue,
+  title = {Pattern with Evar Value Confuses Match {$\cdot$} {{Issue}} \#4482 {$\cdot$} Coq/Coq},
+  url = {https://github.com/coq/coq/issues/4482},
+  urldate = {2020-11-21},
+  abstract = {Note: the issue was created automatically with bugzilla2github tool Original bug ID: BZ\#4482 From: @jonleivent Reported version: 8.5 CC: @ppedrot},
+  file = {/home/buzzer/.local/share/Zotero/storage/Z23473DW/4482.html},
+  journal = {GitHub},
+  language = {en}
 }
 
 @misc{pedrotCoqHoTTminuteTickingClockwork2016,
@@ -672,7 +725,7 @@
   address = {{Carnegie Mellon University}},
   url = {https://www.cs.cmu.edu/~fp/courses/lp/lectures/lp-all.pdf},
   urldate = {2020-11-16},
-  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pfenning/2007/Pfenning - 2007 - Logic programming.pdf},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Pfenning/2007/Pfenning - 2007 - Logic programming (lecture notes).pdf},
   language = {en}
 }
 
@@ -739,6 +792,50 @@
   number = {2-3}
 }
 
+@unpublished{sammlerRefinedCExtensibleRefinement2020,
+  title = {{{RefinedC}}: {{An}} Extensible Refinement Type System for c Based on Separation Logic Programming},
+  author = {Sammler, Michael and Lepigre, Rodolphe and {Robbert Krebbers} and Memarian, Kayvan and Dreyer, Derek and Garg, Deepak},
+  year = {2020},
+  month = jul,
+  url = {https://plv.mpi-sws.org/refinedc/},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Sammler et al/2020/Sammler et al. - 2020 - RefinedC An extensible refinement type system for.pdf}
+}
+
+@inproceedings{sighireanuSLCOMPCompetitionSolvers2019,
+  title = {{{SL}}-{{COMP}}: {{Competition}} of {{Solvers}} for {{Separation Logic}}},
+  shorttitle = {{{SL}}-{{COMP}}},
+  booktitle = {Tools and {{Algorithms}} for the {{Construction}} and {{Analysis}} of {{Systems}}},
+  author = {Sighireanu, Mihaela and Navarro P{\'e}rez, Juan A. and Rybalchenko, Andrey and Gorogiannis, Nikos and Iosif, Radu and Reynolds, Andrew and Serban, Cristina and Katelaan, Jens and Matheja, Christoph and Noll, Thomas and Zuleger, Florian and Chin, Wei-Ngan and Le, Quang Loc and Ta, Quang-Trung and Le, Ton-Chanh and Nguyen, Thanh-Toan and Khoo, Siau-Cheng and Cyprian, Michal and Rogalewicz, Adam and Vojnar, Tomas and Enea, Constantin and Lengal, Ondrej and Gao, Chong and Wu, Zhilin},
+  editor = {Beyer, Dirk and Huisman, Marieke and Kordon, Fabrice and Steffen, Bernhard},
+  year = {2019},
+  pages = {116--132},
+  publisher = {{Springer International Publishing}},
+  address = {{Cham}},
+  doi = {10.1007/978-3-030-17502-3_8},
+  abstract = {SL-COMP aims at bringing together researchers interested on improving the state of the art of the automated deduction methods for Separation Logic (SL). The event took place twice until now and collected more than 1K problems for different fragments of SL. The input format of problems is based on the SMT-LIB format and therefore fully typed; only one new command is added to SMT-LIB's list, the command for the declaration of the heap's type. The SMT-LIB theory of SL comes with ten logics, some of them being combinations of SL with linear arithmetics. The competition's divisions are defined by the logic fragment, the kind of decision problem (satisfiability or entailment) and the presence of quantifiers. Until now, SL-COMP has been run on the StarExec platform, where the benchmark set and the binaries of participant solvers are freely available. The benchmark set is also available with the competition's documentation on a public repository in GitHub.},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Sighireanu et al/2019/Sighireanu et al. - 2019 - SL-COMP Competition of Solvers for Separation Log.pdf},
+  isbn = {978-3-030-17502-3},
+  language = {en},
+  series = {Lecture {{Notes}} in {{Computer Science}}}
+}
+
+@article{sozeauMetaCoqProject2020,
+  title = {The {{MetaCoq Project}}},
+  author = {Sozeau, Matthieu and Anand, Abhishek and Boulier, Simon and Cohen, Cyril and Forster, Yannick and Kunze, Fabian and Malecha, Gregory and Tabareau, Nicolas and Winterhalter, Th{\'e}o},
+  year = {2020},
+  month = jun,
+  volume = {64},
+  pages = {947--999},
+  issn = {1573-0670},
+  doi = {10.1007/s10817-019-09540-0},
+  url = {https://doi.org/10.1007/s10817-019-09540-0},
+  urldate = {2020-11-21},
+  abstract = {The MetaCoq project aims to provide a certified meta-programming environment in Coq. It builds on Template-Coq, a plugin for Coq originally implemented by Malecha (Extensible proof engineering in intensional type theory, Harvard University, http://gmalecha.github.io/publication/2015/02/01/extensible-proof-engineering-in-intensional-type-theory.html, 2014), which provided a reifier for Coq terms and global declarations, as represented in the Coq kernel, as well as a denotation command. Recently, it was used in the CertiCoq certified compiler project (Anand et al., in: CoqPL, Paris, France, http://conf.researchr.org/event/CoqPL-2017/main-certicoq-a-verified-compiler-for-coq, 2017), as its front-end language, to derive parametricity properties (Anand and Morrisett, in: CoqPL'18, Los Angeles, CA, USA, 2018). However, the syntax lacked semantics, be it typing semantics or operational semantics, which should reflect, as formal specifications in Coq, the semantics of Coq 's type theory itself. The tool was also rather bare bones, providing only rudimentary quoting and unquoting commands. We generalize it to handle the entire polymorphic calculus of cumulative inductive constructions, as implemented by Coq, including the kernel's declaration structures for definitions and inductives, and implement a monad for general manipulation of Coq 's logical environment. We demonstrate how this setup allows Coq users to define many kinds of general purpose plugins, whose correctness can be readily proved in the system itself, and that can be run efficiently after extraction. We give a few examples of implemented plugins, including a parametricity translation and a certified extraction to call-by-value \$\$\textbackslash lambda \$\${$\lambda$}-calculus. We also advocate the use of MetaCoq as a foundation for higher-level tools.},
+  journal = {Journal of Automated Reasoning},
+  language = {en},
+  number = {5}
+}
+
 @inproceedings{spiwackAbstractTypeConstructing2010,
   title = {An Abstract Type for Constructing Tactics in {{Coq}}},
   booktitle = {Proof {{Search}} in {{Type Theory}}},
@@ -771,7 +868,7 @@
   url = {https://hal.inria.fr/hal-01637063},
   urldate = {2020-11-12},
   abstract = {Elpi is dialect of {$\lambda$}Prolog that can be used as an extension language for Coq. It lets one define commands and tactics in a high level programming language tailored to the manipulation of syntax trees containing binders and existentially quantified meta variables.},
-  file = {/home/buzzer/.local/share/Zotero/storage/Q98U4F5C/Tassi - 2018 - Elpi an extension language for Coq (Metaprogrammi.pdf;/home/buzzer/.local/share/Zotero/storage/GILRPKAS/hal-01637063.html},
+  file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Tassi/2018/Tassi - 2018 - Elpi an extension language for Coq (Metaprogrammi.pdf;/home/buzzer/.local/share/Zotero/storage/GILRPKAS/hal-01637063.html},
   language = {en}
 }
 

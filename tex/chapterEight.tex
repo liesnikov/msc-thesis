@@ -1,1 +1,19 @@
-\chapter{Conclusion}
+\chapter{Conclusion and future work}
+
+\vspace{-2em}
+In this thesis we reimplemented MoSeL using a new tactic language Ltac2, using the new version of MoSeL to develop several new features.
+In particular, we provide a set of new tactics that support postponed decisions in resource distribution, goal-matching tactical and showcase their usage with a simple solver for separation logic.
+And while the work we present here can be used immediately, there still are some things which can be improved in it.
+\paragraph{``Lost'' evars issue.}
+  This issue breaks the abstraction to of the tactics to some extent, as the goals presented seemingly don't have anything to do with the entailments presented.
+  We hypothesize that this can be solved with a more careful consideration of the usage of the existing tactics and introduction of heuristics based on the goals.
+\emph{Performance.}
+  While observed performance of tactics seems reasonable, we are yet to do a study on performance evaluation of Ltac2 and the new tactics implemented.
+  However, it is obvious that the new MoSeL proof mode could benefit from the optimizations, as seen from both larger proofs and, in particular, performance of \coqe{i_solver}.
+\paragraph{More powerful solver to introduce iSpecialize rule.}
+  While our custom solving procedure sufficed for our goals, we had to modify the rules for \coqe{iSpecialize} in order for the new Boolean expression introduced to fit the required format.
+  This can be solver either via the introduction of external SAT solver for the constraints, or implementation of such solver in Ltac2 directly.
+\paragraph{User-facing conveniences.}
+  The focus of our work was on the proof-of-concept implementation of MoSeL in Ltac2, which didn't include some of the most useful user-facing features of the Ltac1 version of MoSeL.
+  In particular, it would still be possible to reimplement intropatterns in the new proof mode, even without proper support from Ltac2, either via limiting the patterns to those allowed by Coq and reusing them for MoSeL, or following the original implementation and parsing intropatterns from Coq \coqe{string}s.
+  We also don't contribute towards error messages improvement of MoSeL, even though Ltac2 does provide a good opportunity for this, so we leave any such improvements for future work too.
