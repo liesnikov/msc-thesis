@@ -1,41 +1,5 @@
 From Ltac2 Require Import Ltac2.
-
-From iris.proofmode Require Import tactics intro_patterns.
-From iris.proofmode Require Import coq_tactics.
-From iris.proofmode Require Import base spec_patterns
-     sel_patterns coq_tactics reduction.
-
-From Local Require ltac2_tactics.
 From Local Require Import utils.
-Import utils.Evars.
-
-Inductive Id {A} (a : A) : Type := C : Id a.
-
-
-Goal True.
-Proof.
-  let v := new_evar_with_cast '(nat) in
-  let q := new_evar_with_cast '(bool) in
-  assert (Id $v /\ ($q && false)= true).
-  admit.
-  cbn in H.
-  match! goal with
-  | [|- Id ?v /\ ?q = _] =>
-    Message.print (utils.Misc.os "worked");
-      unify $v 1;
-    match! q with
-    | (andb ?a ?b) => orelse (fun () => unify true $a) (fun e => Control.throw e)
-    | _ => Message.print (utils.Misc.os "couldn't match andb")
-    end
-  | [|- _] => Message.print (utils.Misc.os "didn't work")
-  end.
-  let a := Std.eval_red '(1 + 1) in
-  Message.print (utils.Misc.oc a).
-
-  let _ := new_evar '(nat) in ().
-  admit.
-Admitted.
-
 From Local Require Import tactics.
 Set Default Proof Using "Type".
 

@@ -63,8 +63,6 @@ Proof.
 Qed.
 
 
-
-
 Ltac2 eassumption0 () := ltac1:(eassumption).
 Ltac2 Notation "eassumption" := eassumption0 ().
 
@@ -80,10 +78,6 @@ Ltac2 rec tauto0 () :=
   | [|- forall x, ?p] =>
     intros ?; tauto0 ()
   | [|- exists (_ : ?a), _] =>
-    (* let i := fresh_ident x in
-    Evars.evar0 i a;
-    let xv := Std.eval_red (Control.hyp i) in
-    exists0 true [(fun () => Std.ImplicitBindings ([xv]))]; *)
     eexists;
     tauto0 ()
   | [|- _] => eassumption
@@ -97,13 +91,13 @@ Proof.
 Qed.
 
 
-Lemma test_sixteen {A : Type} (P : PROP) (Φ Ψ : A → PROP) :
+Lemma example {A : Type} (P : PROP) (Φ Ψ : A → PROP) :
   P ∗ (∃ a, (Φ a) ∨ (Ψ a)) -∗ ∃ a, (P ∗ Φ a) ∨ (P ∗ Ψ a).
 Proof.
   i_intro_named "H".
   i_and_destruct '(INamed "H") '(INamed "HP") '(INamed "HE").
   i_exist_destruct '(INamed "HE") as x '(INamed "HE").
   i_or_destruct '(INamed "HE") '(INamed "H1") '(INamed "H2") ;; i_exists x.
-  - i_left (). i_split_l ["HP"]. i_assumption ().
+  - i_left (). i_split_l ["HP"] ;; i_assumption ().
   - i_right (). i_split_l ["HP"] ;; i_assumption ().
 Qed.

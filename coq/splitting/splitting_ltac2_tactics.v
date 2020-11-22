@@ -146,6 +146,8 @@ Ltac2 pm_prettify () :=
   ltac2_tactics.pm_prettify ().
 
 Ltac2 i_solve_tc := ltac2_tactics.i_solve_tc.
+(* TODO: test this *)
+Ltac2 i_solve_side_condition := ltac1:(split_and?; try solve [ fast_done | solve_ndisj ]).
 
 Ltac2 Type context_choice := [Spatial | Intuitionistic].
 
@@ -742,7 +744,6 @@ Ltac2 i_mod_intro () :=
   | pm_prettify ()].
 
 (* TODO: battle-test this *)
-(* FIME: add solve_side_condition *)
 Ltac2 i_mod_core (i : constr) :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
@@ -753,7 +754,7 @@ Ltac2 i_mod_core (i : constr) :=
   [ | | | | | | | |
   | pm_force_reflexivity ()
   | i_solve_tc ()
-  | (*TODO: i_solve_side_conditions *)
+  | i_solve_side_condition ()
   | pm_reduce (); pm_prettify ()].
 
 (* TODO: iris intropatterns *)

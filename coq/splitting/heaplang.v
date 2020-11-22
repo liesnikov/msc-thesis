@@ -296,6 +296,8 @@ Proof.
 Qed.
 End heap.
 
+TODO: implement heaplang Latc2 tactics
+(*
 Tactic Notation "wp_expr_eval" tactic3(t) :=
   iStartProof;
   lazymatch goal with
@@ -659,3 +661,4 @@ Tactic Notation "wp_faa" :=
     |wp_finish]
   | _ => fail "wp_faa: not a 'wp'"
   end.
+*)
