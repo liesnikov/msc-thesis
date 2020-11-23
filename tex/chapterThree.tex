@@ -2,22 +2,17 @@
 \label{chap:reimplementation_ipm}
 
 The original implementation of Iris Proof Mode is due to \citet{krebbersInteractiveProofsHigherorder2017}.
-It was later extended to MoSeL\cite{krebbersMoSeLGeneralExtensible2018} by , a general framework for modal separation logics in Coq.
+It was later extended to MoSeL by \citet{krebbersMoSeLGeneralExtensible2018}, which is a general framework for modal separation logics in Coq.
 However, while the original work was done using Ltac1, here we present a translation of MoSeL to Ltac2.
 In the translation we follow both its ideas and implementation closely.
 
-The structure of the chapter is as follows:
-\begin{itemize}
-\item First we describe the basics of separation logic and basic semantics.
-\item Then we cover the embedding of logic in Coq and what MoSeL entailments correspond to in BI.
-\item Afterwards we go into the details of the implementation of tactics and proof mode.
-\item Finally, we share some experiences from the translation of Ltac1 implementation to Ltac2.
-\end{itemize}
+In this chapter, we first describe the basics of separation logic and basic semantics, then cover the embedding of logic in Coq and what MoSeL entailments correspond to in BI\@.
+Afterwards we go into the details of the implementation of tactics and proof mode and, finally, we share some experiences from the translation of Ltac1 implementation to Ltac2.
 
 \section{Introduction to separation logic}
 \label{sec:separation-logic-intro}
 
-We will now describe the basics of the separation logic.
+We will now describe the basics of separation logic.
 Separation logic is an extension of Hoare logic which includes several new operators, the most important two being separating conjunction \((*)\) and separating implication or ``magic wand'' \((\wand)\).
 Separation logic is also built on Bunched Implications logic.
 

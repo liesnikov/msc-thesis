@@ -19,10 +19,10 @@ With this approach logics have to be restricted in order for automation to be fe
 However, automatic proofs are not the only possibility.
 They are also not suitable for more expressive variants of SL, which can include advanced connectives, such as modalities and views.
 The alternative to automatic verification is tactic-based interactive verification.
-There are multiple developments that pursue this idea, usually utilizing existing interactive proof assistants: ``Charge!''~\cite{bengtsonCharge2012}, VST-Floyd~\cite{caoVSTFloydSeparationLogic2018} for Verified Software Toolchain, MoSeL for Iris~\cite{krebbersInteractiveProofsHigherorder2017, krebbersMoSeLGeneralExtensible2018}.
+There are multiple developments that pursue this idea, usually utilizing existing interactive proof assistants: ``Charge!''~\cite{bengtsonCharge2012}, VST-Floyd~\cite{caoVSTFloydSeparationLogic2018} for Verified Software Toolchain, and MoSeL for Iris~\cite{krebbersInteractiveProofsHigherorder2017, krebbersMoSeLGeneralExtensible2018}.
 {
 \interfootnotelinepenalty=10000
-In fact, MoSeL (and its predecessor, IPM -- Iris Proof Mode \footnote{We are going to focus on MoSeL for the rest of the thesis. The title of the thesis stays true to the nature of the work, since the biggest application of MoSeL is still proof mode for Iris.}) turned out to be essential for developments based on Iris \cite{krebbersMoSeLGeneralExtensible2018, jungUnderstandingEvolvingRust2020}: verification of Rust's safety claims \cite{jungRustBeltSecuringFoundations2018, jungStackedBorrowsAliasing2019, dangRustBeltMeetsRelaxed2019}, formalization of Scala's core type system \cite{giarrussoScalaStepbystepSoundness2020}, framework for concurrent reasoning based on message-passing \cite{hinrichsenActrisSessiontypeBased2019} and many others.}
+In fact, MoSeL (and its predecessor, IPM -- Iris Proof Mode \footnote{We are going to focus on MoSeL for the rest of the thesis. The title of the thesis stays true to the nature of the work, since the biggest application of MoSeL is still proof mode for Iris.}) turned out to be essential for developments based on Iris \cite{krebbersMoSeLGeneralExtensible2018, jungUnderstandingEvolvingRust2020}: verification of Rust's safety claims \cite{jungRustBeltSecuringFoundations2018, jungStackedBorrowsAliasing2019, dangRustBeltMeetsRelaxed2019}, formalization of Scala's core type system \cite{giarrussoScalaStepbystepSoundness2020}, a framework for concurrent reasoning based on message-passing \cite{hinrichsenActrisSessiontypeBased2019} and many others.}
 
 VST-Floyd~\cite{caoVSTFloydSeparationLogic2018} and MoSeL \cite{krebbersMoSeLGeneralExtensible2018} are two most recent major contributions in the direction of tactic-based interactive verification.
 Both of them provide support for automation, though they differ significantly in approaches.
@@ -43,7 +43,7 @@ It has badly defined semantics, such that even maintainers don't understand the 
 Even documentation says that some tactics should be used ``at your own risk'' \cite[Section~3.3.1]{thecoqdevelopmentteamCoqProofAssistant2020}.
 MoSeL also relies on Ltac to a great extent and this is a handicap for its development and maintenance, because of the fragility of larger programs written in Ltac.
 
-Fortunately, since the problem with Ltac are well-known, many other languages appeared to substitute it \cite{malechaExtensibleEfficientAutomation2016, zilianiMtacMonadTyped2013, kaiserMtac2TypedTactics2018a, tassiElpiExtensionLanguage2018}.
+Fortunately, since the problems with Ltac are well-known, many other languages appeared to substitute it \cite{malechaExtensibleEfficientAutomation2016, zilianiMtacMonadTyped2013, kaiserMtac2TypedTactics2018a, tassiElpiExtensionLanguage2018}.
 There is also a new experimental tactic language that aims to be a direct successor of Ltac, tries to stay as close as possible to Ltac, while maintaining reasonable semantics: Ltac2 \cite{pedrotLtac2TacticalWarfare2019}.
 
 In an attempt to evaluate Ltac2 as a language for bigger developments, we rewrite Ltac parts of MoSeL to Ltac2.
@@ -64,7 +64,7 @@ It requires the user to provide a list of hypotheses that will be attributed to 
 
 The issue with the rule was first described in a paper by \citet{harlandResourceDistributionBooleanConstraints2003}.
 They proposed an amended entailment predicate to solve the problem.
-The idea is to postpone the distribution by attaching Boolean flags (\(e_1, e_2\)) that indicate presence of hypotheses and imposing the side-condition that the flags are disjoint.
+The idea is to postpone the distribution by attaching Boolean flags (\(e_1, e_2\)) that indicate presence of hypotheses and subsequently imposing the side-condition that the flags are disjoint.
 \[\infer[e_i \oplus \hat{e}_i = \true, i \in \{1,2\}]
         {P, Q \vdash \phi_1 \ast \phi_2}
         {P[e_1], Q[e_2] \vdash \phi_1 &
@@ -74,9 +74,9 @@ We adapt their solution to MoSeL and create a new \coqe{iSplit} tactic which doe
 \subsection{Goal matching}
 \label{sec:goal-matching}
 
-A very useful tacticals of Ltac is \coqe{match goal}.
+A very useful tactical of Ltac is \coqe{match goal}.
 It allows the user to match the hypothesis and the goal in the current proof state and has proven to be essential for automation tactics.
-I.e.\ it is used in \coqe{naive_solver} from stdpp~\cite{std++developersandcontributorsStdpp}, one of the first examples in CPDT~\cite{chlipalaCertifiedProgrammingDependent2013} and \coqe{break_match} tactic from StuctTact library~\cite{uwplse-structtactdevelopmentteamStructTact2020}.
+E.g.\ it is used in \coqe{naive_solver} from stdpp~\cite{std++developersandcontributorsStdpp}, one of the first examples in CPDT~\cite{chlipalaCertifiedProgrammingDependent2013} and in the \coqe{break_match} tactic from StuctTact library~\cite{uwplse-structtactdevelopmentteamStructTact2020}.
 
 \begin{figure}[H]
 \begin{coq}
@@ -85,11 +85,11 @@ match goal with
 | [|- True] => exact I
 end.
 \end{coq}
-  \caption{Small example of automation tactic, which uses \texttt{match goal}}
+  \caption{Small example of automation tactic which uses \coqe{match goal}}
   \label{fig:match-goal-example-intro}
 \end{figure}
 
-MoSeL doesn't use Coq contexts and instead stores hypothesis in the goal, which means that the original tactical is of limited usage, and Ltac doesn't provide an obvious way implement goal-matching for MoSeL contexts, i.e.\ there is no way to reuse the syntax of goal matching for user-defined tactics.
+MoSeL doesn't use Coq contexts and instead stores hypotheses in the goal, which means that the original tactical is of limited usage, and Ltac doesn't provide an obvious way implement goal-matching for MoSeL contexts, i.e.\ there is no way to reuse the syntax of goal matching for user-defined tactics.
 We develop a new tactic \coqe{iMatch goal} in Ltac2 for the reimplemented MoSeL, which aims to be a separation-logic alternative to \coqe{match goal}.
 
 \section{Contributions}
@@ -97,7 +97,7 @@ We develop a new tactic \coqe{iMatch goal} in Ltac2 for the reimplemented MoSeL,
 
 \begin{itemize}
 \item In chapter~\ref{chap:reimplementation_ipm}, we describe our reimplementaion of MoSeL in Ltac2, which is, to our knowledge, contributing one of the first significant applications of the language.
-  In the process, we evaluate parts of Ltac2 used and suggest possible directions for future development.
+  In the process, we evaluate used parts of Ltac2 used and suggest possible directions for future development.
 \item In chapter~\ref{chap:postponed_splitting}, we develop an adaptation of results by \citet{harlandResourceDistributionBooleanConstraints2003} to MoSeL, as reimplemented in the previous chapter, to introduce a new splitting tactic \coqe{iSplit}.
 \item In chapter~\ref{chap:imatch}, we describe a new primitive \coqe{iMatch goal} for the tactic language of separation logic which allows us to match entailments in a fashion similar to Coq's native \coqe{match goal} construct.
 \item Finally, in chapter~\ref{chap:solver} we utilize the previously implemented features in order to implement a simple solver for separation logic.
