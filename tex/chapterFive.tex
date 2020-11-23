@@ -165,8 +165,8 @@ And since \coqe{f} is given to us by the Ltac2 machinery, we are only left with 
 We will describe the rest of the implementation on a higher level now.
 Inside \coqe{i_match_patterns_goal}, current proof state is matched and MoSeL contexts and goal are extracted from it.
 We then compute all possible pairings of hypotheses and patterns with help of \coqe{Pattern.match} and return them as a list alternatives inside monad \coqe{M}.
-We also match current IPM goal with goal pattern \coqe{pconcl}, take a direct product of these two monadic lists of values and merge substitution maps.
-Essentially, if \coqe{i_match_patterns_goal} returns a non-zero result, the last part of the computation above takes form of
+We also match current MoSeL goal with goal pattern \coqe{pconcl}, take a direct product of these two monadic lists of values and merge substitution maps.
+If \coqe{i_match_patterns_goal} returns a non-zero result, the last part of the computation above takes form of
 \begin{coq}
 let (hids, subst) := Control.plus (h,s) foo in
 f hids subst
@@ -181,7 +181,7 @@ Control.plus
    f hids subst)
 \end{coq}
 
-Which from a user perspective simply means that there might be several alternative bindings of hypotheses to identifers inside the match and we can backtrack to try different ones.
+Which from the user perspective simply means that there might be several alternative bindings of hypotheses to identifers inside the match and we can backtrack to try different ones.
 
 In case \coqe{i_match_patterns_goal} can't match current proof state with this branch's patterns (\coqe{i_match_patterns_goal phyps pconcl}) or branch right-hand side fails (\coqe{f hids subst}), \coqe{cur} will be set to \coqe{fun () => Control.zero e}, for some \coqe{e}.
 This results in a following redex:
@@ -189,13 +189,13 @@ This results in a following redex:
 let cur := fun () => Control.zero e
 in Control.plus cur rest
 \end{coq}
-Which in its own turn evaluates to \coqe{rest}, which is equivalent to switching to a different branch from a user perspective.
+Which evaluates to \coqe{rest}, which is equivalent to switching to a different branch from the user perspective.
 
 \section{Backtracking and variants of \texttt{iMatch}}
 
 One of the reasons for success of \coqe{match goal} is its intuitive behavior.
 Our implementation of \coqe{iMatch} aims to follow it as closely, as possible.
-However, Ltac1 has not only \coqe{match}, but also two alternatives: \coqe{lazymatch} and \coqe{multimatch}, both for goal and term matching.
+However, Ltac2 has not only \coqe{match}, but also two alternatives: \coqe{lazy_match} and \coqe{multi_match}, both for goal and term matching.
 We reproduce them for \coqe{iMatch} too.
 
 In this section we are going to explain what are the differences in semantics between those variants and cover some details about the implementation of them for \coqe{iMatch}.
@@ -210,7 +210,7 @@ We are going to walk through them now.
 
 \subsection{Backtracking during hypothesis matching and switching branches}
 
-It might be tempting to think about iMatch simply selecting the right hypothesis when a user wants it to, this isn't exactly what's happening.
+It might be tempting to think about iMatch simply selecting the right hypothesis when the user wants it to, this isn't exactly what's happening.
 In reality, Ltac, Ltac2 implementation, and ours, match patterns will all fitting hypotheses sequentially, starting with the first one.
 
 Which would make one think that if there are two hypotheses: \coqe{H1:P}, \coqe{H2:Q}, only one of the following two snippets would succeed.

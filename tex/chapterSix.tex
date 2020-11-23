@@ -42,7 +42,7 @@ This ensures that we first normalize the environment and only then start solving
 \begin{figure}[H]
   \begin{coq}
  Ltac2 i_solver () := i_start_split_proof ();
-  solve [repeat (orelse (i_solver_first) (fun _ => i_solver_second ()))].
+  solve [repeat (orelse (i_solve_first) (fun _ => i_solve_second ()))].
   \end{coq}
   \caption{\texttt{i\_solver} implementation}
   \label{fig:i-solver}
@@ -72,7 +72,7 @@ Ltac2 i_solve_first () := iLazyMatch! goal with
 
 \begin{figure}
 \begin{coq}
-Ltac2 i_solver_second () := iMultiMatch! goal with
+Ltac2 i_solve_second () := iMultiMatch! goal with
   | [a : <?>(?p \/ ?q) |- _ ] =>
     i_or_destruct (ipm_id a) (i_fresh ()) (i_fresh ())
   | [ |- (?p \/ ?q)%I] =>
@@ -141,7 +141,7 @@ However, there are also several downsides that stem from the nature of implement
 \item Completeness: as the approach we pick is heuristics-based, ensuring that \coqe{i_solver} can indeed solve some externally specified subset of logic is hard.
 \item Performance: while neither Ltac2, nor the solver were developed with execution speed in focus, we have to note that our naive implementation suffers at times from slowness.
   We haven't done extensive benchmarking and can only offer anecdotal evidence, on a computer with Intel i5-5200U processor and Coq 8.11 solving~\ref{fig:bigger-example-i-solver} took roughly 1 minute, while smaller examples would be finished withing 0.2 of a second.
-  And while it is hard to place blame without proper profiling tooling available, but experiments suggested that backtracking may cause significant slowdown, as well as function calls.
+  And while it is hard to place blame without proper profiling tooling available, but experiments suggested that backtracking inside \coqe{iMatch} may cause significant slowdown, andwhat is the way to speed it up, except reimplementation in OCaml, is not clear.
 \end{itemize}
 
 %%% Local Variables:

@@ -16,7 +16,7 @@ This thesis was built on MoSeL and followed its design choices closely, where po
 Now we proceed with discussion of work related to the contributions of the thesis.
 There are three key points which we are going to discuss.
 \begin{itemize}
-\item How did the language choice impact us for the purposes of this thesis?
+\item Could we chose a different language for the implementation?
 \item What are other approaches to resource management and resource distribution problem?
 \item How does our approach to automation compare to existing work?
 \end{itemize}
@@ -27,7 +27,7 @@ There are three key points which we are going to discuss.
 \begin{itemize}
 \item Mtac2~\cite{kaiserMtac2TypedTactics2018a} is tactic language, which focuses on stronger types for meta-programs and features support for backwards-style reasoning.
   Fortunately, Mtac2 paper~\cite{kaiserMtac2TypedTactics2018a} features a reimplementation of some Iris Proof Mode tactics as a case-study.
-  Mtac2 is able to provide some benefits, which are unique to it.
+  Mtac2 is able to provide some benefits which are unique to it.
   In particular, Ltac2 does not ensure that goal type and lemma types match, likewise it doesn't help with ``lemma-argument'' mismatch and ``subgoal-tactic'' mismatch problems (names are from the Mtac2 paper~\cite[Section~5.4]{kaiserMtac2TypedTactics2018a}).
   And this problems are not only not aided by Ltac2, they stay precisely the same, as they were for Ltac1, since Ltac2 does feature type system, but it is too weak to capture Coq goals.
   However, Ltac2 is able to aid ``non-modular error handling'' problem, which me praise Ltac2 for in the relevant chapter~\ref{sec:impr-from-transl}.
@@ -41,10 +41,10 @@ There are three key points which we are going to discuss.
   This makes endeavors such as reimplementation of MoSeL in MetaCoq infeasible for us, since unlike the example presented in the paper, we have to rely on many existing tactics with MoSeL.
 \item Rtac~\cite{malechaExtensibleEfficientAutomation2016} is a tactic language that is build around the idea of computational reflection.
   Rtac provides the user with ability to create automation tactics, that can be proven sound in a straightforward way, while also featuring superb performance compared to Ltac.
-  And while this could be utilized to implement solver like \coqe{i_solver}, Rtac is missing several critical for our implementation features, like constructs to work with existential variables, that lie at the heart of the new implementation of MoSeL or, again, notational machinery.
-\item The last tactic language we consider is Elphi~\cite{tassiElpiExtensionLanguage2018}.
-  It supports advanced logical programming, transformations of Coq terms and even gives an example of pattern-matching goals.
-  But it doesn't provide support for existential variables, which seem to be the solution for resource distribution and has a downside of being completely different syntactically and semantically, which serves as a handicap for user-developed automation.
+  And while this could be utilized to implement solver like \coqe{i_solver}, Rtac is missing several critical for our implementation features, like primitives to work with existential variables, that lie at the heart of the new implementation of MoSeL or, again, notational machinery.
+% \item The last tactic language we consider is Elphi~\cite{tassiElpiExtensionLanguage2018}.
+%   It supports advanced logical programming, transformations of Coq terms and even gives an example of pattern-matching goals.
+%   But it has a downside of being completely different syntactically and semantically, which serves as a handicap for user-developed automation.
 \end{itemize}
 
 \section{Resource managment and distribution}
@@ -65,13 +65,13 @@ These are provided to a solver, which outputs and assignment for variables prese
   This is the only strategy that our approach doesn't accommodate at all, since we solve constraints immediately.
 
   Since MoSeL is implemented in Coq, we also get some flexibility for free, which isn't necessarily present in the strategies described in the paper.
-  In particular, since goals in Iris Proof Mode are Coq goals too, the user can jump from one goal to another at any moment, which resembles ``intermediate'' distribution.
+  In particular, since goals in MoSeL are Coq goals too, the user can jump from one goal to another at any moment, which resembles ``intermediate'' distribution.
 \item One alternative to Boolean-expression resembles ``continuation-style'' environments, which we described in section~\ref{subsec:environments}.
   This approach is described in the lecture notes by~\citet{pfenningLogicProgrammingLecture2007} and is implemented in Lolli~\cite{LolliLinearLogic}.
   The idea is to track used resources in one branch and then discard them once proof enters the other branch.
   In order to ensure efficiency this approach has been subsumed by ``tag frames''\cite{hodasTagFrameSystemResource2002, lopezImplementingEfficientResource2004}.
-  However, while such approach is more efficient it is also less general, since it requires ones to use depth-first search (or ``lazy'' strategy, in terms of \citet{harlandResourceDistributionBooleanConstraints2003}).
-  And besides, as we mentioned earlier~\ref{subsec:environments}, such approach would be unfit for implementation in MoSeL due to higher-order nature of the logic.
+  However, while such approach is more efficient it is also less general, since it requires the developer to use depth-first search (or ``lazy'' strategy, in terms of \citet{harlandResourceDistributionBooleanConstraints2003}).
+  And besides, as we mentioned earlier in section~\ref{subsec:environments}, such approach would be unfit for implementation in MoSeL due to the higher-order nature of the logic.
 \item While the last comparison is not strictly related to separation logic, a very similar problem to resource distribution is encountered in languages with linear type systems and multiplicities.
   In particular, Idris 2 (\cite{MultiplicitiesIdris2Documentation}) builds on quantitative type theory and therefore has to track argument usage.
   The mechanism is based on count appearance in proof terms.
