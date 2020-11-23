@@ -82,6 +82,7 @@
 \newcommand{\settitle}[1]{\title{#1}\def\thetitle{#1}}
 
 \newcommand{\advisor}[1]{\def\theadvisor{#1}}
+\newcommand{\supervisor}[1]{\def\thesupervisor{#1}}
 \newcommand{\reviewerOne}[1]{\def\thereviewerOne{#1}}
 \newcommand{\reviewerTwo}[1]{\def\thereviewerTwo{#1}}
 \newcommand{\university}[1]{\def\theuniversity{#1}}
@@ -113,13 +114,19 @@
 
       % Author and supervisor
       \noindent
-      \begin{minipage}{0.4\textwidth}
+      \begin{minipage}{0.3\textwidth}
         \begin{flushleft} \Large
           \emph{Author}\\
           \theauthor
         \end{flushleft}
       \end{minipage}%
-      \begin{minipage}{0.4\textwidth}
+      \begin{minipage}{0.3\textwidth}
+        \begin{center} \Large
+        \emph{Supervisor}\\
+        \thesupervisor
+      \end{center}
+      \end{minipage}
+      \begin{minipage}{0.3\textwidth}
         \begin{flushright} \Large
           \emph{Advisor} \\
           \theadvisor
@@ -129,7 +136,7 @@
 
       \noindent
       \begin{minipage}{1\textwidth}
-        \vspace{7cm}
+        \vspace{6cm}
         \begin{center} \large
           \emph{Reviewers} \\
           \thereviewerOne\\
@@ -140,7 +147,6 @@
       \vfill
 
       {\large Submitted: \thesubday\textsuperscript{th} \thesubmonth~\thesubyear}
-
     \end{center}
   \end{titlepage}
 }
@@ -179,7 +185,7 @@ Computer Science Department.
 
 \vspace*{3cm}
 
-\includegraphics[height=1cm]{../sig}\\
+%\includegraphics[height=1cm]{../sig}\\
 \thecity, \thesubday$^{\text{th}}$ \thesubmonth, \thesubyear
 
 \newpage
@@ -198,7 +204,7 @@ I hereby confirm the congruence of the contents of the printed data and the elec
 
 \vspace*{3cm}
 
-\includegraphics[height=1cm]{../sig}\\
+%\includegraphics[height=1cm]{../sig}\\
 \thecity, \thesubday$^{\text{th}}$ \thesubmonth, \thesubyear
 
 \newpage
