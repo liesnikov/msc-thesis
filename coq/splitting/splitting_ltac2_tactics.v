@@ -146,8 +146,8 @@ Ltac2 pm_prettify () :=
   ltac2_tactics.pm_prettify ().
 
 Ltac2 i_solve_tc := ltac2_tactics.i_solve_tc.
-(* TODO: test this *)
-Ltac2 i_solve_side_condition := ltac1:(split_and?; try solve [ fast_done | solve_ndisj ]).
+(* FIXME: solve_ndisj isn't available *)
+Ltac2 i_solve_side_condition () := () (* ltac1:(split_and?; try solve [ fast_done | solve_ndisj ])*).
 
 Ltac2 Type context_choice := [Spatial | Intuitionistic].
 
