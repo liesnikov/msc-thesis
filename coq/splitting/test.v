@@ -195,13 +195,10 @@ Proof.
   i_intro_named "r".
   i_intro_named "t".
   i_split ().
-  i_split ().
   i_and_destruct_split '(INamed "pq") '(INamed "p") '(INamed "q").
+  i_split ().
   i_exact '(INamed "r").
   i_cleanup ().
-  i_and_destruct_split '(INamed "pq") '(INamed "p") '(INamed "q").
-  Focus 2.
-  i_exact '(INamed "q").
-  i_cleanup ().
+  i_assumption ().
   i_assumption ().
 Qed.

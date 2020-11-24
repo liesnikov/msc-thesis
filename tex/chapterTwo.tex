@@ -63,7 +63,7 @@ In order to ensure sound behavior with respect to the proof state, the body of a
 This is the reason why we thunk definitions in the example above.
 
 Ltac2 also features quotation mechanism.
-In the example above \coqe{two} is a thunked constraint, while \coqe{three} is a thunked \coqe{open_constr}, which can contain existential variables.
+In the example above \coqe{two} is a thunked Coq term, while \coqe{three} is a thunked \coqe{open_constr}, which can contain existential variables.
 
 Ltac2 doesn't expose Ltac1 tactics directly inside, but rather reimplements them from scratch and OCaml primitives.
 This provides great flexibility for introducing changes to them, but also means that Ltac2 isn't compatible with other tactic languages, like SSReflect~\cite[Section~3.1.3]{thecoqdevelopmentteamCoqProofAssistant2020}.
@@ -95,16 +95,16 @@ Ltac2 one_conjunct_trivial :=
   end.
 \end{coq}
 
-The syntax is the same as for Ltac1. Units \coqe{()} are no-op in the snippet above, but we include them for readability.
-
+The syntax is the same as for Ltac1.
+Units \coqe{()} are no-op in the snippet above, but we include them for readability.
 The other new element of syntax is
-% The quote environments are to fix box overflows
-\begin{quote}
-\coqe{tactic1 > [tactic2_1 | $\ldots$ | tactic2_n]} which stands for tactic \end{quote}
-dispatch and was written as
-\begin{quote}
-\coqe{tactic1; [tactic2_1 |  $\ldots$ | tactic2_n]}
-\end{quote}
+\begin{coq}
+tactic1 > [tactic2_1 | $\ldots$ | tactic2_n]
+\end{coq}
+which stands for tactic dispatch and was written as
+\begin{coq}
+tactic1; [tactic2_1 |  $\ldots$ | tactic2_n]
+\end{coq}
 in Ltac1.
 
 Notably, Ltac2 not only provides machinery for pattern-matching terms and goals, but also exposes notations and internal functions for them.

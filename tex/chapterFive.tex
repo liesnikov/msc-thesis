@@ -1,7 +1,7 @@
 \chapter{iMatch}
 \label{chap:imatch}
 
-Ltac has a tactical for matching current proof state, which looks as follows:
+Ltac has a tactical for matching proof states which looks as follows:
 
 \begin{coq}
 match goal with
@@ -9,18 +9,15 @@ match goal with
 end
 \end{coq}
 
-In this example we are matching context that's supposed to contain at least two assumptions: \coqe{P} and \coqe{Q}.
+In this example we are matching the context that's supposed to contain at least two assumptions: \coqe{P} and \coqe{Q}.
 We also require the goal to be exactly \coqe{P} and then close the proof with the first assumption matched in the context.
 
 MoSeL doesn't use Coq contexts, since they don't track hypothesis usage, which can result in resources being used multiple times or not used at all.
-Instead, it stores whole proof state in the goal, thus limiting usability of \coqe{match goal} significantly.
+Instead, it stores whole proof state in the goal, thus limiting the usability of \coqe{match goal} significantly.
 
-The following contributions of the thesis are presented in this chapter:
-\begin{itemize}
-\item We develop an alternative for \coqe{match goal} for MoSeL and call it \coqe{iMatch}.
-\item We integrate it with the new MoSeL entailments, as developed in the previous chapter~\ref{chap:postponed_splitting}.
-\item We describe limitations encountered in Ltac2 for the purposes of the development and suggest possible solutions.
-\end{itemize}
+In this chapter we first develop an alternative for \coqe{match goal} for MoSeL and call it \coqe{iMatch}.
+Then we integrate it with the new MoSeL entailments, as developed in the previous chapter~\ref{chap:postponed_splitting}.
+Finally, we describe limitations encountered in Ltac2 for the purposes of the development and suggest possible solutions.
 
 \section{Motivation/examples}
 
@@ -28,12 +25,10 @@ While one of the best illustrative examples for \coqe{iMatch} would be a solver 
 Let's take a simpler and more intuitive example here instead.
 Suppose we want to extend \coqe{i_assumption} tactic so that it also applies suitable wands it can find in the context.
 We will call this new tactic \coqe{i_assumption'}.
-This would allow us to discharge goals like the following with \coqe{repeat i_assumption'}.\\
+This would allow us to discharge goals like the following with \coqe{repeat i_assumption'}.
 
 \begin{minipage}{\linewidth}
-\texttt{P, Q : PROP\\
----------------------------------------\\
-"q" : Q\\
+\texttt{"q" : Q\\
 "p" : Q $\wand$ P\\
 ---------------------------------------*\\
 P

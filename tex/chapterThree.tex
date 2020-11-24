@@ -636,18 +636,22 @@ We now show what the proof looks like in the reimplemented version of MoSeL.
 The full listing is in figure~\ref{fig:example-proof-mosel-ltac2}.
 Since we didn't touch environment or rendering of the goals, for the user only tactics changed and everything else stayed the same, including the proof states.
 
-Perhaps, the biggest difference from the Ltac1 version is the lack of notations.
+Perhaps, the biggest difference from the Ltac1 version is the lack of useful notations and intropatterns.
 However, this is not Ltac2's fault, but rather ours -- we didn't focus on them and this aspect can still be improved.
+In particular, now we have to destruct the introduced separating conjunction with two tactic invocations: what previously was just \coqe{iIntros "[HP H]".} now becomes manual introduction of the separating conjunction \coqe{i_intro_named "HS".} and then its destruction \coqe{i_and_destruct '(INamed "HS") '(INamed "HP") '(INamed "H").}
+Same goes for the existential, while previously we could destruct both the existential and disjunction in one command, now we have to perform two.
 
 \begin{figure}
 \begin{coq}
 Lemma example {A : Type} (P : PROP) (Phi Psi : A → PROP) :
   P * (exists a, (Phi a) \/ (Psi a)) -* exists a, (P * Phi a) \/ (P * Psi a).
 Proof.
-  i_intro_named "H".
-  i_and_destruct '(INamed "H") '(INamed "HP") '(INamed "HE").
-  i_exist_destruct '(INamed "HE") as x '(INamed "HE").
-  i_or_destruct '(INamed "HE") '(INamed "H1") '(INamed "H2").
+  (* iIntros "[HP H]". *)
+  i_intro_named "HS".
+  i_and_destruct '(INamed "HS") '(INamed "HP") '(INamed "H").
+  (* iDestruct "H" as (x) "[H1|H2]". *)
+  i_exist_destruct '(INamed "H") as x '(INamed "HD").
+  i_or_destruct '(INamed "HD") '(INamed "H1") '(INamed "H2").
   - i_exists$\text{~}$x. i_left (). i_split_l ["HP"] ;; i_assumption ().
   - i_exists$\text{~}$x. i_right (). i_split_l ["HP"] ;; i_assumption ().
 Qed.

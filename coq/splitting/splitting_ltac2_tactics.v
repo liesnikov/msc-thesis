@@ -2,7 +2,6 @@ From iris.bi Require Export bi telescopes.
 From iris.proofmode Require Import base.
 From iris.proofmode Require Export classes notation.
 Set Default Proof Using "Type".
-
 From Local Require Import named_prop.
 From Local Require Export named_prop_notation.
 From Local Require Import splitting_imatch.
@@ -21,7 +20,7 @@ Export ident.
 
 
 Ltac2 Type ident_ltac2 := Init.constr.
-Ltac2 new_constraint () := new_evar_with_cast '(bool).
+Ltac2 new_variable () := new_evar_with_cast '(bool).
 
 Ltac2 Notation "parse_strategy" s(strategy) := s.
 Ltac2 Notation red_flags_default := parse_strategy.
@@ -498,7 +497,7 @@ Ltac2 i_assumption0 () :=
 end.
 
 Ltac2 i_assumption () := Control.enter i_assumption0.
-      
+
 Ltac2 i_specialize (f : ident_ltac2) (a : ident_ltac2) (n : ident_ltac2) :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e _] =>
@@ -526,7 +525,7 @@ Ltac2 i_specialize_assert (f : ident_ltac2) :=
     match (Int.equal 0 n) with
     | true => '(nil)
     | false =>
-      let v := new_constraint () in
+      let v := new_variable () in
       let tl := gen_list (Int.sub n 1) in
       '($v :: $tl)
     end in
@@ -579,7 +578,7 @@ Ltac2 i_and_destruct (x : ident_ltac2)
                      (z : ident_ltac2) :=
   i_start_split_proof ();
   refine '(tac_and_destruct _ $x _ $y $z _ _ _ _ _ _ _ _) >
-  [ () | () | () | () | ()
+  [ () | Control.shelve () | () | () | ()
   | pm_reflexivity ()
   | pm_reduce_force (); i_solve_tc ()
   | pm_reduce ()].
@@ -589,7 +588,7 @@ Ltac2 i_and_destruct_split0 (x : ident_ltac2)
                             (z : ident_ltac2)
                             (c : constr) :=
   refine '(tac_and_destruct_split _ $x _ $y $z _ $c _ _ _ _ _ _ _) >
-  [ () | () | () | () | ()
+  [ () | Control.shelve () | () | () | ()
   | pm_reflexivity ()
   | i_solve_tc ()
   | pm_reduce () ].
@@ -597,7 +596,7 @@ Ltac2 i_and_destruct_split0 (x : ident_ltac2)
 Ltac2 i_and_destruct_split (x : ident_ltac2)
                            (y : ident_ltac2)
                            (z : ident_ltac2) :=
-  let c := new_constraint () in
+  let c := new_variable () in
   i_and_destruct_split0 x y z c.
 
 Ltac2 i_and_destruct_left (x : ident_ltac2)
@@ -670,7 +669,7 @@ Ltac2 i_sep_split () :=
     match (Int.equal 0 n) with
     | true => '(nil)
     | false =>
-      let v := new_constraint () in
+      let v := new_variable () in
       let tl := gen_list (Int.sub n 1) in
       '($v :: $tl)
     end in
