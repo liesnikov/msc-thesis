@@ -1,4 +1,4 @@
-In this thesis, we use a new experimental tactic language -- Ltac2 to reimplement part of the complex system of which provides tactics for separation logic, as originally presented by MoSeL.
+In this thesis, we use a new experimental tactic language -- Ltac2 to reimplement part of MoSeL, a framework for interactive proofs in separation logic.
 Using this new implementation as a platform for new feature development, we adapt the solution for ``resource distribution'' problem from the work by~\citet{harlandResourceDistributionBooleanConstraints2003} to MoSeL entailments. In particular, we adapt old tactics to support postponed decisions about the distribution and provide a completely new one for introduction of separating conjunction \coqe{iSplit}.
 Utilizing Ltac2's notation mechanisms, we also implement a separation-logic alternative for \coqe{match goal}, which incorporates both multiple contexts from MoSeL proof mode and the new proof mode with postponed resource distribution decisions.
 Finally, we consolidate the new implemented features to implement a simple solver for separation logic.
