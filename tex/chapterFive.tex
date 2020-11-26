@@ -96,13 +96,12 @@ iMatch! goal with
 | [a:<true>P |- _ ] => ...
 \end{coq}
 The first two options are equivalent and match only hypotheses with constraints which don't evaluate to \false.
-The third one binds the constraint to \coqe{c} in case user wants to minuplate it or force its unification with either $\true$ or $\false$ manually.
+The third one binds the expression attached to the resource a to \coqe{c} in case user wants to minuplate it or force its unification with either $\true$ or $\false$ manually.
 The last one only matches hypotheses which are guaranteed to be present in the context, as opposed to ones which might or might not be in this branch of the proof after splitting the context.
-This generalizes to arbitrary constraints, so the user can also write \coqe{<?c1 & ?c2>}.
-Though where such generality might be useful is not entirely clear yet.
+This generalizes to arbitrary expressions, so the user can also write \coqe{<?c1 & ?c2>}.
 \item There is also a technical limitation -- at the moment it is not possible to implement non-linear patterns in Ltac2, so technically it's not possible to implement \coqe{i_assumption'} for \emph{pattern-matching} to ensure that the goal and conclusion of the wand match.
   Presented implementation is still correct, as \coqe{iApply} (and \coqe{iExact}) will ensure that conclusion and the goal match.
-  However, this does degrade performance due to branches of backtracking being cut off later, then necessary.
+  However, this does degrade performance due to branches of backtracking being cut off later than necessary.
   Lack of linearity means that technically the implementation above is equivalent to the following, which keeps the conciseness.
 
 \begin{minipage}{\linewidth}
@@ -122,13 +121,13 @@ We discuss the root of the limitation further in the last section~\ref{sec:desir
 \label{subsec:implementation_details}
 
 Ltac2 computation model is based on a monad, which is a state, list (non-binary choice) and captures exceptions simultaneously.
-However, for a high-level description of implementation having only a list monad \coqe{M} suffices.
-To this end, we take \coqe{(Control.zero : forall a, exn -> M a)} to be an empty list.
+However, for a high-level description of the implementation it suffices to have a backtracking list monad \coqe{M}.
+To this end, we take \coqe{(Control.zero : forall a, exn -> M a)} to be an empty list constructor.
 And \coqe{(Control.plus : forall a, M a -> M a -> M a)} to be \coqe{append} operator for lists.
 For simplicity, let's also assume that patterns can't contain contexts, e.g. \coqe{context a [I]} isn't allowed.
-They don't add much in terms of conceptual complexity and the only change would be to pass results of their matches around too.
+They don't add much in terms of conceptual complexity and the only change required to accommodate them would be to pass results of their matches around too.
 
-From Ltac2 we take a function \coqe{Pattern.match}, \coqe{match! goal} tactical and notation (a scope, in Ltac2 terms) for goal pattern-matching.
+From Ltac2 we take the \coqe{Pattern.matches} function, \coqe{match! goal} tactical and notation (a scope, in Ltac2 terms) for goal pattern-matching.
 The latter allows us to reuse the same syntax as \coqe{match! goal}:
 \begin{coq}
 Ltac2 Notation "iMatch!" "goal" "with" m(goal_matching) "end" :=
@@ -158,9 +157,9 @@ After taking apart one branch \coqe{ph}, we bind \coqe{rest} to the rest of the 
 And since \coqe{f} is given to us by the Ltac2 machinery, we are only left with \coqe{i_match_patterns_goal} to worry about.
 
 We will describe the rest of the implementation on a higher level now.
-Inside \coqe{i_match_patterns_goal}, current proof state is matched and MoSeL contexts and goal are extracted from it.
-We then compute all possible pairings of hypotheses and patterns with help of \coqe{Pattern.match} and return them as a list alternatives inside monad \coqe{M}.
-We also match current MoSeL goal with goal pattern \coqe{pconcl}, take a direct product of these two monadic lists of values and merge substitution maps.
+Inside \coqe{i_match_patterns_goal} the current proof state is matched (\coqe{match! goal}) and MoSeL contexts and goal are extracted from it.
+We then compute all possible pairings of hypotheses from the contexts and patterns with help of \coqe{Pattern.matches} and return them as a list alternatives inside monad \coqe{M}.
+We also match current MoSeL goal against goal pattern \coqe{pconcl} with \coqe{Pattern.matches}, take a direct product of the result of goal-matching and hypothesis-matching as two monadic lists of values and merge substitution maps.
 If \coqe{i_match_patterns_goal} returns a non-zero result, the last part of the computation above takes form of
 \begin{coq}
 let (hids, subst) := Control.plus (h,s) foo in
@@ -341,7 +340,7 @@ OCaml functions to enable access to the name-unification resolution monad, which
 \item The final issue we encountered while implementing \coqe{iMatch} was also related to separators of contexts.
   Ltac2 provides a module to probe the AST of Coq terms inside Ltac2 -- Constr.Unsafe -- which proved to be invaluable for the implementation of new \coqe{iSplit} tactic and working with existential variables in general.
   It would be extremely handy to have similar ability for patterns.
-  One use-case, which would fit in the current implementation is detection whether a pattern is simply a constraint.
+  One use-case, which would fit in the current implementation is detection whether a pattern is a separator, that is, a specific Coq term.
   For now we we check whether a pattern is a separator between context by matching it against different terms.
 \end{itemize}
 

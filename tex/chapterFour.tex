@@ -33,7 +33,7 @@ The following contributions of the thesis are presented in this chapter:
 \begin{itemize}
 \item We generalize rules from \citet{harlandResourceDistributionBooleanConstraints2003} to allow resource manipulation for ``undecided'' resources, where possible.
   In particular, we change the rule for non-separating conjunction, introduce a new rule for wand and existential quantifier elimination.
-\item We adapt the rules to MoSeL entailments, and, to the best of our knowledge, present the first implementation of the results, as well as the first mechanized BI derivation rules with Boolean constraints.
+\item We adapt the rules to MoSeL entailments, and, to the best of our knowledge, present the first implementation of the results for BI, as well as the first mechanized BI derivation rules with Boolean constraints.
 \item Finally, the main contribution from practical point of view: we implement several new tactics for MoSeL, and, among others, \coqe{iSplit} which solves precisely the problem outlined above.
 \end{itemize}
 
@@ -273,7 +273,7 @@ However, since the current logic is still single-conclusioned, we have to ask fo
       {\Gamma, \phi[\neg (c \& c_2) \& c_1], (\phi \wand \psi)[\neg (c \& c_1) \& c_2], \psi[c \& c_1 \& c_2] \vdash \rho}
 \]
 
-The idea is that we combine the constraints for the resulting resource \(\psi\), while ensuring that the user still has the choice to not utilize it.
+The idea is that we combine expressions for the resulting resource \(\psi\), while ensuring that the user still has the choice to not utilize it.
 However, as we will see later, such a rule is unfit for our implementation, since expression's shape becomes too general.
 
 \subsection{Non-separating conjunction}
@@ -889,7 +889,6 @@ Concretely, this would ask for an explicit proof of disjointness of resources \c
 In this case \coqe{tac_and_destruct_split} would change from figure~\ref{fig:i_and_destruct_split_lemma} to figure~\ref{fig:i_and_destruct_split_lemma_eq}.
 
 This approach can, to some extent, make it easier to interface MoSeL with an external SAT solver, since equations are now explicitly present in the proof terms and can be managed by Ltac2.
-The problem with calling SAT solver from Ltac2, however, stays the same.
 
 \begin{figure}
 \begin{coq}

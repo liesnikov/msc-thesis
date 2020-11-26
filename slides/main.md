@@ -2,8 +2,8 @@
 author: Bohdan Liesnikov
 institute:
 - "Universität des Saarlandes"
-- "Supervisor: Derek Dreyer"
 - "Advisor: Robbert Krebbers"
+- "Supervisor: Derek Dreyer"
 title: Extending and Automating \text{Iris~Proof~Mode} with Ltac2
 subtitle: "Master's thesis presentation"
 date: November 30, 2020
@@ -17,70 +17,56 @@ section-titles: true
 listings: true
 ---
 
-
 # Introduction
 
-## Motivation
+## Motivation #1: Ltac
 
-## Related work
+Ltac is 
 
-# But what is PolyRec exactly?
+## Motivation #2: \textnormal{\LARGE \texttt{iSplit}}
 
-## The setting
+# Crash course in Ltac2
 
-## Paper contributions
+## ML-family language
 
-## Transformations considered
+## Notations
 
-## The rest
+## Exceptions, mutable datatypes, and others
 
-# Iteration space representation
+## Semantics
 
-## Iteration space representation
+# iMatch
 
-## Running example
+## Matching goals in Ltac/Ltac2
 
-## Running example
+## Matching goals in MoSeL
 
-## Iteration space representation
+## Different environments
 
-# Transformations
+## iLazyMatch, iMultiMatch
 
-## Transformations representation
+# iSplit
 
-## Specific transformations: Code motion
+## Problem setting
 
-## Specific transformations: Code motion
+## Solution by Harland and Pym
 
-## Specific transformations: Interchange
+## How to port to MoSeL
 
-## Specific transformations: Interchange
+## New environments
 
-## Specific transformations: Interchange
+## New Coq tactics
 
+## iSplit in action
 
-## Transformation: inline `inner.left` (reminder)
+# iSolver
 
-## Transformation: inline `inner.left`
+## Let's put all this together
 
-## Summary so far
-
-# Dependency representation
-
-## Dependency and running example
-
-## Dependency representation: witness tuples
-
-## Dependency check: what it does
-
-# Evaluation
-
-## Evaluation: questions
-
-## Evaluation: cases
-
-## Evaluation
+## Scope
 
 # Conclusion
 
-## Conclusion
+## Ltac2 lessons
+
+## New MoSeL proof mode
