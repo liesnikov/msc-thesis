@@ -19,11 +19,27 @@ listings: true
 
 # Introduction
 
+## Motivation
+
+* One of the key elements of Iris success has been Iris Proof Mode \autocite{krebbersInteractiveProofsHigherorder2017}.
+* In 2018, it was extended to MoSeL \autocite{krebbersMoSeLGeneralExtensible2018} -- a general framework for interactive proofs in separation logic.
+* Can we do more for MoSeL?
+
 ## Motivation #1: Ltac
 
-Ltac is 
+* MoSeL is implemented in Ltac
+* There are multiple complains about Ltac, people are calling it names (and for a good reason!)
+* Why don't we try reimplementing MoSeL in some other tactic language?
+* Ltac2 is the new kid on the block
+* Claims to be a sane successor to Ltac1
+* Let's try it and see if we can do something cool along the way
 
 ## Motivation #2: \textnormal{\LARGE \texttt{iSplit}}
+
+* It is annoying to provide resources explicitly every time you introduce a star
+* Same goes for \coqe{iApply}
+* Prior work: \citeauthor{harlandResourceDistributionBooleanConstraints2003} developed a solution based on Boolean flags
+* Ltac1 is bad for working with evars, let's see if Ltac2 is better!
 
 # Crash course in Ltac2
 
@@ -70,3 +86,12 @@ Ltac is
 ## Ltac2 lessons
 
 ## New MoSeL proof mode
+
+---
+\printbibliography
+
+<!-- Local Variables: -->
+<!-- mode: markdown; reftex -->
+<!-- reftex-cite-format: biblatex -->
+<!-- reftex-default-bibliography: ("/home/buzzer/my-dir/ed/uni/saar/prjcts/iris/npm/tex/TacticsProofs.bib") -->
+<!-- End: -->
