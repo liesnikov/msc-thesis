@@ -3,7 +3,7 @@
 
 In this chapter we consolidate the features implemented in the last three chapters to showcase integration between them and test compositionality of tactics in the reimplemented MoSeL.
 We call it \coqe{i_solver}.
-We don't aim to develop the most powerful solver, but rather just an illustrative example, that is still useful.
+We don't aim to develop the most powerful solver, but rather just an illustrative example that is still useful.
 
 The solver is fully automatic and aims to close the goal, not to simplify it.
 
@@ -20,15 +20,15 @@ Proof. i_solver (). Qed.
 \label{sec:i-solver-implementation-idea}
 
 The high-level idea behind the solver is pretty simple:
-We destruct as many hypotheses in the context, as possible, while also introducing all available resources from the goal.
+We destruct as many hypotheses in the context as possible, while also introducing all available resources from the goal.
 Then we apply constructors based on the goal and utilize tactics developed in chapter~\ref{chap:postponed_splitting}.
 Both of these are done using \coqe{iMatch} to select the right action based on the hypothesis found and the shape of the goal.
 
 Since backtracking offers flexibility, it might seem like a good idea to use \coqe{iMultiMatch} for everything.
-Unsurprisingly, it turns out that such approach introduces \emph{too much} backtracking, bringing the performance too unacceptable levels.
+Unsurprisingly, it turns out that such an approach introduces \emph{too much} backtracking, bringing the performance to unacceptable levels.
 In order to mitigate this, we break up our solver in two parts:
 \begin{itemize}
-\item We will first perform actions, that don't involve any choice on behalf of the solver, so that there is no need to backtrack to them
+\item We will first perform actions that don't involve any choice on behalf of the solver, so that there is no need to backtrack to them.
   Fortunately, with the introduction of new versions of \coqe{iSplit} and \coqe{iAndDestruct}, this already allows us to bring the goal very close to the normalized form, where there are no composite resources in the context.
   Part of its implementation can be found in figure~\ref{fig:i-solver-free}.
 \item Then we perform all the actions that can benefit from backtracking, like introduction and elimination of disjunction.
@@ -36,7 +36,7 @@ In order to mitigate this, we break up our solver in two parts:
   Part of its implementation can be found in figure~\ref{fig:i-solver-back}.
 \end{itemize}
 
-We then connect (figure~\ref{fig:i-solver}) the two parts with \coqe{orelse} operator, that essentially serves as try-catch expression, executing the second half of the solver only when the first one fails.
+We then connect (figure~\ref{fig:i-solver}) the two parts with the \coqe{orelse} operator, which essentially serves as a try-catch expression, executing the second half of the solver only when the first one fails.
 This ensures that we first normalize the environment and only then start solving the goal.
 
 \begin{figure}[H]
@@ -95,8 +95,8 @@ Ltac2 i_solve_second () := iMultiMatch! goal with
 \section{Scope of the solver}
 \label{sec:scope-solver}
 
-Despite simplicity, \coqe{i_solver} is able to handle a large fragment of first-order separation logic.
-For the sake of simplicity we don't include tactics to work with \coqe{heaplang}, so it would more precise to say that we build a solver for BI logic.
+Despite its simplicity, \coqe{i_solver} is able to handle a large fragment of first-order separation logic.
+For the sake of simplicity we don't include tactics to work with \coqe{heaplang}, so it would be more precise to say that we built a solver for BI logic.
 The inclusion of tactics for Hoare triples is possible, however, and doesn't present a major challenge.
 
 At the moment, however, \coqe{i_solver} is able to solve fairly complex MoSeL entailments, including goals with elaborate conjunctions and ones that require deeply nested wand application.
@@ -122,9 +122,9 @@ Proof. i_solver (). Qed.
 
 \section{Comparison with existing solvers}
 
-In recent years there has been multiple new separation logic solvers developed, some of them being presented and compared to each other within SL-COMP competition \cite{sighireanuSLCOMPCompetitionSolvers2019}.
-It is worth noting our example differs from them first of all with the purpose, as we do not aim to build the most complete solver, but rather just illustrate automation capabilities of existing features.
-However, future developments of \coqe{i_solver} might compete with other solvers and here we argue what can already be seen from the present example.
+In recent years multiple new separation logic solvers have been developed, some of them being presented and compared to each other within the SL-COMP competition \cite{sighireanuSLCOMPCompetitionSolvers2019}.
+It is worth noting that our example differs from them foremost in its purpose, as we do not aim to build the most complete solver, but rather just want illustrate the automation capabilities of existing features.
+However, future developments of \coqe{i_solver} might compete with other solvers and here we argue what power the present example already shows.
 
 In particular, \coqe{i_solver} is
 \begin{itemize}
@@ -133,15 +133,15 @@ In particular, \coqe{i_solver} is
 \item Modular:
   we saw that the rules for \coqe{i_solver} are easy to read and to extend.
   This provides an opportunity for the user to extend it in a way that fits them.
-  Alternatively, it is also possible to incorporate a call to external tactic, similar to the way \coqe{naive_solver} is doing it.
+  Alternatively, it is also possible to incorporate a call to an external tactic, similar to the way \coqe{naive_solver} does.
 \end{itemize}
 
 However, there are also several downsides that stem from the nature of implementation.
 \begin{itemize}
 \item Completeness: as the approach we pick is heuristics-based, ensuring that \coqe{i_solver} can indeed solve some externally specified subset of logic is hard.
 \item Performance: while neither Ltac2, nor the solver were developed with execution speed in focus, we have to note that our naive implementation suffers at times from slowness.
-  We haven't done extensive benchmarking and can only offer anecdotal evidence, on a computer with Intel i5-5200U processor and Coq 8.11 solving~\ref{fig:bigger-example-i-solver} took roughly 1 minute, while smaller examples would be finished withing 0.2 of a second.
-  And while it is hard to place blame without proper profiling tooling available, but experiments suggested that backtracking inside \coqe{iMatch} may cause significant slowdown, andwhat is the way to speed it up, except reimplementation in OCaml, is not clear.
+  We haven't done extensive benchmarking and can only offer anecdotal evidence, but on a computer with an Intel i5-5200U processor and Coq 8.11, solving~\ref{fig:bigger-example-i-solver} took roughly 1 minute, while smaller examples would be finished withing 0.2 seconds.
+  While it is hard to place blame without proper profiling tools available, experiments suggested that the backtracking through many branches inside \coqe{iMatch} may cause significant slowdown, and how to speed that up, except reimplementation in OCaml, is not clear.
 \end{itemize}
 
 %%% Local Variables:

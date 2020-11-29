@@ -2,33 +2,35 @@
 
 \vspace{-2em}
 In this thesis we reimplemented MoSeL using a new tactic language Ltac2, using the new version of MoSeL to develop several new features.
-In particular, we provide a set of new tactics that support postponed decisions in resource distribution, goal-matching tactical and showcase their usage with a simple solver for separation logic.
+In particular, we provide a set of new tactics that support postponed decisions in resource distribution, a goal-matching tactical and then showcase their usage with a simple solver for separation logic.
 
-This thesis pursued two main goals: experiment with Ltac2 and provide new tactics, that don't require user to commit to particular distribution of resources upfront.
+This thesis pursued two main goals: experiment with Ltac2 and provide new tactics that don't require users to commit to a particular distribution of resources upfront.
 
-Through our development Ltac2 proved to be a language with a solid foundation, which suffices to implement many advanced tactics.
-However, while leaving a largely positive impressions, it is still has issues which complicate the development procedure.
-These mostly concern user-facing features, like advanced notations, which don't impact Ltac2 on deeper levels, but make the development of tactics with advanced user interfaces complicated to develop.
-In particular, Ltac2 turned out to be powerful enough to both reimplement MoSeL (without intropatterns) and introduce a completely new proof mode for environments with Boolean constraints.
+Throughout our development, Ltac2 proved to be a language with a solid foundation, which suffices to implement many advanced tactics.
+However, while leaving a largely positive impressions, it still has issues which complicate the development procedure.
+These mostly concern user-facing features, like advanced notations, which don't impact Ltac2 on deeper levels, but make the development of tactics with advanced user interfaces complicated to write.
+In particular, Ltac2 turned out to be powerful enough to both reimplement MoSeL (without intro patterns) and introduce a completely new proof mode for environments with Boolean constraints.
 
 The new proof mode, which introduces \coqe{iSplit}, was implemented almost exactly as described in the original paper~\cite{harlandResourceDistributionBooleanConstraints2003}.
 This, combined with the new tactical \coqe{iMatch} allowed us to develop a simple first-order separation logic solver, which manages resources automagically.
 For both the new and the old proof modes we don't provide a reimplementation of all MoSeL tactics, but just a selection.
 
-While the work we present here can be used immediately, there still are some things which can be improved in it.
-\paragraph{``Lost'' evars issue.}
-  This issue breaks the abstraction to of the tactics to some extent, as the goals presented seemingly don't have anything to do with the entailments presented.
-  We hypothesize that this can be solved with a more careful consideration of the usage of the existing tactics and introduction of heuristics based on the goals.
+While the work we present here can be used immediately, some things can still be improved:
+\paragraph{The ``lost'' evars issue.}
+  This issue breaks the abstraction of the tactics to some extent, as the presented goals seemingly don't have anything to do with the presented entailments.
+  We hypothesize that this can be solved by a more careful consideration of the usage of the existing tactics and introduction of heuristics based on the goals.
 \paragraph{Performance.}
-  While observed performance of tactics seems reasonable, we are yet to do a study on performance evaluation of Ltac2 and the new tactics implemented.
-  However, it is obvious that the new MoSeL proof mode could benefit from the optimizations, as seen from both larger proofs and, in particular, performance of \coqe{i_solver}.
-\paragraph{More powerful solver to introduce iSpecialize rule.}
-  While our custom solving procedure sufficed for our goals, we had to modify the rules for \coqe{iSpecialize} in order for the new Boolean expression introduced to fit the required format.
-  This can be solver either via the introduction of external SAT solver for the constraints, or implementation of such solver in Ltac2 directly.
+  While the observed performance of tactics seems reasonable, we are yet to do a study on performance evaluation of Ltac2 and the newly implemented tactics.
+  However, it is obvious that the new MoSeL proof mode could benefit from optimizations, as seen from both larger proofs and, in particular, performance of \coqe{i_solver}.
+\paragraph{More powerful solver to introduce an \texttt{iSpecialize} rule.}
+  While our custom solving procedure sufficed for our goals, we had to modify the rules for \coqe{iSpecialize} to let the newly introduced Boolean expressions fit the required format.
+  This can be solved either via the introduction of an external SAT solver for the constraints, or an implementation of such a solver in Ltac2 directly
 \paragraph{User-facing conveniences.}
   The focus of our work was on the proof-of-concept implementation of MoSeL in Ltac2, which didn't include some of the most useful user-facing features of the Ltac1 version of MoSeL.
-  In particular, it would still be possible to reimplement intropatterns in the new proof mode, even without proper support from Ltac2, either via limiting the patterns to those allowed by Coq and reusing them for MoSeL, or following the original implementation and parsing intropatterns from Coq \coqe{string}s.
-  We also don't contribute towards error messages improvement of MoSeL, even though Ltac2 does provide a good opportunity for this, so we leave any such improvements for future work too.
+  In particular, it would still be possible to reimplement intro patterns in the new proof mode, even without proper support from Ltac2, either by limiting the patterns to those allowed by Coq and reusing them for MoSeL, or by following the original implementation and parsing intro patterns from Coq \coqe{string}s.
+  We also don't contribute towards error message improvements of MoSeL, even though Ltac2 does provide a good opportunity for this, so we leave any such improvements for future work too.
+
+But even with all these elements profiting from potential improvement, we consider our pursuit to be a successful experiment, paving the way for improvements both in Ltac2 and MoSeL.
 
 %%% Local Variables:
 %%% mode: latex
