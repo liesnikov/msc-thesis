@@ -3,9 +3,11 @@
 \usepackage{xcolor}
 \usepackage{xspace}
 \usepackage[framemethod=TikZ]{mdframed}
+\usepackage{proof}
 \usepackage{lstcoq}
+\usepackage{iris}
 \usepackage{hyperref}
-\usepackage[backend=biber, style=numeric]{biblatex}
+\usepackage[backend=biber, style=alphabetic]{biblatex}
 \addbibresource{TacticsProofs.bib}
 
 \lstset{
@@ -15,3 +17,55 @@
 \setbeamertemplate{footline}{%
     \raisebox{5pt}{\makebox[\paperwidth]{\hfill\makebox[20pt]{\color{gray}
           \scriptsize\insertframenumber}}}\hspace*{5pt}}
+
+
+\newcommand{\M}[1]{\ensuremath{\textit{#1}}} % \mathup
+\newcommand{\imp}{\mathbin{\rightarrow}~}
+\newcommand{\Imp}{\mathbin{\Rightarrow}~}
+\renewcommand{\iff}{\mathbin{\leftrightarrow}}
+\newcommand*{\defeq}{\mathrel{\vcenter{\baselineskip0.5ex \lineskiplimit0pt
+                     \hbox{\scriptsize.}\hbox{\scriptsize.}}}%
+                     =}
+\newcommand{\delequal}{\triangleq}
+
+\newcommand{\dd}[2]{\ensuremath{#1_1,\dots,#1_{#2}}}  % x_1,...,x_n
+\newcommand{\ddd}[2]{\ensuremath{#1_1\dots\,#1_{#2}}}  % x_1...x_n
+\newcommand{\col}{\colon}
+\newcommand{\set}[1]{\ensuremath{\left\{ #1 \right\}}}
+\newcommand{\mset}[2]{\set{\,#1\mid#2\,}}
+\newcommand{\eset}{\ensuremath{\emptyset}}
+\newcommand{\incl}{\ensuremath{\subseteq}}
+\newcommand{\bnfor}{~|~} %|
+\newcommand{\qedsq}{\hfill\ensuremath{_\blacksquare}}
+
+\newcommand{\true}{\textbf{true}\xspace}
+\newcommand{\false}{\textbf{false}\xspace}
+\newcommand{\andb}{\mathop{\&\&}}
+
+\newcommand{\True}{\textsf{True}\xspace}
+\newcommand{\False}{\textsf{False}\xspace}
+
+\newcommand\wand{\ensuremath{\mathrel{-\mkern-6mu*}}}
+\newcommand\emp{\textsf{emp}\xspace}
+\newcommand\iMatch{\coqe{iMatch}}
+
+\newcommand\expr{\ensuremath{\text{exp}}}
+
+\newcommand{\Prop}{\textsl{Prop}\xspace}
+\newcommand\Affine[1]{\ensuremath{\text{Affine}(#1)}}
+\newcommand\Absorbing[1]{\ensuremath{\text{Absorbing}(#1)}}
+\newcommand\Persistent[1]{\ensuremath{\text{Persistent}(#1)}}
+
+\newcommand\pure[1]{\ensuremath{\ulcorner #1 \urcorner}}
+\newcommand{\affine}{\ensuremath{\langle\text{affine}\rangle}}
+\newcommand{\absorb}{\ensuremath{\langle\text{absorb}\rangle}}
+\newcommand{\pers}{\ensuremath{\langle\text{pers}\rangle}}
+\newcommand{\intuit}{\always}
+% \newcommand{\later}{\mathop{{\triangleright}}}
+
+\newcommand\entailsOne[2]{\ensuremath{#1 \,\Vdash\, #2}}
+\newcommand\entails[3]{\ensuremath{#1 ;\,\, #2 \,\Vdash\, #3}}
+\newcommand\IntuD{\ensuremath{\Gamma}}
+\newcommand\SpatD{\ensuremath{\Pi}}
+\newcommand\entailsOneD[1]{\ensuremath{\entailsOne {\SpatD} {#1}}}
+\newcommand\entailsD[1]{\ensuremath{\entails {\IntuD} {\SpatD} {#1}}}

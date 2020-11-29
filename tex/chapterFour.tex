@@ -84,7 +84,7 @@ We apply the same technique with the introduction of new variables and end up wi
 \hspace{-0.03\linewidth}
 \infer{(A \wand B)[c_0], (C \wand D)[c_1], A[c_2], C[c_3] \vdash B}
       {(C \wand D)[c'_1 \& c_1], A[c'_2 \& c_2], C[c'_3 \& c_3] \vdash A &
-       (C \wand D)[\neg c'_1 \& c_1], A[\neg c'_1 \& c_2], C[\neg c'_3 \& c_3], B[c_0] \vdash B}
+       (C \wand D)[\neg c'_1 \& c_1], A[\neg c'_2 \& c_2], C[\neg c'_3 \& c_3], B[c_0] \vdash B}
 \]
 
 In order for the left premise to be derivable we want \(A\) to be present and all other resources to be gone.
@@ -610,7 +610,7 @@ Let's look at them in the new setting.
 % \item Rewrite
 \end{itemize}
 
-\section{Design implemented}
+\section{Boolean constraints implemented}
 
 In this section we describe implementation of the new entailment predicate, challenges in adaptation of \citet{harlandResourceDistributionBooleanConstraints2003} results for MoSeL and briefly discuss our solving procedure for constraints.
 
@@ -752,7 +752,7 @@ This means that if we were to generate equational constraints, as described in t
 
 The second reason is that due to specific shape of expressions in the contexts, it suffices to consider only ``minimal'' solutions, where we only decide presence of the resouce in the last branching.
 Intuitively, when we require a resource to be absent from the current branch of the proof, we don't want to decide for any other branch except this one.
-And since the expressions take form of iterated conjunctions, where the outermost one corresponds to the last branching point, it suffices to unify only the first existential variable we encounter with \false (or \true, if it's under negation).
+And since the expressions take form of iterated conjunctions, where the outermost one corresponds to the last branching point, it suffices to unify only the first variable we encounter with \false (or \true, if it's under negation).
 
 Concretely, if there is a resource with expression of the form \coqe{?a && ?b} and we want to impose a constraint that forces it to evaluate to \false, both \(\setBraces {a \mapsto \false, b \mapsto \_} \) and \(\setBraces {b \mapsto \false, a\ \mapsto \_}\) technically satisfy this condition.
 However, choosing the second one corresponds to premature decision to eliminate the resource from both the current branch and its sibling.
