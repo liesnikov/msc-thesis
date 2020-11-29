@@ -13,7 +13,7 @@ When using it from proof search perspective, however, a problem appears.
 We know that the premises should take the form of \(\Gamma_1 \vdash \phi_1\) and \(\Gamma_2 \vdash \phi_2\), where $\Gamma_i$ are two unknown contexts.
 We also know that the conclusion should be \(\Gamma \vdash \phi_1 \ast \phi_2\).
 But it doesn't provide us with any information on how to split \(\Gamma\) into \(\Gamma_1\) and \(\Gamma_2\).
-Since propositions in separation logic are frequently thought of as resources, this problem is sometimes called the ``resource distribution'' problem in the literature.
+Since propositions in separation logic are frequently thought as resources, this problem is sometimes called the ``resource distribution'' problem in the literature.
 
 We develop a technique to automate some parts of it, building on the solution by \citet{harlandResourceDistributionBooleanConstraints2003}.
 The idea is to allow the user to postpone the decision instead of forcing them to distribute resources right away.
@@ -26,14 +26,14 @@ This is done by adding Boolean flags (\(e_1, e_2\)) which indicate the presence 
 \]
 
 The flags are not assigned values immediately, but only after the proof is done and it is evident where each resource was used.
-In order to ensure that no matter what value the flag takes, resources wouldn't be used twice, we negate the flag in one of the branches.
-This way it is obvious that \(P\) can't be in both branches simultaneously, since \(e_1\) and \(\neg {e}_1\) can't be \true at the same time.
+In order to ensure that no matter what value flags take, resources wouldn't be used twice, we negate flags in one of the branches.
+This way it is obvious that \(P\) (or any other resource) can't be in both branches simultaneously, since \(e_1\) and \(\neg {e}_1\) can't be \true at the same time.
 
 The following contributions of the thesis are presented in this chapter:
 \begin{itemize}
 \item We generalize rules from \citet{harlandResourceDistributionBooleanConstraints2003} to allow resource manipulation for ``undecided'' resources, where possible.
   In particular, we change the rule for non-separating conjunction, introduce a new rule for wand and existential quantifier elimination.
-\item We adapt the rules to MoSeL entailments, and, to the best of our knowledge, present the first implementation of the results for BI, as well as the first mechanized BI derivation rules with Boolean constraints.
+\item We adapt the rules to the MoSeL entailment, and, to the best of our knowledge, present the first implementation of the results for BI, as well as the first mechanized BI derivation rules with Boolean constraints.
 \item Finally, the main contribution from a practical point of view: we implement several new tactics for MoSeL, among which \coqe{iSplit}, which solves precisely the problem outlined above.
 \end{itemize}
 
@@ -94,7 +94,6 @@ If we take a look at the right premise, we can also unify both \(\neg c'_1 \& c_
 Moreover, since we deduced earlier that \(c'_2\) must be \true, the expression attached to \(A\) in the right sequent (\(\neg c'_2 \& c_2\)) must be \false.
 
 
-
 The resulting system of equations allows us to conclude that \(c_1\) and \(c_3\) are \false and that the values of \(c'_1\) and \(c'_3\) are arbitrary.
 This gives us a total assignment:
 \[\set {c_0 \mapsto \true, c_1 \mapsto \false, c_2 \mapsto \true, c_3 \mapsto \false, c'_1 \mapsto \_, c'_2 \mapsto \true, c'_3 \mapsto \_}\]
@@ -104,7 +103,6 @@ which means that, as soon as we're done with the left sub-derivation, it's clear
 \label{sec:isplit-in-action}
 
 Let's now turn to the example from the previous chapter.
-Full proof script with new proof mode is in figure~\ref{fig:running-example-with-constr}.
 The full proof script with the new proof mode is in figure~\ref{fig:running-example-with-constr}.
 
 \begin{figure}
@@ -176,6 +174,7 @@ The second branch of the proof, where the right disjunct is chosen, is very simi
 
 As stated in the introduction, the main difference between the entailment predicate introduced by \citet{harlandResourceDistributionBooleanConstraints2003} and a regular one, is attachment of a Boolean expression to each element of the context.
 In this section we present a version of BI logic following \citet{harlandResourceDistributionBooleanConstraints2003}.
+Unlike them, we also restrict ourselves to presentations with multiplicative bunches, since we are interested only in those for MoSeL adaptation.
 
 \begin{definition}[Annotated formula]
   Let \(\phi\) be an arbitrary BI formula and \(c\) be a Boolean expression.
@@ -203,7 +202,6 @@ Now let's define some operations on annotated bunches.
 
 We're now ready to define some rules for BI logic with constraints.
 Since most of the rules are almost exactly as derived by \citet{harlandResourceDistributionBooleanConstraints2003}, here we present only a small illustrative selection, together with the rules that we changed.
-Unlike \citeauthor{harlandResourceDistributionBooleanConstraints2003}, we also restrict ourselves to presentations with multiplicative bunches, since we are interested only in those for MoSeL adaptation.
 
 \subsection{Axiom}
 
@@ -294,7 +292,7 @@ Without Boolean expressions the rule reads as follows:
 \]
 
 Essentially forcing the prover to commit to one of the conjuncts immediately or carry an additive bunch until the moment it's used.
-With them, however, we can postpone this choice until later and remove the additive connector, which is what MoSeL requires us to do.
+With them, however, we can postpone this choice until later and remove the additive bunch connector, which appears in the general BI presentation and which is what MoSeL requires us to do.
 
 \[
 \infer{\Gamma, (\phi_1 \wedge \phi_2)[c] \vdash \psi}
@@ -325,11 +323,11 @@ However, this is not the only way to define such a rule and we discuss the alter
 \label{subsec:other-rules}
 
 There are several more which we don't cover here, but which are present in Section 4 of the original paper~\cite{harlandResourceDistributionBooleanConstraints2003}.
-In general, Boolean constraints are introduced in rules which require resource distribution and then get resolved at leaf nodes, like the rule for axiom, Falsity elimination or introduction of \emp.
+In general, Boolean variables are introduced in rules which require resource distribution and then get resolved at leaf nodes, like the rule for axiom, Falsity elimination or introduction of \emp.
 
 \section{New entailment predicate for MoSeL}
 
-Now that we have covered the rules for Bi, let's turn to the formalization of MoSeL entailments.
+Now that we have covered the rules for BI, let's turn to the formalization of MoSeL entailments.
 We have to make several changes to the original design covered in chapter~\ref{chap:reimplementation_ipm}.
 First we cover a new entailment predicate and then discuss new rules and tactics.
 
