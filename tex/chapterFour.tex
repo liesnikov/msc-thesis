@@ -7,17 +7,17 @@ Consider the following standard rule in separation logic
          \Gamma_2 \vdash \phi_2} \]
 
 When we use it as a deductive inference rule, we know the premises and have to derive the conclusion.
-The left premise lets us infer what one part of the context in the conclusion should be and the right one -- the other.
+The left premise lets us infer what one part of the context in the conclusion should be and the right premise lets us infer the other.
 
-However, when using it from proof search perspective, a problem appears.
-We know that the premises should take form of \(\Gamma_1 \vdash \phi_1\) and \(\Gamma_2 \vdash \phi_2\), where $\Gamma_i$ are two unknown contexts.
-And we know that the conclusion should be \(\Gamma \vdash \phi_1 \ast \phi_2\).
-But it doesn't provide us with any infromation on how to split \(\Gamma\) into \(\Gamma_1\) and \(\Gamma_2\).
-Since propositions in separation logic are frequently thought as resources, this problem is sometimes called ``resource distribution'' problem in the literature.
+When using it from proof search perspective, however, a problem appears.
+We know that the premises should take the form of \(\Gamma_1 \vdash \phi_1\) and \(\Gamma_2 \vdash \phi_2\), where $\Gamma_i$ are two unknown contexts.
+We also know that the conclusion should be \(\Gamma \vdash \phi_1 \ast \phi_2\).
+But it doesn't provide us with any information on how to split \(\Gamma\) into \(\Gamma_1\) and \(\Gamma_2\).
+Since propositions in separation logic are frequently thought of as resources, this problem is sometimes called the ``resource distribution'' problem in the literature.
 
-We develop a tecnhique to automate some parts of it, building on the solution by \citet{harlandResourceDistributionBooleanConstraints2003}.
-The idea to allow the user to postpone the decision instead of forcing them to distribute resources right away.
-This is done by adding Boolean flags (\(e_1, e_2\)) which indicate presence of respective resources.
+We develop a technique to automate some parts of it, building on the solution by \citet{harlandResourceDistributionBooleanConstraints2003}.
+The idea is to allow the user to postpone the decision instead of forcing them to distribute resources right away.
+This is done by adding Boolean flags (\(e_1, e_2\)) which indicate the presence of respective resources.
 
 \[
   \infer{P, Q \vdash \phi_1 \ast \phi_2}
@@ -34,23 +34,23 @@ The following contributions of the thesis are presented in this chapter:
 \item We generalize rules from \citet{harlandResourceDistributionBooleanConstraints2003} to allow resource manipulation for ``undecided'' resources, where possible.
   In particular, we change the rule for non-separating conjunction, introduce a new rule for wand and existential quantifier elimination.
 \item We adapt the rules to MoSeL entailments, and, to the best of our knowledge, present the first implementation of the results for BI, as well as the first mechanized BI derivation rules with Boolean constraints.
-\item Finally, the main contribution from practical point of view: we implement several new tactics for MoSeL, and, among others, \coqe{iSplit} which solves precisely the problem outlined above.
+\item Finally, the main contribution from a practical point of view: we implement several new tactics for MoSeL, among which \coqe{iSplit}, which solves precisely the problem outlined above.
 \end{itemize}
 
 \section{Motivating example}
 
-Since separating conjunction is one of the fundamental connectives it appears in many proofs and hence, the ability to postpone decision which resources go where is also frequently useful.
-Naturally, the value of the improvement grows with the complexity of decision which the user has to make upfront.
-Still, let's consider small illustrative example of where we would want to use the new rule.
+Since separating conjunction is one of the fundamental connectives it appears in many proofs and hence the ability to postpone the decision of which resources go where is also frequently useful.
+Naturally, the value of the improvement grows with the complexity of the decision that the user has to make upfront.
+Still, let's consider a small illustrative example of where we would want to use the new rule.
 
 Take the following statement:
 \((A \wand B), (C \wand D), A, C \vdash B * D\)
 
 After a moment's consideration, it's pretty clear for a human what the derivation should be.
-But for a machine it's not, so instead we postpone the decision about distribution and simply say that resources are distributed disjointly.
+But for a machine it's not, so instead we postpone the distribution decision and simply say that resources are distributed disjointly.
 
 For this we split the resources between two branches via the introduction of new variables:
-for any resource \(Q[c]\), we put \(Q[c' \& c]\) and \(Q[\neg c' \& c]\) into \(\Gamma_1\) and \(\Gamma_2\) respectively, where \(c'\) is a new Boolean variables with yet undecided value.
+for any resource \(Q[c]\), we put \(Q[c' \& c]\) and \(Q[\neg c' \& c]\) into \(\Gamma_1\) and \(\Gamma_2\) respectively, where \(c'\) is a new Boolean variable with a yet undecided value.
 The idea is that no matter what \(c\) evaluates to, \(c' \& c\) and \(\neg c' \& c\) can't be \true simultaneously, and hence \(Q\) will not be used twice.
 Moreover, if the original \(c\) evaluates to \true, then exactly one of them will be \true, and if \(c\) evaluates to \false, then both of them will be \false.
 And since in the original statement none of the resources had Boolean expressions attached, we treat them as if they had expressions evaluating to \true.
@@ -63,7 +63,7 @@ And since in the original statement none of the resources had Boolean expression
 
 Then we utilize wand application on the left-hand side in both sequents above the line.
 Let's take a closer look at the left one: \((A \wand B)[c_0], (C \wand D)[c_1], A[c_2], C[c_3] \vdash B\).
-In order to apply wand \(A \wand B\) two resources are required: the wand itself and its argument.
+In order to apply \(A \wand B\), two resources are required: the wand itself and its argument.
 And while we can deduce that the expression attached to \((A \wand B)[c_0]\) should evaluate to \true, finding the antecedent isn't that simple in general.
 
 To this end, we apply the wand which creates two subgoals: one for \(A\) and another one with \(B[c_0]\) in the context with side condition that \(c_0\) should evaluate to \true.
@@ -90,19 +90,22 @@ We apply the same technique with the introduction of new variables and end up wi
 In order for the left premise to be derivable we want \(A\) to be present and all other resources to be gone.
 This corresponds to \(c'_2 \& c_2\) being \true, which tells us that both \(c'_2\) and \(c_2\) must be \true.
 Moreover, \(c'_1 \& c_1\) and \(c'_3 \& c_3\) must be \false, but we can't deduce the values of the variables without other equations.
-If we take a look at the right premise, we can also unify \(\neg c'_1 \& c_1\), \(\neg c'_3 \& c_3\) with \false, since \(c_0\) should be \true according to the side-condition above.
-Moreover, since we deduced earlier that \(c'_2\) must be \true, expression attached to \(A\) in the right sequent -- \(\neg c'_1 \& c_2\) must be \false.
+If we take a look at the right premise, we can also unify both \(\neg c'_1 \& c_1\) and \(\neg c'_3 \& c_3\) with \false, and \(c_0\) should be \true according to the side condition above.
+Moreover, since we deduced earlier that \(c'_2\) must be \true, the expression attached to \(A\) in the right sequent (\(\neg c'_2 \& c_2\)) must be \false.
 
-The resulting system of equations allows us to conclude that \(c_1\) and \(c_3\) are \false and values of \(c'_1\) and \(c'_3\) are arbitrary.
+
+
+The resulting system of equations allows us to conclude that \(c_1\) and \(c_3\) are \false and that the values of \(c'_1\) and \(c'_3\) are arbitrary.
 This gives us a total assignment:
 \[\set {c_0 \mapsto \true, c_1 \mapsto \false, c_2 \mapsto \true, c_3 \mapsto \false, c'_1 \mapsto \_, c'_2 \mapsto \true, c'_3 \mapsto \_}\]
-which means as soon as we're done with the left sub-derivation it's clear what resources should go to the right one.
+which means that, as soon as we're done with the left sub-derivation, it's clear what resources should go to the right one.
 
 \subsection{\texttt{iSplit} in action}
 \label{sec:isplit-in-action}
 
 Let's now turn to the example from the previous chapter.
 Full proof script with new proof mode is in figure~\ref{fig:running-example-with-constr}.
+The full proof script with the new proof mode is in figure~\ref{fig:running-example-with-constr}.
 
 \begin{figure}
   \begin{coq}
@@ -155,9 +158,9 @@ With \coqe{i_split}, however, both hypotheses appear in both subgoals:
 \end{minipage}
 
 In this case, since resources aren't yet distributed, we see indicators of their possible presence, rendered as \texttt{$\langle$?$\rangle$}.
-The first subgoal is then closed with \coqe{i_exact '(INamed "HP")}, which unifies expression attached to \coqe{"HP"} with \true and one attached to \coqe{"H1"} with \false.
+The first subgoal is then closed with \coqe{i_exact '(INamed "HP")}, which unifies the expression attached to \coqe{"HP"} with \true and the one attached to \coqe{"H1"} with \false.
 When we enter the second subgoal, it stays the same visually at first, since decisions from the previous branch haven't yet propagated here.
-In order for them to take effect we apply \coqe{i_cleanup} tactic, which transforms the goal to the following state:
+In order for them to take effect we apply the \coqe{i_cleanup} tactic, which transforms the goal into the following state:
 
 \begin{minipage}[t]{\linewidth}
 \texttt{"H1" : $\Phi$ x\\
@@ -171,7 +174,7 @@ The second branch of the proof, where the right disjunct is chosen, is very simi
 
 \section{Entailments with expressions}
 
-As stated in the introduction, the main difference of the entailment predicate introduced by \citet{harlandResourceDistributionBooleanConstraints2003} from a regular one is attachment of a Boolean expression to each element of the context.
+As stated in the introduction, the main difference between the entailment predicate introduced by \citet{harlandResourceDistributionBooleanConstraints2003} and a regular one, is attachment of a Boolean expression to each element of the context.
 In this section we present a version of BI logic following \citet{harlandResourceDistributionBooleanConstraints2003}.
 
 \begin{definition}[Annotated formula]
@@ -195,12 +198,12 @@ Now let's define some operations on annotated bunches.
 \end{definition}
 
 \begin{definition}
-  Given an annotated bunch \(\Gamma = \phi_1[c_1],\ldots,\phi_n[c_n]\) and a set of Boolean expressions \(V = \{\dd {x} {n}\}\), we denote by \(\Gamma . V\) a new bunch where each \(\phi_i[c_i]\) is changed for \(\phi_i[x_i \& c_i]\).
+  Given an annotated bunch \(\Gamma = \phi_1[c_1],\ldots,\phi_n[c_n]\) and a set of Boolean expressions \(V = \{\dd {x} {n}\}\), we denote by \(\Gamma . V\) a new bunch where each \(\phi_i[c_i]\) is exchanged for \(\phi_i[x_i \& c_i]\).
 \end{definition}
 
 We're now ready to define some rules for BI logic with constraints.
-Since most of the rules are almost exactly as derived by \citet{harlandResourceDistributionBooleanConstraints2003}, here we present only a small illustrative selection and the rules we changed.
-Unlike \citeauthor{harlandResourceDistributionBooleanConstraints2003}, we also restrict ourselves to presentation with multiplicative bunches only, since we are interested only in those for MoSeL adaptation.
+Since most of the rules are almost exactly as derived by \citet{harlandResourceDistributionBooleanConstraints2003}, here we present only a small illustrative selection, together with the rules that we changed.
+Unlike \citeauthor{harlandResourceDistributionBooleanConstraints2003}, we also restrict ourselves to presentations with multiplicative bunches, since we are interested only in those for MoSeL adaptation.
 
 \subsection{Axiom}
 
@@ -250,7 +253,7 @@ With Boolean expressions introduced, it becomes:
       {\Gamma , \phi[\true] \vdash \psi}
 \]
 
-Morally it's the same rule since a resource in the context with expression that evaluates to \(\true\) is precisely a resource being in the context in the usual setting.
+Morally it's the same rule since a resource in the context with an expression that evaluates to \(\true\) is precisely a resource being in the context in the usual setting.
 
 While introduction makes expressions grow, albeit in a simple way, elimination creates new constraints on them that force resolution.
 
@@ -261,7 +264,7 @@ While introduction makes expressions grow, albeit in a simple way, elimination c
        \Gamma. \overline{V}, \psi[c] \vdash \rho}
 \]
 
-Morally, this rules is saying ``in order to use a wand which might be in the context, ensure that it is indeed there and provide the resources it needs''.
+Morally, this rule says ``in order to use a wand which might be in the context, ensure that it is indeed there and provide the resources it needs''.
 
 The generalization of this rule follows straightforwardly from multi-conclusioned BI logic with constraints.
 The rule above has a limitation in a sense that if we want to manipulate resources without requiring them to be present, asking for a definitive \(\phi\) is too restrictive.
@@ -274,7 +277,7 @@ However, since the current logic is still single-conclusioned, we have to ask fo
 \]
 
 The idea is that we combine expressions for the resulting resource \(\psi\), while ensuring that the user still has the choice to not utilize it.
-However, as we will see later, such a rule is unfit for our implementation, since expression's shape becomes too general.
+However, as we will see later, such a rule is unfit for our implementation, since the shape of expressions become too general.
 
 \subsection{Non-separating conjunction}
 \label{sec:non-separ-conj}
@@ -282,7 +285,7 @@ However, as we will see later, such a rule is unfit for our implementation, sinc
 The only other primitive rule that generates new expressions is (non-separating) conjunction elimination.
 We differ from \citet{harlandResourceDistributionBooleanConstraints2003} too.
 
-Without Boolean expressions the rule is saying the following:
+Without Boolean expressions the rule reads as follows:
 
 \[
 \infer[ i \in \{1,2\} ]
@@ -290,8 +293,8 @@ Without Boolean expressions the rule is saying the following:
       {\Gamma, \phi_i \vdash \psi}
 \]
 
-Essentially forcing the prover to commit to one of the conjuncts immediately or carry additive bunch till the moment it's used.
-With them, however, we can postpone this choice till later and remove additive connector, which is what MoSeL requires us to do.
+Essentially forcing the prover to commit to one of the conjuncts immediately or carry an additive bunch until the moment it's used.
+With them, however, we can postpone this choice until later and remove the additive connector, which is what MoSeL requires us to do.
 
 \[
 \infer{\Gamma, (\phi_1 \wedge \phi_2)[c] \vdash \psi}
@@ -302,10 +305,10 @@ With them, however, we can postpone this choice till later and remove additive c
 \label{subsec:exist-quant}
 
 Given an existentially quantified resource with a Boolean expression in the context, a simple way to destruct it while keeping the constraint is by asserting the existence of an element in meta-logic.
-\[\infer{\Gamma, \exists x : A, \phi x \vdash \psi}
+\[\infer{\Gamma, \exists x : X, \phi x \vdash \psi}
         { \exists x. (\Gamma, \phi x \vdash \psi)}\]
 This leads to problems in mechanization if we use shallow embedding of the logic.
-For example, one can't simply destruct \((\exists (p : \bot), P x)[c]\), to get a proof of \(\bot\) in the ambient logic and \((P x)[c]\) in BI, since then it is possible to simply apply \emph{ex falso} rule and provide \coqe{p} as a proof for \(\bot\) no matter what the expression evaluates to.
+For example, one can't simply destruct \((\exists (p : \bot), P x)[c]\), to get a proof of \(\bot\) in the ambient logic and \((P x)[c]\) in BI, since then it is possible to simply apply the \emph{ex falso} rule and provide \coqe{p} as a proof for \(\bot\) no matter what the expression evaluates to.
 
 \citet[page 5]{harlandResourceDistributionBooleanConstraints2003} don't encounter this problem, since they take the idea of principal formulas as their guiding principle: ``the principal formula of each rule must be assigned the value of 1'' (\true instead of 1 in our notation).
 We have to make use of this principle for existentials for the sake of mechanization later:
@@ -326,16 +329,16 @@ In general, Boolean constraints are introduced in rules which require resource d
 
 \section{New entailment predicate for MoSeL}
 
-Now that we have covered rules for Bi, let's turn to the formalization of MoSeL entailments.
+Now that we have covered the rules for Bi, let's turn to the formalization of MoSeL entailments.
 We have to make several changes to the original design covered in chapter~\ref{chap:reimplementation_ipm}.
-First we cover new entailment predicate and then discuss new rules and tactics.
+First we cover a new entailment predicate and then discuss new rules and tactics.
 
-\subsection{From theoretical perspective}
+\subsection{From a theoretical perspective}
 
-As a reminder, from theoretical point of view, MoSeL environment consists of two contexts, both of which are lists of resources.
-\(\IntuD \defeq \left[i_1 : P_1, \ldots , i_n : P_n \right]\) -- intuitionisctic context and \(\SpatD \defeq \left[j_1 : Q_1, \ldots , j_m : Q_m \right]\) -- spatial context.
-Therefore, we put the entailment to be: \[\entailsD R \defeq \intuit \left(\bigwedge \IntuD\right) * \left(\Sep \SpatD\right) \vdash R\]
-Where \(\bigwedge\) and \(\Sep\) are iterated:
+As a reminder, from a theoretical point of view, a MoSeL environment consists of two contexts, both of which are lists of resources:
+\(\IntuD \defeq \left[i_1 : P_1, \ldots , i_n : P_n \right]\), the intuitionistic context, and \(\SpatD \defeq \left[j_1 : Q_1, \ldots , j_m : Q_m \right]\), the spatial context.
+Therefore, we let the entailment be: \[\entailsD R \defeq \intuit \left(\bigwedge \IntuD\right) * \left(\Sep \SpatD\right) \vdash R\]
+where \(\bigwedge\) and \(\Sep\) are iterated:
 \begin{align*}
   & \bigwedge  \left[i_1 : P_1, \ldots , i_n : P_n \right] \defeq P_1 \wedge \dots\, \wedge P_n
   & \bigwedge [\,] \defeq \True \\
@@ -344,10 +347,9 @@ Where \(\bigwedge\) and \(\Sep\) are iterated:
 \end{align*}
 
 When we add Boolean expressions to formulas, the environment also has to change to accommodate them.
-We keep the structure of the environment the same, but now both contexts contain annotated formulas:intuitionisctic context --
-\(\IntuD \defeq \left[(i_1, c_1) : P_1, \ldots , (i_n,c_n) : P_n \right]\) and spatial context --\(\SpatD \defeq [(j_1, c'_1) :Q_1 , \ldots, (j_m, c'_m) :Q_m]\).
+We keep the structure of the environment the same, but now both contexts contain annotated formulas: \(\IntuD \defeq \left[(i_1, c_1) : P_1, \ldots , (i_n,c_n) : P_n \right]\), the intuitionistic context, and \(\SpatD \defeq [(j_1, c'_1) :Q_1 , \ldots, (j_m, c'_m) :Q_m]\) , the spatial context.
 
-We also change definitions of iterated \(\wedge\) and \(*\) so that they ignore formulas with \false expressions.
+We also change the definitions of iterated \(\wedge\) and \(*\) so that they ignore formulas with \false expressions.
 
 \begin{minipage}[t]{1\linewidth}
   \begin{align*}
@@ -370,19 +372,19 @@ We also change definitions of iterated \(\wedge\) and \(*\) so that they ignore 
   \end{align*}
 \end{minipage}
 
-In particular, it means that as soon as all variables in constraints are assigned, resources with \false constraints don't influence derivations in any way.
-From theoretical point of view, once we have a total assignment we can also remove all Boolean expressions and construct a regular proof, if needed.
+In particular, this means that, as soon as all variables in constraints are assigned, resources with \false constraints don't influence derivations in any way.
+From a theoretical point of view, once we have a total assignment, we can also remove all Boolean expressions and construct a regular proof if needed.
 This corresponds to Proposition 4.10 -- Completeness of Resource Proofs of \citet[page~25]{harlandResourceDistributionBooleanConstraints2003}, but for MoSeL entailment predicate.
 
 \subsection{Rules for MoSeL}
 
-As with regular entailment predicate, with formalization for it in hand we can also present some rules for new tactics.
-In section~\ref{sec:rules-regular-ipm} we covered rules for magic wand introduction, \coqe{iIntro} and separation-logic variants of \coqe{exact} and \coqe{assumption}.
+As with the regular entailment predicate, with formalization for it in hand we can also present some rules for new tactics.
+In section~\ref{sec:rules-regular-ipm} we covered rules for magic wand introduction, \coqe{iIntro}, and separation-logic variants of \coqe{exact} and \coqe{assumption}.
 Let's look at them in the new setting.
 
 \begin{itemize}
 \item Introduction of separating implication: \coqe{iIntro}\\
-  The rule for introduction is almost the same as one we have seen for BI in the previous section~\ref{sec:separating-impl-bi-with-constr}.
+  The rule for introduction is almost the same as the one we have seen for BI in the previous section, section~\ref{sec:separating-impl-bi-with-constr}.
   \[
   \infer{\entailsD P \wand Q}
         {\entails {\IntuD} {\SpatD, i : P[\true]} {Q} &
@@ -398,11 +400,11 @@ Let's look at them in the new setting.
   \]
 
 \item Dealing with assumptions: \coqe{iExact} and \coqe{iAssumption}.\\
-  In the new setting both of them serve as tactics which trigger final constraint solving which unifies expressions of relevant resources with either \true or \false.
+  In the new setting both of them serve as tactics which trigger final constraint solving that unifies expressions of relevant resources with either \true or \false.
 
   We shall only present rules for \coqe{iExact}, since \coqe{iAssumption} exploits exactly the same ideas.
-  There are two cases to consider: the case when the relevant resource is found in intuitionistic context and the case when it's in spatial context.
-  In both cases we unify the expression attached to selected resource with \true and try to clear the spatial context.
+  There are two cases to consider: the case when the relevant resource is found in the intuitionistic context and the case when it's in the spatial context.
+  In both cases we unify the expression attached to the selected resource with \true and try to clear the spatial context.
   The difference is that in the second case we obviously have to exclude the resource itself.
   \[
     \infer[c = \true]
@@ -418,8 +420,8 @@ Let's look at them in the new setting.
            \forall \phi[e] \in (\SpatD \backslash \{i : P[c]\}).\, e = \false \vee \phi \text{ is affine}}
   \]
 
-  One of the problems that these rules don't deal with is treatment of (other) resources in intuitionistic context.
-  At the moment we try to clear them too, unifying their expressions with \false, since they can be safely discarded in other branch if not needed, but there are also other~\cite[Section 15.3]{pfenningLogicProgrammingLecture2007} approaches.
+  One of the problems that these rules don't deal with is treatment of (other) resources in the intuitionistic context.
+  At the moment, we try to clear them too, unifying their expressions with \false, since they can be safely discarded in other branch if not needed, but there are also other approaches \cite[Section 15.3]{pfenningLogicProgrammingLecture2007}.
 
 \item Introduction of separating conjunction: \coqe{iSplit}.\\
   This rule is simply an adaptation of the separating conjunction introduction rule.
@@ -438,9 +440,9 @@ Let's look at them in the new setting.
    This is the adaptation of the rule for MoSeL entailments:
   \[
   \infer{\entailsD Q}
-        {i : P \wedge R[c] \in \SpatD &
+        {i : \left(P \wedge R\right)[c] \in \SpatD &
          \entails {\IntuD}
-                  {(\SpatD \backslash \{i : P \wedge R[c]\}), P[c' \& c], R [\neg c' \& c]}
+                  {(\SpatD \backslash \{i : \left(P \wedge R\right)[c]\}), P[c' \& c], R [\neg c' \& c]}
                   {Q} &
          c \text{ is a fresh variable}}
   \]
@@ -612,19 +614,19 @@ Let's look at them in the new setting.
 
 \section{Boolean constraints implemented}
 
-In this section we describe implementation of the new entailment predicate, challenges in adaptation of \citet{harlandResourceDistributionBooleanConstraints2003} results for MoSeL and briefly discuss our solving procedure for constraints.
+In this section we describe the implementation of the new entailment predicate and the challenges encountered while adapting the result of \citet{harlandResourceDistributionBooleanConstraints2003} for MoSeL, and briefly discuss our solving procedure for constraints.
 
 \subsection{Coq implementation}
 \label{subsec:ipm_constr_coq_implementation}
 
 As per figure~\ref{fig:ipm-diagram}, our changes affected everything up from the environments.
-In particular, we had to amend typecasses, Coq lemmas, and, most importantly, implement constraint management in Ltac2 for the topmost layer.
-However, the changes to typeclasses and Coq lemmas were following naturally and don't constitute particular interest.
-Therefore, in this section we focus on the reimplementabtion of environments, the entailment predicate, and Ltac2 tactics.
+In particular, we had to amend type classes, Coq lemmas, and, most importantly, implement constraint management in Ltac2 for the topmost layer.
+However, the changes to type classes and Coq lemmas followed naturally and aren't particularly interesting.
+Therefore, in this section we focus on the reimplementation of environments, the entailment predicate, and Ltac2 tactics.
 
 Let's start with environments.
 We can mostly keep the definition of environments, as shown in figure~\ref{fig:coq_envs}, and only change the definitions of intuitionistic and spatial contexts.
-In particular, we first change the type of identifier to include a Boolean variable and then use this new identifier in the definition of environment.
+In particular, we first change the type of identifier to include a Boolean variable and then use this new identifier in the definition of an environment.
 
 \begin{coq}
   Definition mrkd_ident : Type := bool * ident.
@@ -633,7 +635,7 @@ In particular, we first change the type of identifier to include a Boolean varia
   | Esnoc : env B -> mrkd_ident -> B -> env B.
 \end{coq}
 
-With new environments in hand we can reconstruct entailment predicates.
+With these new environments in hand we can reconstruct the entailment predicates.
 As with environtment \coqe{envs}, most of the definition stays superficially the same:
 \begin{coq}
   Definition envs_entails {PROP} ($\Delta$ : envs PROP) (Q : PROP):
@@ -641,16 +643,16 @@ As with environtment \coqe{envs}, most of the definition stays superficially the
 \end{coq}
 
 But even if we keep the notation, the implementation of everything except simple connectives has to be adjusted.
-First of all, we follow theoretical presentation for definitions of \coqe{[$\wedge$]} and \coqe{[*]} -- both of them evaluate expressions in the contexts, discard resources with \false elements and return lists folded with their respective operations.
-This can be confusing, since the computation doesn't happen automatically while the user is doing proof.
+First of all, we follow the theoretical presentation for definitions of \coqe{[$\wedge$]} and \coqe{[*]}: both of them evaluate expressions in the contexts, discard resources with \false elements and return lists folded with their respective operations.
+This can be confusing, since the computation doesn't happen automatically while the user is doing the proof.
 The reason for this is that such computation would result in evaluation getting stuck on evars frequently, so we only ``unfold'' the definition while proving Coq lemmas, not while doing proofs using MoSeL.
 
-Well-foundedness predicate should also be changed.
+The well-foundedness predicate should also be changed.
 One might think that we need to check only the resources present for non-duplication.
-However, exactly because some of the expressions are yet undefined, it's not possible to tell apart resources which are present from those which are absent.
-Hence, we need to guarantee that no identifiers appears more than once, even if it does in a resource with expression that evaluates to \false.
+However, exactly because some of the expressions are still undefined, it's not possible to tell apart resources which are present from those which are absent.
+Hence, we need to guarantee that no identifier appears more than once, even if it does in a resource with an expression that evaluates to \false.
 
-For the sake of comparison with \ref{fig:tac-assumption}, we also provide the statement of \coqe{iAssumption} lemma:
+For the sake of comparison with \ref{fig:tac-assumption}, we also provide the statement of the \coqe{iAssumption} lemma:
 
 \begin{figure}[H]
   \begin{coq}
@@ -669,22 +671,22 @@ Lemma tac_assumption Delta i p P Q :
 As we see, the main difference from the previous definition is that environment lookups now take Boolean expressions into account.
 In particular, \coqe{envs_lookup_true} only returns resources with Boolean expressions that evaluate to \true.
 This seemingly contradicts our previous statement about computation getting stuck on evars.
-However, since this lemma is only used by specific Ltac2 function which ensures there no existential variables in the expression attached to \coqe{i}, it is safe to do perform such a lookup.
+However, since this lemma is only used by a specific Ltac2 function that ensures that there are no existential variables in the expression attached to \coqe{i}, it is safe to perform such a lookup.
 
 \subsection{Managing constraints in Ltac2}
 \label{subsec:managing_constraints}
 
 Let's now turn to the Ltac2 layer.
 
-As we saw above, contexts themselves contain regular Boolean values, but the central piece of solution by \citet{harlandResourceDistributionBooleanConstraints2003} was that the values of the expressions was only decided later, at the time of solving constraints.
+As we saw above, contexts themselves contain regular Boolean values, but the central piece of the solution by \citet{harlandResourceDistributionBooleanConstraints2003} was that the values of the expressions were only decided later, at the time of solving constraints.
 To this end, we use existential variables~\cite[Section 2.2.1]{thecoqdevelopmentteamCoqProofAssistant2020}.
 They are precisely typed placeholder terms which should be instantiated at some point before a proof is closed.
 In the terms of the paper, they are Boolean variables with no constraints.
 
-The generation of new Boolean (existential) variables and instantiation of said variables with Boolean values are two new tasks of the Ltac2 tactics.
-Apart from this, however, tactics are not that different from the implementation described in section~\ref{sec:ltac2-tactics-mosel}: they are still wrapping Coq lemmas and do basic bookkeeping.
+The generation of new Boolean (existential) variables and the instantiation of said variables with Boolean values are two new tasks of the Ltac2 tactics.
+Apart from this, however, the tactics are not that different from the implementation described in section~\ref{sec:ltac2-tactics-mosel}: they still wrap Coq lemmas and do basic bookkeeping.
 
-We start with generation of new variables.
+We start with the generation of new variables.
 To simplify presentation, we take the new rule for the destruction of non-separating conjunction: \coqe{iAndDestruct}.
 In the relevant Coq lemma we require presence of some conjunct with identifier \coqe{i}:
 \begin{coq}
@@ -697,7 +699,7 @@ and then substitute \coqe{P} for two elements with new expressions:
                                          (     c' && c, j1) P1)
                       Delta
 \end{coq}
-Full lemma statement can be found in figure~\ref{fig:i_and_destruct_split_lemma}.
+A complete statement of the lemma can be found in figure~\ref{fig:i_and_destruct_split_lemma}.
 
 \begin{figure}
 \begin{coq}
@@ -726,38 +728,36 @@ Ltac2 i_and_destruct_split (x y z : ipm_ident) :=
 
 To explain instantiation of variables let's take our running example of \coqe{iAssumption}.
 The only difference from implementation in figure~\ref{fig:i-assumption-def} is in the \coqe{find} function.
-While previously in the \coqe{Esnoc} case we would either apply the lemma or recurse, now we have to ensure that the resource selected is indeed there.
-
-Which in Ltac2 translates to changing
+While previously in the \coqe{Esnoc} case we would either apply the lemma or recurse, we now have to ensure that the selected resource is indeed there, which in Ltac2 translates to changing
 \begin{coq}
 refine '(tac_assumption _ \$j \$p \$pp _ _ _ _) > [$\ldots$]
 \end{coq}
-to the following:
+to
 \begin{coq}
 try_only_selected_all (Constr.equal j) gamma;
 refine '(tac_assumption _ \$j \$p \$pp _ _ _ _) > [$\ldots$]
 \end{coq}
 
-Where \coqe{try_only_selected_all} function recurses over the environment and tries to unify expressions attached to selected resources (with identifier equal to \coqe{j}) with \true and everything else with \false.
+Where the \coqe{try_only_selected_all} function recurses over the environment and tries to unify the expressions attached to the selected resources (with identifier equal to \coqe{j}) with \true and everything else with \false.
 
 \subsection{Solving constraints/unification procedure}
 \label{subsec:solving_constraints}
 
-There's, however, an important difference between our approach and one described by \citet{harlandResourceDistributionBooleanConstraints2003}.
-While they suggest generating equational constraints and then supplying external SAT solver with them to produce an assignment of values to variables, we omit equations and implement a simple specialized solver in Ltac2.
+There is, however, an important difference between our approach and the one described by \citet{harlandResourceDistributionBooleanConstraints2003}.
+While they suggest generating equational constraints and then supplying an external SAT solver with them to produce an assignment of values to variables, we omit the equations and implement a simple specialized solver in Ltac2.
 
 There are three reasons for this.
-As we saw in section~\ref{sec:monad-tactics}, the only state that we can keep in a monad are goals and hypothesis, which also end up in the proof term when the proof is closed.
-This means that if we were to generate equational constraints, as described in the paper, we would have to store them until they are passed to the solver, which would unnecessarily bloat proof terms, since the equations will hold because of the right instantiation of variables.
+As we saw in section~\ref{sec:monad-tactics}, the only state that we can keep in a monad are goals and hypotheses, which also end up in the proof term when the proof is closed.
+This means that, if we were to generate equational constraints as described in the paper, we would have to store them until they are passed to the solver, which would unnecessarily bloat proof terms, since the equations will hold because of the right instantiation of variables.
 
-The second reason is that due to specific shape of expressions in the contexts, it suffices to consider only ``minimal'' solutions, where we only decide presence of the resouce in the last branching.
+The second reason is that due to the shape of expressions in the contexts, it suffices to consider only ``minimal'' solutions, where we only decide on the presence of the resource in the last branch.
 Intuitively, when we require a resource to be absent from the current branch of the proof, we don't want to decide for any other branch except this one.
-And since the expressions take form of iterated conjunctions, where the outermost one corresponds to the last branching point, it suffices to unify only the first variable we encounter with \false (or \true, if it's under negation).
+And since the expressions take the form of iterated conjunctions, where the outermost one corresponds to the last branching point, it suffices to unify only the first variable we encounter with \false (or \true, if it's under negation).
 
-Concretely, if there is a resource with expression of the form \coqe{?a && ?b} and we want to impose a constraint that forces it to evaluate to \false, both \(\setBraces {a \mapsto \false, b \mapsto \_} \) and \(\setBraces {b \mapsto \false, a\ \mapsto \_}\) technically satisfy this condition.
-However, choosing the second one corresponds to premature decision to eliminate the resource from both the current branch and its sibling.
+Concretely, if there is a resource with an expression of the form \coqe{?a && ?b} and we want to impose a constraint that forces it to evaluate to \false, both \(\setBraces {a \mapsto \false, b \mapsto \_} \) and \(\setBraces {b \mapsto \false, a\ \mapsto \_}\) technically satisfy this condition.
+However, choosing the second one corresponds to a premature decision to eliminate the resource from both the current branch and its sibling.
 
-The final reason is purely technical -- interfacing Ltac2 with an external SAT solver would require extending OCaml implementation for such an interface, which complicates both development and distribution.
+The final reason is purely technical: interfacing Ltac2 with an external SAT solver would require extending the OCaml implementation for such an interface, which complicates both development and distribution.
 
 \section{Design space and shortcomings of the current implementation}
 \label{sec:poss-designs-comp}
@@ -771,9 +771,9 @@ While discussing dependent sum elimination originally, we resorted to the \citea
 
 While the principle seems natural, it prohibits manipulation of resources which the user might not want to commit to.
 We successfully avoided this restriction for conjunction and will describe possible approaches in this section.
-The main problem with the destruction of dependent sums, which might not be present is leakage of resources into the Coq context, which doesn't track usage and can't be amended to include Boolean expressions as guards.
+The main problem with the destruction of dependent sums that might not be present, is leakage of resources into the Coq context, which doesn't track usage and can't be amended to include Boolean expressions as guards.
 
-The problem with leakage can be illustrated with the following example: assume we can simply destruct dependent sum \coqe{(exists x, P x)[c]} to result in \coqe{(P x) [c']} in the MoSeL context, where \(c'\) is some new expression.
+The problem with leakage can be illustrated with the following example: assume we can simply destruct the dependent sum \coqe{(exists x, P x)[c]} to result in \coqe{(P x) [c']} in the MoSeL context, where \(c'\) is some new expression.
 
 In the MoSeL rendering of the proof state this would look as follows:
 
@@ -788,10 +788,10 @@ Q
 }
 \end{minipage}
 
-Where everything below the first line is the MoSeL state and everything above -- the Coq proof state.
+where everything below the first line is the MoSeL state and everything above it the Coq proof state.
 
 Since we don't know whether \coqe{p} is an affine resource, the correct proof would unify \coqe{$c$} with \false.
-With the assumed destruction rule, we can instead prove it by destruction of \coqe{p}.
+With the assumed destruction rule, we can instead prove the goal by destruction of \coqe{p}.
 
 \begin{minipage}{\linewidth}
 \texttt{P : $\forall$ x : False, PROP\\
@@ -804,25 +804,25 @@ q : Q\\
 Q}
 \end{minipage}
 
-And then by \coqe{exfalso} rule without ever unifying $c^{'}$ with \true.
+And then by the \coqe{exfalso} rule without ever unifying $c^{'}$ with \true.
 Which means that MoSeL will have no way to guarantee that p is indeed used only in this branch and not elsewhere too, so the rule is unsound.
 
 We shall now describe possible alternatives for the naive rule, which include guards for the first component of the dependent sum (\texttt{x : X}) and the second one (\texttt{P x}).
 However, the primary reason for the user to destruct the dependent pair is usually to access the resource in the second component, which is complicated in the last two alternatives.
 \begin{enumerate}
 \item \emph{Require a proof that the type quantified over is inhabited.}
-  This leaves the second element of exactly as in the naive rule, which simplifies development.
-  However, this can not be automated in the general case, so the user would be asked for the proof of inhabitedness, which might be harder then simply deciding to force presence of the original existential.
-\item \emph{Requiring a proof that expression is equal to \true in Coq context}.
+  This leaves the second element exactly as in the naive rule, which simplifies development.
+  However, this can not be automated in the general case, so the user would be asked for the proof of inhabitedness, which might be harder than simply deciding to force presence of the original existential.
+\item \emph{Requiring a proof that the expression is equal to \true in Coq context}.
   Essentially, instead of introducing just \coqe{x : X} to the Coq context, we introduce the following function \coqe{forall (p : c = true), X}.
   This successfully guards access to the quantified type, but complicates the access to the second element of the pair.
 \item \emph{Introducing a conditional}.
-  While in the previous approach we asked for a proof that \coqe{c} is \true, we can as well simply branch on \coqe{c}, providing \coqe{x : X} if it is indeed true and unit if it is false.
+  While in the previous approach we asked for a proof that \coqe{c} is \true, we can also simply branch on \coqe{c}, providing \coqe{x : X} if it is indeed true and unit if it is false.
   So, instead of \coqe{x : X}, we introduce \coqe{x : if c then X else True} to the context.
-  This, however, suffers from the same problem as the previous option -- we can not simply access x inside \coqe{P x}, so it also has to be altered to include a guard that \coqe{c} is indeed \true and \coqe{x} is \coqe{X} and not \coqe{True}.
+  This, however, suffers from the same problem as the previous option -- we cannot simply access x inside \coqe{P x}, so it also has to be altered to include a guard that \coqe{c} is indeed \true and \coqe{x} is \coqe{X} and not \coqe{True}.
 \end{enumerate}
 
-One way around the issue with second and third solutions might be to embed dependency of the proposition on the expression into the entailment predicate, changing the evaluation to apply resources to their respective constraints, but it would require major changes in the development.
+One way around the issue with the second and third solutions might be to embed the dependency of the proposition on the expression into the entailment predicate, changing the evaluation to apply resources to their respective constraints, but it would require major changes in the development.
 
 We leave further investigation of the issue to future work.
 
@@ -831,21 +831,21 @@ We leave further investigation of the issue to future work.
 \label{subsec:hanging-obligations}
 
 There's also a problem with our current approach.
-Since from Ltac2 we don't have access to current existential variables of the proof, we are restricted to operate on existential variables that show up in the goal.
-However, some of the tactics in MoSeL simply erase resources from the context, like introduction of intuitionistic modality, which removes all hypotheses from spatial context.
+Since from Ltac2 we don't have access to current existential variables of the proof, we are restricted to operating on existential variables that show up in the goal.
+However, some of the tactics in MoSeL simply erase resources from the context, like introduction of intuitionistic modality, which removes all hypotheses from the spatial context.
 
 Consider the case with a hypothesis being yet undistributed in the spatial context, which then gets erased in both branches due to the introduction of intuitionistic modality.
-In this case, its expression is erased from the goal and we, from Ltac2 perspective, have no opportunity to post-factum assign it to any branch (which would be fine from proof perspective, since it gets erased anyway).
+In this case, its expression is erased from the goal and we, from the Ltac2 perspective, have no opportunity to post-factum assign it to any branch (which would be fine from the proof perspective, since it gets erased anyway).
 
 Currently there isn't a good way to solve this, since Ltac2 tactics can only operate on one goal, and introspection to verify that no existential variables are forgotten requires a global view of the proof state.
 
-One way around it would be to introduce equations explicitly and pass all them to an external solver, which ensures that no variables are lost.
+One way around it would be to introduce equations explicitly and pass them all to an external solver, which ensures that no variables are lost.
 
 \subsection{Environments}
 \label{subsec:environments}
 
 In section~\ref{subsec:ipm_constr_coq_implementation} we defined new environments with Boolean expressions, following the definition from the paper by \citet{harlandResourceDistributionBooleanConstraints2003} and existing environments in MoSeL.
-However, this is not the only way to solve resource management problem.
+However, this is not the only way to solve the resource management problem.
 We sketch two alternative designs and discuss another design decision that was made regarding naming resources.
 
 \paragraph{Continuation-style environments}
@@ -873,17 +873,17 @@ Q
 }
 \end{minipage}
 
-Where \(\Delta\) is used as a current context and which gets populated through usage of resources, which then gets subtracted from the original context when we switch to the second conjunct.
+Where \(\Delta\) is used as a current context which gets populated through usage of resources and then gets subtracted from the original context when we switch to the second conjunct.
 
 The upside of this approach is the lack of existential variables and hence no problem like \ref{subsec:hanging-obligations}.
-The problem with this approach emerges when we have to remove not only variables from the MoSeL context, but also Coq contexts, which happens regularly due to higher-order nature of MoSeL.
-A prime example of this is a dependent pair -- destruction of one moves the first element into Coq context.
-However, while while we can only store the continuation entailment in the goal, there is no way to embed Coq context withing a goal, so currently there is no way to implement it in Coq.
+The problem with this approach emerges when we have to remove not only variables from the MoSeL context, but also Coq contexts, which happens regularly due to the higher-order nature of MoSeL.
+A prime example of this is a dependent pair -- destruction of one moves the first element into the Coq context.
+However, while while we can only store the continuation entailment in the goal, there is no way to embed the Coq context within a goal, so currently there is no way to implement this solution in Coq.
 
 \paragraph{Boolean constraints resolved post-factum with equations posed as goals}
 
 The other alternative, which is closer to the implemented solution and also solves the problem described in \ref{subsec:hanging-obligations}, is posing the equations explicitly.
-However, as mentioned section~\ref{subsec:solving_constraints}, this would increase the size of the proofs.
+However, as mentioned in section~\ref{subsec:solving_constraints}, this would increase the size of the proofs.
 
 Concretely, this would ask for an explicit proof of disjointness of resources \coqe{xorb c1 c2 = true}.
 In this case \coqe{tac_and_destruct_split} would change from figure~\ref{fig:i_and_destruct_split_lemma} to figure~\ref{fig:i_and_destruct_split_lemma_eq}.
@@ -914,20 +914,20 @@ One potentially confusing aspect of the current implementation of the new proof 
 If there is a resource \coqe{p : P[c]} with a Boolean expression \coqe{c} evaluating to \false in the context, the user will not be able to introduce a different proposition with the same identifier.
 This is especially confusing due to the rendering of the goals which doesn't display such resources as \coqe{p : P[false]} at all.
 
-One alternative approach would be to move  from the idea of well-foundedness based on the identifiers and use internal counter instead.
+One alternative approach would be to move  from the idea of well-foundedness based on the identifiers and use an internal counter instead.
 
 With the current implementation there are two constructors for identifiers: anonymous and named, where the former includes a counter, while the latter only has a name (as seen in the section~\ref{subsec:ipm_constr_coq_implementation}).
 
-Well-foundedness guarantees that for any identifier looking in up will result in a single resources.
+Well-foundedness guarantees that looking up any identifier will return at most one resource.
 \begin{coq}
   Inductive env_wf {A : Type}: env A → Prop :=
   | Enil_wf : env_wf Enil
   | Esnoc_wf Γ i x : lookup Γ i = None → env_wf Γ → env_wf (Esnoc Γ i x).
 \end{coq}
 
-We change the definition of identifier to also include counter in the named constructors and require well-foundedness to only have a single resource for each value of the counter, but not necessarily for each string identifier (which is part of the named constructor).
+We change the definition of identifier to also include a counter in the named constructors and require well-foundedness to only have a single resource for each value of the counter, but not necessarily for each string identifier (which is part of the named constructor).
 
-The upside of such approach is that the problem described above doesn't appear at all.
+The upside of such an approach is that the problem described above doesn't appear at all.
 The downside, however, is that management of non-duplication of hypothesis names is now on Ltac2 which can also complicate Coq lemmas.
 
 \section{Reflection on Ltac2 usage}
@@ -938,18 +938,18 @@ And while Ltac2 comes without a library to manage existential variables, the set
 There was just one primitive which at the time of writing wasn't available in Ltac2, \coqe{convert_no_check} which was frequently needed for expression simplification.
 
 Finally, the problem described in section~\ref{subsec:hanging-obligations} is annoying and is not solvable with the current set of primitives provided by Ltac2.
-It is not clear what would be a good solution for it, since global operations on proof state would break monadic interface and so would access for all existential variables.
+It is not clear what would be a good solution for it, since global operations on proof state would break the monadic interface and so would access for all existential variables.
 
 \subsection{Evar unification and constraint solving}
 \label{subsec:evar-unification-and-constr-solving}
 
 There were three main challenges for development of primitives to work with evar in Ltac2.
 \begin{itemize}
-\item The first one was generation of existential variables which in Ltac1 is provided with as a primitive.
+\item The first one was generation of existential variables which in Ltac1 is provided as a primitive, while in Ltac2 it isn't.
   The solution to this turned out to be typechecking of \coqe{'(_ : bool)} for generation of Boolean existential variables, and subsequent manipulation of those to strip casts where they were unnecessary.
-\item The second one was to find a way to simulate \coqe{unify} primitive in Ltac2 which also wasn't available.
+\item The second one was to find a way to simulate the \coqe{unify} primitive in Ltac2 which also wasn't available.
   In this case, the solution was to force Coq to typecheck a term of type \coqe{eq_refl t : t = true} to unify \coqe{t} with \coqe{true}.\footnote{Thanks to Jan-Oliver Kaiser for showing me this trick}.
-\item Finally, \coqe{Constr.Unsafe} library of Ltac2 turned out to be invaluable for multiple primitives, from stripping casts from evars to their detection in a term.
+\item Finally, the \coqe{Constr.Unsafe} library of Ltac2 turned out to be invaluable for multiple primitives, from stripping casts from evars to their detection in a term.
 \end{itemize}
 
 %%% Local Variables:
