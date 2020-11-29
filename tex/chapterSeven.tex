@@ -58,7 +58,7 @@ But, equally importantly, introduction of Boolean constraints to the logic is no
   The paper also presents strategies to solve imposed constraints and their solution is based on decoupling generation of equational constraints and search for their solution.
   We previously mentioned that our approach doesn't consider equations at all and operates on one expression at a time instead the moment new information about the resource is available, but it can still be cast as a strategy to solve constraints in terms for the original paper.
    It doesn't fit in any of the strategies described in the paper exactly, but is closest to the ``lazy'' strategy.
-  In the ``lazy'' strategy one branch is pursued till the maximum depth is reached, then constraints for the expressions are generated in form of equations.
+  In the ``lazy'' strategy one branch is pursued until the maximum depth is reached, then constraints for the expressions are generated in form of equations.
 These are provided to a solver, which outputs and assignment for variables present in the expression and the solution is propagated to other branches.
 
   ``Eager distribution'' strategy requires exploring all branches until the very bottoms and only after that querying constraint solver with all equations.

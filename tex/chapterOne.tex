@@ -49,10 +49,10 @@ There is also a new experimental tactic language that aims to be a direct succes
 In an attempt to evaluate Ltac2 as a language for bigger developments, we rewrite Ltac parts of MoSeL to Ltac2.
 We tried to improve the implementation where possible and use this new version of MoSeL to develop new features.
 
-\subsection{\coqe{iSplit} tactic}
+\subsection{The \coqe{iSplit} tactic}
 \label{sec:isplit-tactic}
 
-One of the main problems with incorporating backwards-style proofs into separation logic is the introduction rule for a new connective -- ``separating conjunction''.
+One of the main problems with incorporating backwards-style proofs into separation logic is the introduction rule for a new connective: ``separating conjunction''.
 \[\infer{\Gamma_1, \Gamma_2 \vdash \phi_1 \ast \phi_2}
         {\Gamma_1 \vdash \phi_1 &
          \Gamma_2 \vdash \phi_2} \]

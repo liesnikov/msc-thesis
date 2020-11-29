@@ -355,7 +355,7 @@ We start with an overview of components (figure~\ref{fig:ipm-diagram}) of the im
 \begin{itemize}
 \item The base layer of the implementation is a BI interface that the user instantiates with their logic and can use to profit from the existing infrastructure.
 \item On top of the BI interface MoSeL defines environments and entailment predicates. These are used to make proofs of ``Coq tactics'' easier.
-  Additionally, typeclasses allow for more general unification and proof search in an automated way.
+  Additionally, type classes allow for more general unification and proof search in an automated way.
 \item ``Coq tactics'' themselves are verified transformations of the goal, the simplest instance being \coqe{tac_ex_falso}, which looks as follows:\\
 \coqe{Lemma tac_ex_falso Delta Q : envs_entails Delta False → envs_entails Delta Q.}.
 \item These transformations are then applied by Ltac1 (or Ltac2, in the reimplementation) programs, which can combine them, use specialized tactics for the subgoals they generate and handle errors.
@@ -444,10 +444,10 @@ Lemma tac_ex_falso Delta Q : envs_entails Delta False → envs_entails Delta Q.
 Proof. by rewrite envs_entails_eq -(False_elim Q). Qed.
 \end{coq}
 
-\subsubsection{Typeclasses}
+\subsubsection{Type classes}
 \label{subsubsec:typeclasses}
 
-Typeclasses serve multiple purposes in MoSeL development, and here we are going to describe only a couple of the simplest instances needed for \coqe{iAssumption}.
+Type classes serve multiple purposes in MoSeL development, and here we are going to describe only a couple of the simplest instances needed for \coqe{iAssumption}.
 The primary idea is to automatize simple parts of proof search via logic programming.
 
 The first example we are going to look at are \coqe{Affine} and \coqe{AffineEnv}.
@@ -480,7 +480,7 @@ Global Instance affine_env_snoc Γ i P :
 \end{coq}
 
 The next example is slightly more involved and concerns entailment of one proposition with another.
-To be more precise, we want to define a typeclass which corresponds intuitively to ``\(P\) is almost the same as \(Q\) and P entails Q''.
+To be more precise, we want to define a type class which corresponds intuitively to ``\(P\) is almost the same as \(Q\) and P entails Q''.
 \begin{coq}
 Class FromAssumption {PROP : bi} (p : bool) (P Q : PROP) :=
   from_assumption : $\intuit$?p P |- Q.
@@ -563,7 +563,7 @@ Ltac2 i_assumption () :=
       | Esnoc ?gg ?j ?pp =>
         first [ refine '(tac_assumption _ \$j \$p \$pp _ _ _ _) >
                 [ pm_reflexivity () (* for the lookup *)
-                | i_solve_tc () (* perform typeclass search for FromAssumption*)
+                | i_solve_tc () (* perform type class search for FromAssumption*)
                 | pm_reduce (); (* evaluate env_delete and if-branch *)
                   i_solve_tc ()]
               | find p gg q]
@@ -681,7 +681,7 @@ At the moment this mostly impacts error printing, since we have to rely on the L
 
 \paragraph{notypeclasses refine}
 
-Ltac2 also currently lacks a variant of \coqe{refine}, which doesn't resolve typeclasses on the application.
+Ltac2 also currently lacks a variant of \coqe{refine}, which doesn't resolve type classes on the application.
 This tactic is heavily used in MoSeL development.
 
 \paragraph{Interoperability between Ltac1 and Ltac2}
