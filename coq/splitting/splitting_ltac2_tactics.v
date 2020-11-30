@@ -411,17 +411,16 @@ Ltac2 Notation "i_intro_named" x(constr) := i_intro_named0 x.
 Ltac2 i_exact_spatial h :=
   lazy_match! goal with
   | [|- @envs_entails _ ?e ?p] =>
-    or(fun () =>
-         try_only_selected Spatial (Constr.equal h) e;
-         (* try to clear intuitionisctic hyps too *)
-         try_only_selected Intuitionistic (fun x => false) e)
-      (fun () =>
+    or (fun () =>
          let n := fresh () in
          assert_as_id '(Absorbing $p) n > [i_solve_tc ()| ()];
          Std.clear [n];
          ensure_selected Spatial (Constr.equal h) e;
          try_only_selected Intuitionistic (fun x => false) e)
-
+       (fun () =>
+          try_only_selected Spatial (Constr.equal h) e;
+         (* try to clear intuitionisctic hyps too *)
+          try_only_selected Intuitionistic (fun x => false) e)
   end;
   refine '(tac_assumption _ $h _ _ _ _ _ _) >
   [ () | ()
