@@ -32,7 +32,7 @@ The connectives that differentiate BI logic from regular logic are separating co
 Intuition behind BI logic is somewhat simpler to understand by example.
 In classical separation logic \cite{reynoldsSeparationLogicLogic2002, ohearnLocalReasoningPrograms2001}, a prototypical instance of a BI logic, propositions are predicates on memory heaps.
 In this case separating conjunction \(P \ast Q\) represents a proposition that asserts that the heap can be divided in two heaplets, such that they don't share any memory and that one satisfies \(P\), while the other satisfies \(Q\).
-Separating implication \(P \wand Q\) means that any heap that satisfies \(P\) also satisfies \(Q\).
+Separating implication \(P \wand Q\) asserts ownership of a heaplet, such that for any separate heaplet that satisfies \(P\), the two together satisfy \(Q\).
 Lastly, the neutral element \emp simply means that the heap is empty.
 Non-separating conjunction \(P \wedge Q \)in that case means that the heap satisfies both \(P\) and \(Q\) simultaneously.
 
@@ -99,9 +99,9 @@ To reflect this, the definitions of the connectives have to be changed:
 Intuitionistic logics are better suited for reasoning about programs with garbage collection, since, due to monotonicity, they allow us to ``forget''  about some parts of the memory or ``drop'' some resources: \(l \mapsto v \ast P \vdash P\), for any \(P\).
 
 \paragraph{Affine logics.}
-This ability to ``forget'' about resourecs can also be expressed in the BI logics directly.
+This ability to ``forget'' about resources can also be expressed in the BI logics directly.
 There, it corresponds to the presence of the weakening rule for multiplicative bunches.
-Logics, which admit such a rule are called \emph{affine}.
+A logic which admits such a rule is called \emph{affine}.
 The inclusion of this rule can also be expressed as an axiom.
 \[\infer{P \ast Q\vdash Q}{}\]
 Intuitionistic separation logic is an affine BI, while classical is not.
@@ -208,7 +208,7 @@ Qed.
   \label{fig:mosel-example-full}
 \end{figure}
 
-\section{MoSeL from theoretical perspective}
+\section{MoSeL from the theoretical perspective}
 \label{sec:ipm_theory}
 
 We just saw BI logic on paper and a formal proof in Coq as done in MoSeL, so in this section we give a more formal presentation for MoSeL from a BI point of view.
@@ -337,10 +337,10 @@ Regular introduction rules don't change that much, except now the context has to
   The details can be found in the MoSel paper~\cite[Section 2.3]{krebbersMoSeLGeneralExtensible2018}.
 \end{itemize}
 
-\section{MoSeL from implementation perspective}
+\section{MoSeL from the implementation perspective}
 \label{sec:implementation-of-ipm}
 
-Now that we have seen MoSeL from theoretical perspective, let's turn to the Coq implementation.
+Now that we have seen MoSeL from the theoretical perspective, let's turn to the Coq implementation.
 
 We start with an overview of components (figure~\ref{fig:ipm-diagram}) of the implementation and build the \coqe{iAssumption} tactic in the end.
 

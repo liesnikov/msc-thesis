@@ -8,16 +8,16 @@ The need for a new tactic language is well-justified due to multiple issues with
 Current usages of Ltac1, i.e. Bedrock platform \cite{chlipalaMostlyautomatedVerificationLowlevel2011}, VST-Floyd~\cite{caoVSTFloydSeparationLogic2018} or Iris Proof Mode \cite{krebbersInteractiveProofsHigherorder2017, krebbersMoSeLGeneralExtensible2018} go far beyond what one would consider ``simple''.
 This discrepancy between intended purpose and usage becomes apparent through unpredictability and lack of uniformity in semantics and issues with maintainability (\cite[Section 3.3.2]{thecoqdevelopmentteamCoqProofAssistant2020}, \cite{pedrotLtac2TacticalWarfare2019}).
 
-The Coq community developed multiple alternatives to Ltac1, such Mtac \cite*{zilianiMtacMonadTyped2013, kaiserMtac2TypedTactics2018a}, which focuses on stronger types for tactics,
-Rtac \cite{malechaExtensibleEfficientAutomation2016} and Cydele \cite{claretLightweightProofReflection2013} both providing reflection-based tactics, and others.
+The Coq community developed multiple alternatives to Ltac1, such as Mtac \cite*{zilianiMtacMonadTyped2013, kaiserMtac2TypedTactics2018a}, which focuses on stronger types for tactics,
+Rtac \cite{malechaExtensibleEfficientAutomation2016} and Cybele \cite{claretLightweightProofReflection2013} both providing reflection-based tactics, and others.
 Ltac2, on the other hand, does not aim for a new approach to tactics, but rather to be a direct successor to Ltac1, being backwards-compatible where possible, but maintaining reasonable semantics.
 It is still experimental and was integrated in Coq in version 8.11, so the description here applies only to versions 8.11 and 8.12, which are available at the moment.
 
-In this chapter we first present a suit of examples which give a taste of what Ltac2 programs look like, building up to a simple first-order logic solver tactic.
-We then Then we present details of the semantics of Ltac2 in a more formal way.
+In this chapter we first present a suite of examples which give a taste of what Ltac2 programs look like, building up to a simple first-order logic solver tactic.
+Then we present details of the semantics of Ltac2 in a more formal way.
 This chapter assumes some knowledge of Ltac1 from the reader.
 
-\section{Ltac2 by examples}
+\section{Ltac2 by example}
 \label{sec:ltac2-by-examples}
 
 Ltac2 is an ML-family language, which means it is a call-by-value, effectful functional language.
@@ -30,7 +30,7 @@ In particular, it has:
   (* polymorphic sum type *)
   Ltac2 Type ('a, 'b) sum := [Left ('a) | Right ('b)].
   \end{coq}
-\item functions, lambda functions, and pattern-matching:
+\item (lambda) functions, and pattern-matching:
   \begin{coq}
   (* function definition *)
   Ltac2 add_one (a : int) := Int.add a 1.
@@ -62,7 +62,7 @@ Ltac2 untrue () := match (Constr.equal (two ()) (three ())) with
 In order to ensure sound behavior with respect to the proof state, the body of an Ltac2 definition is required to be either a function, a constant, a pure constructor recursively applied to values or a (non-recursive) let binding of a value in a value.
 This is the reason why we thunk definitions in the example above.
 
-Ltac2 also features quotation mechanism.
+Ltac2 also features a quotation mechanism.
 In the example above \coqe{two} is a thunked Coq term, while \coqe{three} is a thunked \coqe{open_constr}, which can contain existential variables.
 
 Ltac2 doesn't expose Ltac1 tactics directly inside, but rather reimplements them from scratch and OCaml primitives.
@@ -77,7 +77,7 @@ Ltac2 split_assumption () := repeat (first [split | assumption]).
 \subsection{Matching terms and goals}
 \label{sec:matching-terms}
 
-In order to work with Coq terms effectively, Ltac2 gives uses the ability to match them in a way that is very similar syntactically to matching proper Ltac2 terms: the user has to swap \coqe{match} for \coqe{match!} and prepend variable names bound in patterns with question marks:
+In order to work with Coq terms effectively, Ltac2 gives the user the ability to match them in a way that is very similar syntactically to matching proper Ltac2 terms: the user has to swap \coqe{match} for \coqe{match!} and prepend variable names bound in patterns with question marks:
 \begin{coq}
 Ltac2 is_conjunction (v : constr) := match! v with
   | ?p /\ ?q => true
@@ -113,10 +113,10 @@ This is one of the key elements that allowed us to implement pattern-matching fo
 \subsection{Notations and scopes}
 \label{subsec:ltac2-notations-scopes}
 
-Since Ltac2 makes a clear distinction between Coq terms from Ltac2 terms, it has to rely on notations to recreate automagic parsing of Ltac1.
+Since Ltac2 makes a clear distinction between Coq terms and Ltac2 terms, it has to rely on notations to recreate automagic parsing of Ltac1.
 
 There are two different categories of notation machinery in Ltac2: notations and scopes.
-notations are user-defined and look very similar to Coq \coqe{Notation} commands and scopes are custom parsers for arguments.
+Notations are user-defined and look very similar to Coq \coqe{Notation} command, while scopes are custom parsers for arguments.
 \begin{coq}
 Ltac2 Notation "is_conjunction_pretty" v(constr) := is_conjunction v.
 (* without notation *)
