@@ -66,14 +66,14 @@ Ltac2 i_solver () := i_start_split_proof (); solve [repeat (
     let a' := ipm_id a in
     i_apply_ident a'
   | [|- _] =>
-    i_assumption ()
+    (* cut off backtracking on different variants of i_exact,
+       since it introduces even more backtracking *)
+    Control.once (i_assumption)
    end))].
 
 From iris.proofmode Require Import classes notation.
 Context {PROP : sbi}.
 Implicit Types P Q R : PROP.
-
-Set Ltac2 Backtrace.
 
 Lemma test1 P Q : Q ∧ P ⊢ □ (<absorb> P) -∗ Q.
 Proof.

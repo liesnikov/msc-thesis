@@ -17,8 +17,6 @@ section-titles: true
 listings: true
 ---
 
-# Introduction
-
 ## Motivation
 
 * One of the key elements of Iris success has been Iris Proof Mode \autocite{krebbersInteractiveProofsHigherorder2017}.
@@ -455,7 +453,7 @@ It seems to be because of backtracking in \coqe{iMatch} and slowness of interpre
 ## New things in MoSeL
 
 * Matching MoSeL proof states
-* A tactic without manual resource distribution
+* Tactics without manual resource distribution
 * It was important to use Ltac2, would be **hard** to do in Ltac1
 * The way to bring more automation to MoSeL? Maybe
 
