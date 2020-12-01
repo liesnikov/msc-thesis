@@ -92,11 +92,12 @@ end.
 MoSeL doesn't use Coq contexts and instead stores hypotheses in the goal, which means that the original tactical is of limited usage, and Ltac doesn't provide an obvious opportunity to implement goal-matching for MoSeL contexts, i.e.\ there is no way to reuse the syntax of goal matching for user-defined tactics.
 We develop a new tactic \coqe{iMatch goal} in Ltac2 for the reimplemented MoSeL, which aims to be a separation-logic alternative to \coqe{match goal}.
 
-\section{Contributions}
+\section{Structure of the thesis and contributions}
 \label{sec:contributions}
 
 \begin{itemize}
-\item In chapter~\ref{chap:reimplementation_ipm}, we describe our reimplementaion of MoSeL in Ltac2, which is, to our knowledge, contributing one of the first significant applications of the language.
+\item In chapters~\ref{chap:ltac2} and~\ref{chap:reimplementation_ipm} we cover background knowledge for Ltac2 and MoSeL, respectively, which is necessary for the rest of of the thesis.
+\item In chapter~\ref{chap:ltac2-tactics-mosel}, we describe our reimplementaion of MoSeL in Ltac2, which is, to our knowledge, contributing one of the first significant applications of the language.
   In the process, we evaluate the parts of Ltac2 used and suggest possible directions for future development.
 \item In chapter~\ref{chap:postponed_splitting}, we develop an adaptation of results by \citet{harlandResourceDistributionBooleanConstraints2003} to MoSeL, as reimplemented in the previous chapter, to introduce a new splitting tactic \coqe{iSplit}.
 \item In chapter~\ref{chap:imatch}, we describe a new primitive \coqe{iMatch goal} for the tactic language of separation logic which allows us to match entailments in a fashion similar to Coq's native \coqe{match goal} construct.

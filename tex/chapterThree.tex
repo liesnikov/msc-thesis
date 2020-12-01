@@ -1,13 +1,12 @@
-\chapter{Reimplementation of MoSeL in Ltac2}
+\chapter{MoSeL}
 \label{chap:reimplementation_ipm}
 
 The original implementation of Iris Proof Mode is due to \citet{krebbersInteractiveProofsHigherorder2017}.
 It was later extended to MoSeL by \citet{krebbersMoSeLGeneralExtensible2018}, which is a general framework for modal separation logics in Coq.
-However, while the original work was done using Ltac1, here we present a translation of MoSeL to Ltac2.
-In the translation we follow both its ideas and implementation closely.
 
-In this chapter, we first describe the basics of separation logic and basic semantics, then cover the embedding of logic in Coq and what MoSeL entailments correspond to in Bunched Implications (BI) logic.
-Afterwards we go into the details of the implementation of tactics and proof mode and, finally, we share some experiences from translating an Ltac1 implementation to Ltac2.
+In this chapter we describe the implementation of MoSeL as it is currently, with Ltac.
+First we cover the basics of separation logic and its semantics, then describe the embedding of logic in Coq and what MoSeL entailments correspond to in Bunched Implications (BI) logic.
+Finally, we go into the details of the implementation of tactics.
 
 \section{Introduction to separation logic}
 \label{sec:separation-logic-intro}
@@ -342,7 +341,7 @@ Regular introduction rules don't change that much, except now the context has to
 
 Now that we have seen MoSeL from the theoretical perspective, let's turn to the Coq implementation.
 
-We start with an overview of components (figure~\ref{fig:ipm-diagram}) of the implementation and build the \coqe{iAssumption} tactic in the end.
+We start with an overview of components (figure~\ref{fig:ipm-diagram}) of the implementation and work towards the implementation \coqe{iAssumption} throughout this chapter and the first section of chapter~\ref{chap:ltac2-tactics-mosel}.
 
 \begin{figure}
   \centering
@@ -359,7 +358,7 @@ We start with an overview of components (figure~\ref{fig:ipm-diagram}) of the im
 \item ``Coq tactics'' themselves are verified transformations of the goal, the simplest instance being \coqe{tac_ex_falso}, which looks as follows:\\
 \coqe{Lemma tac_ex_falso Delta Q : envs_entails Delta False → envs_entails Delta Q.}.
 \item These transformations are then applied by Ltac1 (or Ltac2, in the reimplementation) programs, which can combine them, use specialized tactics for the subgoals they generate and handle errors.
-  This is described in section~\ref{sec:ltac2-tactics-mosel}.
+  In this chapter we describe the Ltac1 implementation briefly and cover the translation in chapter~\ref{chap:ltac2-tactics-mosel}.
 \end{itemize}
 
 \subsubsection{BI interface}
@@ -541,154 +540,33 @@ If the spatial context is empty, there is nothing to discard, but otherwise eith
 
 No other subgoals are generated, since this is a leaf of a derivation.
 
-\section{Ltac2 tactics in MoSeL}
-\label{sec:ltac2-tactics-mosel}
+\subsubsection{Ltac tactics}
+\label{sec:ltac1-tactics}
 
-The final piece of the puzzle is the Ltac2 layer.
-While Coq tactics provide verified goal transformations, they require formal proofs as an input.
-This introduces a balance between what should go into a Coq statement and an Ltac2 function, since we want to provide input for Coq lemmas automatically.
+The final piece of the puzzle is the Ltac layer.
+While Coq lemmas, such as in figure~\ref{fig:tac-assumption}, are essentially functions from one proof state to another, applying them by hand to do proofs is still pretty far from proper Coq tactics.
+To this end, MoSeL uses Ltac functions that apply necessary lemmas, perform bookkeeping and handle subgoals.
+This introduces a balance between what should go into a Coq statement and an Ltac1/Ltac2 function, since we want to provide input for Coq lemmas automatically.
 
-Turning again to \coqe{iAssumption}, the idea is that the user doesn't provide explicit identifier of the resource they have in mind.
-Instead, the tactic is supposed to find it on its own.
+For example, in order to apply \coqe{tac_assumption} for a specific resource \coqe{j : P}, in the spatial context, we would have to write the following:
 
-Simply asserting the existence of such an identifier in a Coq lemma doesn't solve anything, since we clearly can not prove existence of the relevant resource in general.
-Hence the universally quantified identifier in the definition of the Coq lemma~\ref{fig:tac-assumption}.
-To solve the problem with providing the identifier for lemma we go through all elements of the environment in an Ltac2 function and try to apply the lemma with each one.
-
-\begin{figure}
+\begin{figure}[H]
 \begin{coq}
-Ltac2 i_assumption () :=
-  let rec find (p : coq_bool) (g : ipm_env) (q : ipm_prop) :=
-      lazy_match! g with
-      | Esnoc ?gg ?j ?pp =>
-        first [ refine '(tac_assumption _ \$j \$p \$pp _ _ _ _) >
-                [ pm_reflexivity () (* for the lookup *)
-                | i_solve_tc () (* perform type class search for FromAssumption*)
-                | pm_reduce (); (* evaluate env_delete and if-branch *)
-                  i_solve_tc ()]
-              | find p gg q]
-      end
-  in
-  lazy_match! goal with
-  | [|- envs_entails (Envs ?gp ?gs _) ?q] =>
-     first [ find '(true) gp q
-           | find '(false) gs q
-           | i_assumption_coq ()
-           | Control.zero (Iriception (of_string "no assumption matching " ++
-                                       of_constr q ++
-                                       of_string " was found"))]
-  end.
+refine (tac_assumption _ j false P);
+  [pm_reflexivity (* for the lookup *)
+  |iSolveTC (* perform type class search for FromAssumption*)
+  |pm_reduce; (* evaluate env_delete and if-branch *)
+   iSolveTC]
 \end{coq}
-\caption{\coqe{i_assumption} definition}
-\label{fig:i-assumption-def}
+\caption{Part of Ltac1 implementation of iExact}
+\label{fig:ltac1-iassumption}
 \end{figure}
 
-The listing is in figure~\ref{fig:i-assumption-def}.
-Since there are two contexts to go through, we factor out recursion into a \coqe{find} function, which takes a Boolean flag \coqe{p} to tell apart spatial and intuitionistic context, a context \coqe{g} and a proposition \coqe{q}.
-Then we apply the \coqe{tac_assumption} defined above (figure~\ref{fig:tac-assumption}) and discharge the goals with specialized tactics.
-The first subgoal \coqe{envs_lookup i Delta = Some (p,P)} is computational, so \coqe{pm_reflexivity ()} performs evaluation and tries \coqe{reflexivity} tactic.
+We apply the \coqe{tac_assumption} defined earlier (figure~\ref{fig:tac-assumption}) and discharge the goals with specialized tactics.
+The first subgoal \coqe{envs_lookup i Delta = Some (p,P)} is computational, so \coqe{pm_reflexivity} performs evaluation and uses \coqe{reflexivity} tactic.
 The other two concern type classes, so we use a wrapper around \coqe{typeclasses eauto} to solve them.
 
-The only part which wasn't described so far is \coqe{i_assumption_coq ()}.
-This is an example of tactics composition -- \coqe{i_assumption_coq} is applying a different lemma from \coqe{tac_assumption}, which tries to find an assumption of shape \(\Vdash Q\) in the Coq context instead of MoSeL context.
-
-This example also showcases some error handling in the last case, if none of the cases listed before it succeed.
-
-\subsection{The examplary proof}
-\label{sec:examplary-proof-in-ltac2-mosel}
-
-We now show what the proof looks like in the reimplemented version of MoSeL.
-
-The full listing is in figure~\ref{fig:example-proof-mosel-ltac2}.
-Since we didn't touch environment or rendering of the goals, for the user only tactics changed and everything else stayed the same, including the proof states.
-
-Perhaps, the biggest difference from the Ltac1 version is the lack of useful notations and intropatterns.
-However, this is not Ltac2's fault, but rather ours -- we didn't focus on them and this aspect can still be improved.
-In particular, now we have to destruct the introduced separating conjunction with two tactic invocations: what previously was just \coqe{iIntros "[HP H]".} now becomes manual introduction of the separating conjunction \coqe{i_intro_named "HS".} and then its destruction \coqe{i_and_destruct '(INamed "HS") '(INamed "HP") '(INamed "H").}
-Same goes for the existential, while previously we could destruct both the existential and disjunction in one command, now we have to perform two.
-
-\begin{figure}
-\begin{coq}
-Lemma example {A : Type} (P : PROP) (Phi Psi : A → PROP) :
-  P * (exists a, (Phi a) \/ (Psi a)) -* exists a, (P * Phi a) \/ (P * Psi a).
-Proof.
-  (* iIntros "[HP H]". *)
-  i_intro_named "HS".
-  i_and_destruct '(INamed "HS") '(INamed "HP") '(INamed "H").
-  (* iDestruct "H" as (x) "[H1|H2]". *)
-  i_exist_destruct '(INamed "H") as x '(INamed "HD").
-  i_or_destruct '(INamed "HD") '(INamed "H1") '(INamed "H2").
-  - i_exists$\text{~}$x. i_left (). i_split_l ["HP"] ;; i_assumption ().
-  - i_exists$\text{~}$x. i_right (). i_split_l ["HP"] ;; i_assumption ().
-Qed.
-\end{coq}
-\caption{An example of a proof using Ltac2 version of MoSeL}
-\label{fig:example-proof-mosel-ltac2}
-\end{figure}
-
-
-\subsection{Potential and observed improvements from translation to Ltac2}
-\label{sec:impr-from-transl}
-
-While translating implementation from Ltac1 to Ltac2, we encountered several points where Ltac2 was particularly useful.
-
-\paragraph{Fix arities from original implementation}
-
-In the original implementation there aren't tactics of arbitrary arity.
-Instead, due to Ltac limitations, developers were forced to define several variants of tactics, each with fixed arity.
-
-\begin{coq}
-Tactic Notation "iExists" uconstr(x1) "," uconstr(x2) :=
-  iExists x1; iExists x2.
-Tactic Notation "iExists" uconstr(x1) "," uconstr(x2) "," uconstr(x3) :=
-  iExists x1; iExists x2, x3.
-$\ldots$
-\end{coq}
-
-With Ltac2 we can use scopes for lists, which allow arbitrary arities.
-The example above would look as follows:
-
-\begin{coq}
-  Ltac2 Notation "iExists" lc(list1(thunk(seq(constr, with_bindings)), ",")) :=
-  i_exists$\text{~}$lc.
-\end{coq}
-
-Where \coqe{i_exists} iterates over the list and applies \coqe{iExists} to each element.
-
-\paragraph{Error messages}
-
-Another pain point of Ltac development is lack of proper error handling.
-
-With Ltac2 there two features that help -- we can define our own custom error classes and there is a proper error handling mechanism, which allows us to match on the error thrown.
-
-As with the \coqe{i_assumption} above, there are multiple instances of nesting tactics within each other.
-One way to improve error message thrown by iAssumption would be to catch potential error thrown by \coqe{i_assumption_coq} and append it to the error message produced in \coqe{i_assumption}, so that user can see why the tactic failed.
-
-\section{Desirable features of Ltac2}
-
-However, there also were several features that we wished Ltac2 had and that impacted the scope of potential improvements.
-
-\paragraph{User-defined scopes}
-
-Perhaps, one of the useful features of the original MoSeL implementation that is missing from our implementation is intropatterns.
-The proper way to define them with Ltac2 would be to extend datatype for intropattern with MoSeL-specific symbols and then parse it with a custom scope.
-
-Unfortunately, the latter isn't currently possible without extending OCaml implementation of Ltac2, either via forking Coq or using an Ocaml plugin that modifies Ltac2 grammar.
-
-\paragraph{User-defined pretty-printing}
-Another missing feature would be lack of user-defined printing rules.
-At the moment this mostly impacts error printing, since we have to rely on the Ltac2 pretty-printer, as notations are parsing-only.
-
-\paragraph{notypeclasses refine}
-
-Ltac2 also currently lacks a variant of \coqe{refine}, which doesn't resolve type classes on the application.
-This tactic is heavily used in MoSeL development.
-
-\paragraph{Interoperability between Ltac1 and Ltac2}
-
-While the goal of the rewriting was to give platform for further experiments, some of the tactics were easier to import.
-And while there is a way to call Ltac1 tactics from Ltac2 code, there is no proper way to pass return values there or back.
-I.e.\ \href{https://gitlab.mpi-sws.org/iris/string-ident/}{iris string-ident} has to pass terms through the goal to get the result from one to another.
+This is almost exactly the implementation of \coqe{iExact}, but \coqe{iAssumption} itself is a bit more complicated and we will go through it in the next chapter.
 
 %%% Local Variables:
 %%% mode: latex

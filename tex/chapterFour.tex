@@ -642,7 +642,8 @@ As with environtment \coqe{envs}, most of the definition stays superficially the
 
 But even if we keep the notation, the implementation of everything except simple connectives has to be adjusted.
 First of all, we follow the theoretical presentation for definitions of \coqe{[$\wedge$]} and \coqe{[*]}: both of them evaluate expressions in the contexts, discard resources with \false elements and return lists folded with their respective operations.
-This can be confusing, since the computation doesn't happen automatically while the user is doing the proof.
+Or, to be, precisely technical, it's the coercion from contexts to lists that gets modified to check the flags.
+This dependency on the flags can be confusing, since the computation doesn't happen automatically while the user is doing the proof.
 The reason for this is that such computation would result in evaluation getting stuck on evars frequently, so we only ``unfold'' the definition while proving Coq lemmas, not while doing proofs using MoSeL.
 
 The well-foundedness predicate should also be changed.
@@ -682,7 +683,7 @@ They are precisely typed placeholder terms which should be instantiated at some 
 In the terms of the paper, they are Boolean variables with no constraints.
 
 The generation of new Boolean (existential) variables and the instantiation of said variables with Boolean values are two new tasks of the Ltac2 tactics.
-Apart from this, however, the tactics are not that different from the implementation described in section~\ref{sec:ltac2-tactics-mosel}: they still wrap Coq lemmas and do basic bookkeeping.
+Apart from this, however, the tactics are not that different from the implementation described in chapter~\ref{chap:ltac2-tactics-mosel}: they still wrap Coq lemmas and do basic bookkeeping.
 
 We start with the generation of new variables.
 To simplify presentation, we take the new rule for the destruction of non-separating conjunction: \coqe{iAndDestruct}.
