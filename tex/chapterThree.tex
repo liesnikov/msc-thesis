@@ -1,12 +1,15 @@
 \chapter{MoSeL}
 \label{chap:reimplementation_ipm}
 
-The original implementation of Iris Proof Mode is due to \citet{krebbersInteractiveProofsHigherorder2017}.
+The original implementation of Iris Proof Mode is due to \citet{krebbersInteractiveProofsHigherorder2017} and, as follows from the name, is a set of tactics to do interactive proofs in Coq in Iris.
 It was later extended to MoSeL by \citet{krebbersMoSeLGeneralExtensible2018}, which is a general framework for modal separation logics in Coq.
+The idea behind the proof mode is to provide users with separation-logic version of familiar Coq tactics, like \coqe{intros} or \coqe{destruct}.
 
 In this chapter we describe the implementation of MoSeL as it is currently, with Ltac.
 First we cover the basics of separation logic and its semantics, then describe the embedding of logic in Coq and what MoSeL entailments correspond to in Bunched Implications (BI) logic.
 Finally, we go into the details of the implementation of tactics.
+
+Please note, that, following the MoSeL paper \cite[Section 2]{krebbersMoSeLGeneralExtensible2018}, we focus on the BI -- the assertion language of separation logic, and not on Hoare triples.
 
 \section{Introduction to separation logic}
 \label{sec:separation-logic-intro}
@@ -81,7 +84,7 @@ The connectives are then defined in such a way as to preserve these semantics:
 \item \(\emp \defeq \lambda \sigma. \sigma = \emptyset\)
 \item \(\l \mapsto v \defeq \lambda \sigma. \sigma = [l \leftarrow v]\)
 \item \(P \wedge Q \defeq \lambda \sigma. P (\sigma) \wedge Q (\sigma)\)
-\item \(P \ast Q \defeq \exists \sigma_1, \sigma_2. \sigma = \sigma_1 \uplus \sigma_2 \wedge P(\sigma_1) \wedge Q(\sigma_2)\)
+\item \(P \ast Q \defeq \lambda \sigma. \exists \sigma_1, \sigma_2. \sigma = \sigma_1 \uplus \sigma_2 \wedge P(\sigma_1) \wedge Q(\sigma_2)\)
 \end{itemize}
 
 Where \(l \mapsto v\) is a connective that says ``location \(l\) stores value \(v\)'' and \(\uplus\) is a disjoint union.
@@ -122,6 +125,9 @@ It states that existence and disjunction distribute over separating conjunction.
 Lemma example {A : Type} (P : PROP) (Phi Psi : A → PROP) :
   P * (exists a, (Phi a) \/ (Psi a)) -* exists a, (P * Phi a) \/ (P * Psi a).
 \end{coq}
+
+In this case we use \coqe{PROP} as a type of BI propositions.
+Moreover, we quantify the logic implicitly, which means the lemma is fully generic in the logic, be it a classical or an intuitionistic BI.
 
 This proof is done using Ltac1 tactics, at the end of this chapter we are going to show what it looks like in our implementation (full script is in figure~\ref{fig:mosel-example-full}).
 As the goal starts with an implication, we can use the \coqe{iIntros} tactic, which is a separation-logic alternative to \coqe{intros}.
@@ -213,21 +219,14 @@ Qed.
 We just saw BI logic on paper and a formal proof in Coq as done in MoSeL, so in this section we give a more formal presentation for MoSeL from a BI point of view.
 
 In order to perform BI proofs inside Coq, we need to embed separation logic into Coq.
-This is an old problem and the two most common solutions are ``shallow embedding'' and ``deep embedding''.
-The first one corresponds to mapping propositions in the object logic directly to their semantics in meta-logic, e.g.\ for classical separation logic we would map propositions to predicates over heaps.
-This would map separating conjunction \(P * Q\) to \(\lambda \sigma.\,\exists\sigma_1, \sigma_2.\, \left(\sigma = \sigma_1 \uplus \sigma_2\right) \wedge P (\sigma_1) \wedge Q(\sigma_2)\) and separation logic entailment \(P \vdash Q\) to \(\forall \sigma. P \sigma \imp Q \sigma\).
-Deep embedding, on the other hand, defines syntax of the object logic in meta-logic explicitly.
-
-And while shallow embedding allows us to re-use meta-logic connectives and binders for some constructions -- like implication in the example above -- for others we have to make up more involved propositions.
-This complicates proofs of entailments in the object logic when done within meta-logic.
-
-Instead, MoSeL opts for abstraction of inference rules of the separation logic.
+MoSeL abstracts the inference of the separation logic into an interface (more on this in the implementation section~\ref{subsubsec:bi-interface}).
 From the user perspective, this provides both connectives and their inference rules, as well as some properties.
 For separating conjunction the user gets the usual commutativity, associativity and distributivity properties, as well as what MoSeL calls \textsc{sep-mono} rule:
 \[(P_1 \vdash Q_1) \text{ and } (P_2 \vdash Q_2) \,\, \implies \,\, P_1 * P_2 \vdash Q_1 * Q_2\]
 where the ``and'' on the left-hand side and the implication are in the meta-logic.
+This also makes MoSeL parametric in the BI logic, since anything that instantiates the interface gets tactic support.
 
-But while this already allows axiomatic reasoning about object-logic entailments in meta-logic, it still doesn't support tactics, which Coq users are used to.
+While this already allows axiomatic reasoning about object-logic entailments in meta-logic, it still doesn't support tactics, which Coq users are used to.
 For example, the proof we just performed above would require us not only to apply all the rules by hand, which already is going to make the proof quite a bit bigger, but also to
 use commutativity and associativity rules to reorder hypotheses in the context.
 
@@ -261,11 +260,6 @@ While stepping through the proof above we have hinted at the correspondence betw
 However, the rules we listed then were rules for BI, and not for MoSeL entailment.
 So, in this section, we present the rules that are used in the tactics.
 We aren't going to give a complete list, but just a few for the purpose of illustration.
-
-It is important, however, that from an implementation perspective, MoSeL tactics are not just rules that we can \coqe{apply}.
-Instead, they consist of two major parts: a Coq function, that maps one entailment to another, and an Ltac2 wrapper around it, which applies the function and performs bookkeeping of the generated goals.
-What we present here is closer to the the Coq lemmas, but they also incorporate some parts of the bookkeeping.
-We discuss the technical part of the implementation further in section~\ref{sec:implementation-of-ipm}.
 
 Regular introduction rules don't change that much, except now the context has to stay in a particular shape.
 
@@ -341,22 +335,26 @@ Regular introduction rules don't change that much, except now the context has to
 
 Now that we have seen MoSeL from the theoretical perspective, let's turn to the Coq implementation.
 
+Contrary to what we saw in the previous section, MoSeL tactics are not just rules that we can \coqe{apply}.
+Instead, they consist of two major parts: a Coq function, that maps one entailment to another, and an Ltac2 wrapper around it, which applies the function and performs bookkeeping of the generated goals.
+
 We start with an overview of components (figure~\ref{fig:ipm-diagram}) of the implementation and work towards the implementation \coqe{iAssumption} throughout this chapter and the first section of chapter~\ref{chap:ltac2-tactics-mosel}.
 
 \begin{figure}
   \centering
   \includegraphics[width=0.5\linewidth]{ipm-diagram}
-  \caption{structure of the implementation of MoSeL}
+  \caption{Structure of the implementation of MoSeL}
   \label{fig:ipm-diagram}
 \end{figure}
-
 
 \begin{itemize}
 \item The base layer of the implementation is a BI interface that the user instantiates with their logic and can use to profit from the existing infrastructure.
 \item On top of the BI interface MoSeL defines environments and entailment predicates. These are used to make proofs of ``Coq tactics'' easier.
   Additionally, type classes allow for more general unification and proof search in an automated way.
 \item ``Coq tactics'' themselves are verified transformations of the goal, the simplest instance being \coqe{tac_ex_falso}, which looks as follows:\\
-\coqe{Lemma tac_ex_falso Delta Q : envs_entails Delta False → envs_entails Delta Q.}.
+  \coqe{Lemma tac_ex_falso Delta Q : envs_entails Delta False → envs_entails Delta Q.}, 
+  where \coqe{envs_entails} is precisely the MoSeL entailment predicate.
+  That is, a MoSeL proof state (without Coq context).
 \item These transformations are then applied by Ltac1 (or Ltac2, in the reimplementation) programs, which can combine them, use specialized tactics for the subgoals they generate and handle errors.
   In this chapter we describe the Ltac1 implementation briefly and cover the translation in chapter~\ref{chap:ltac2-tactics-mosel}.
 \end{itemize}
@@ -503,10 +501,8 @@ Lemma from_assumption_exact {PROP : bi} p (P : PROP) : FromAssumption p P P.
 \end{coq}
 
 There are several more instances defined in MoSeL, which generalize it.
-For example, given that we can prove \(\intuit P \vdash Q\), we can also prove \(\intuit P \vdash \affine Q\) and  \(\intuit P \vdash \intuit Q\).
+For example, given that we can prove \(\intuit P \vdash Q\), we can also prove  \(\intuit P \vdash \intuit Q\).
 \begin{coq}
-Global Instance from_assumption_affinely_r P Q :
-  FromAssumption true P Q → KnownRFromAssumption true P ($\affine$ Q).
 Global Instance from_assumption_intuitionistically_r P Q :
   FromAssumption true P Q → KnownRFromAssumption true P ($\intuit$ Q).
 \end{coq}
@@ -552,21 +548,23 @@ For example, in order to apply \coqe{tac_assumption} for a specific resource \co
 
 \begin{figure}[H]
 \begin{coq}
-refine (tac_assumption _ j false P);
-  [pm_reflexivity (* for the lookup *)
-  |iSolveTC (* perform type class search for FromAssumption*)
-  |pm_reduce; (* evaluate env_delete and if-branch *)
-   iSolveTC]
+Tactic Notation "iExactSpatial" constr(H) :=
+  eapply (tac_assumption _ j false P);
+    [pm_reflexivity (* for the lookup *)
+    |iSolveTC (* perform type class search for FromAssumption*)
+    |pm_reduce; (* evaluate env_delete and if-branch *)
+     iSolveTC]
 \end{coq}
-\caption{Part of Ltac1 implementation of iExact}
+\caption{Implementation of iExact for spatial context}
 \label{fig:ltac1-iassumption}
 \end{figure}
 
 We apply the \coqe{tac_assumption} defined earlier (figure~\ref{fig:tac-assumption}) and discharge the goals with specialized tactics.
 The first subgoal \coqe{envs_lookup i Delta = Some (p,P)} is computational, so \coqe{pm_reflexivity} performs evaluation and uses \coqe{reflexivity} tactic.
 The other two concern type classes, so we use a wrapper around \coqe{typeclasses eauto} to solve them.
+\coqe{iExactSpatial} is not a real tactic, since it's too specialized, but it is correct.
 
-This is almost exactly the implementation of \coqe{iExact}, but \coqe{iAssumption} itself is a bit more complicated and we will go through it in the next chapter.
+\coqe{iAssumption}, on the other hand, is a bit more complicated and we will go through it in the next chapter.
 
 %%% Local Variables:
 %%% mode: latex

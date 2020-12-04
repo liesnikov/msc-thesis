@@ -60,13 +60,15 @@ It is worth noting that this tactic is not just readable (assuming one is famili
 \section{Defining and implementing iMatch}
 \label{sec:defin-impl-imatch}
 
-The complexity of Ltac1 code was indeed necessary, and yet it doesn't show up in our example -- it was abstracted away into \coqe{iMatch}.
-In this section we describe how exactly \coqe{iMatch} differs from the original \coqe{match goal} and discuss implementation details.
+The iteration over hypotheses in Ltac1 code was indeed necessary, and yet it doesn't show up in our example -- it was abstracted away into \coqe{iMatch}.
+And it's precisely the careful abstraction that makes \coqe{match goal} (and, we hope, \coqe{iMatch}) such a useful tactical.
+
+Therefore, while we mimic \coqe{match goal} behaviour, we find it also important to highlight the differences in semantics of \coqe{iMatch} and \coqe{match goal}.
+Below, we discuss these differences and describe the implementation details of \coqe{iMatch}.
 
 \subsection{Comparison with \texttt{match goal}}
 
-While we try to preserve \coqe{match goal} behavior for user convenience, there are several notable differences:
-
+There are three most notable differences between \coqe{iMatch} and \coqe{match goal}:
 \begin{itemize}
 \item As noted above, when doing proofs in MoSeL, the user has to deal with several contexts (three, to be exact), compared to just one in regular Coq proofs.
   We provide the user with an ability to access all of them.
@@ -118,15 +120,20 @@ We discuss the source of the limitation further in section~\ref{sec:desir-feat-l
 \subsection{Implementation details}
 \label{subsec:implementation_details}
 
-The Ltac2 computation model is based on a monad, which is a state, a list (non-binary choice) and captures exceptions simultaneously.
-However, for a high-level description of the implementation it suffices to have a backtracking list monad \coqe{M}.
+From Ltac2 we take the \coqe{Pattern.matches} function, the \coqe{match! goal} tactical and the notation (a scope, in Ltac2 terms) for goal pattern-matching.
+The high-level idea behind implementation is the following: through the scope we get the parsed patterns, then we take apart the current MoSeL proof state, extracting both the context and the goal from it.
+Finally we combine patterns parsed by the scope and the hypotheses from the context to create a matching that returns substitution for binders.
+
+In order to explain the implementation we will need the Ltac2 monad again.
+As we remember from section~\ref{sec:semantics-ltac2}, it is a state, a list (non-binary choice) and captures exceptions simultaneously.
+However, for the purposes of this chapter it suffices to have backtracking list monad \coqe{M}.
 To this end, we take \coqe{(Control.zero : forall a, exn -> M a)} to be an empty list constructor
 and \coqe{(Control.plus : forall a, M a -> M a -> M a)} to be the \coqe{append} operator for lists.
+
 For simplicity, let's also assume that patterns can't contain contexts, e.g. \coqe{context a [I]} isn't allowed.
 They don't add much in terms of conceptual complexity and the only change required to accommodate them would be to also pass results of their matches around.
 
-From Ltac2 we take the \coqe{Pattern.matches} function, the \coqe{match! goal} tactical and the notation (a scope, in Ltac2 terms) for goal pattern-matching.
-The latter allows us to reuse the same syntax as \coqe{match! goal}:
+The \coqe{goal_matching} scope allows us to reuse the same syntax as \coqe{match! goal}:
 \begin{coq}
 Ltac2 Notation "iMatch!" "goal" "with" m(goal_matching) "end" :=
   i_match_one_goal m.
@@ -205,7 +212,7 @@ There are three key points where backtracking influences the behavior of \coqe{i
 While it might be tempting to think about iMatch as simply selecting the right hypothesis when the user wants it to, this isn't exactly what's happening.
 In reality, the Ltac1, Ltac2 and our implementation match all patterns with all fitting hypotheses sequentially, starting with the first one.
 
-This would make one think that -- if there are two hypotheses: \coqe{H1:P}, \coqe{H2:Q} -- only one of the following two snippets would succeed.
+This could make one think that -- if there are two hypotheses: \coqe{H1:P}, \coqe{H2:Q} -- only one of the following two snippets would succeed.
 \begin{coq}
   iMatch! goal with
   | [h1:P, h2:_ |- _ ] => ...
@@ -217,7 +224,7 @@ This would make one think that -- if there are two hypotheses: \coqe{H1:P}, \coq
   end
 \end{coq}
 
-But this precisely where backtracking comes in.
+However, precisely because of the backtracking both of them will.
 The first branch will indeed succeed immediately, since the first pattern will be matched against the first hypothesis in sequential order.
 However, for the second snippet, \coqe{P} still matches \coqe{_}, but as soon as we reach the second pattern, we have to match \coqe{P} against \coqe{Q}, which isn't possible.
 The implementation will then backtrack to the point of pairinjg the first pattern (\coqe{_}) and unify it with the second element of the context, \coqe{Q}.

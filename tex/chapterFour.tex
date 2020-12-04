@@ -44,34 +44,34 @@ Naturally, the value of the improvement grows with the complexity of the decisio
 Still, let's consider a small illustrative example of where we would want to use the new rule.
 
 Take the following statement:
-\((A \wand B), (C \wand D), A, C \vdash B * D\)
+\((A \wand B), C, A \vdash B * C\)
 
 After a moment's consideration, it's pretty clear for a human what the derivation should be.
 But for a machine it's not, so instead we postpone the distribution decision and simply say that resources are distributed disjointly.
 
-For this we split the resources between two branches via the introduction of new variables:
-for any resource \(Q[c]\), we put \(Q[c' \& c]\) and \(Q[\neg c' \& c]\) into \(\Gamma_1\) and \(\Gamma_2\) respectively, where \(c'\) is a new Boolean variable with a yet undecided value.
+In this case \(\Gamma \defeq (A \wand B), C, A\) and we want to split it into two disjoint contexts: \(\Gamma_1\) and \(\Gamma_2\).
+This is done via the introduction of new variables:
+for any resource \(Q[c] \in \Gamma\), we put \(Q[c' \& c]\) and \(Q[\neg c' \& c]\) into \(\Gamma_1\) and \(\Gamma_2\) respectively, where \(c'\) is a new Boolean variable with a yet undecided value.
 The idea is that no matter what \(c\) evaluates to, \(c' \& c\) and \(\neg c' \& c\) can't be \true simultaneously, and hence \(Q\) will not be used twice.
 Moreover, if the original \(c\) evaluates to \true, then exactly one of them will be \true, and if \(c\) evaluates to \false, then both of them will be \false.
 And since in the original statement none of the resources had Boolean expressions attached, we treat them as if they had expressions evaluating to \true.
 
 \[\hspace{-0.03\linewidth}
-\infer{(A \wand B), (C \wand D), A, C \vdash B \ast D}
-      {(A \wand B)[c_0], (C \wand D)[c_1], A[c_2], C[c_3] \vdash B  &
-       (A \wand B)[\neg c_0], (C \wand D)[\neg c_1] , A[\neg c_2] , C[\neg c_3] \vdash D}
+\infer{(A \wand B), C, A, \vdash B \ast C}
+      {(A \wand B)[c_0], C[c_1], A[c_2] \vdash B  &
+       (A \wand B)[\neg c_0], C[\neg c_1] , A[\neg c_2] \vdash C}
 \]
 
 Then we utilize wand application on the left-hand side in both sequents above the line.
-Let's take a closer look at the left one: \((A \wand B)[c_0], (C \wand D)[c_1], A[c_2], C[c_3] \vdash B\).
+Let's take a closer look at the left one: \((A \wand B)[c_0], C[c_1], A[c_2] \vdash B\).
 In order to apply \(A \wand B\), two resources are required: the wand itself and its argument.
 And while we can deduce that the expression attached to \((A \wand B)[c_0]\) should evaluate to \true, finding the antecedent isn't that simple in general.
 
-To this end, we apply the wand which creates two subgoals: one for \(A\) and another one with \(B[c_0]\) in the context with side condition that \(c_0\) should evaluate to \true.
+The application of the wand which creates two subgoals: one for \(A\) and another one with \(B[c_0]\) in the context with side condition that \(c_0\) should evaluate to \true.
 
 \[
 \infer[c_0 = \true]
-      {(A \wand B)[c_0], (C \wand D)[c_1],
-        A[c_2], C[c_3] \vdash B}
+      {(A \wand B)[c_0], C[c_1], A[c_2] \vdash B}
       { \Gamma_{11} \vdash A &
         \Gamma_{12}, B[c_0] \vdash B}
 \]
@@ -81,23 +81,36 @@ And since in general derivation of \(A\) is not trivial, we split the rest of re
 We apply the same technique with the introduction of new variables and end up with the following goal:
 
 \[
-\hspace{-0.03\linewidth}
-\infer{(A \wand B)[c_0], (C \wand D)[c_1], A[c_2], C[c_3] \vdash B}
-      {(C \wand D)[c'_1 \& c_1], A[c'_2 \& c_2], C[c'_3 \& c_3] \vdash A &
-       (C \wand D)[\neg c'_1 \& c_1], A[\neg c'_2 \& c_2], C[\neg c'_3 \& c_3], B[c_0] \vdash B}
+\infer[c_0 = \true]
+      {(A \wand B)[c_0], C[c_1], A[c_2] \vdash B}
+      {C[c'_1 \& c_1], A[c'_2 \& c_2] \vdash A &
+       C[\neg c'_1 \& c_1], A[\neg c'_2 \& c_2], B[c_0] \vdash B}
 \]
 
 In order for the left premise to be derivable we want \(A\) to be present and all other resources to be gone.
-This corresponds to \(c'_2 \& c_2\) being \true, which tells us that both \(c'_2\) and \(c_2\) must be \true.
-Moreover, \(c'_1 \& c_1\) and \(c'_3 \& c_3\) must be \false, but we can't deduce the values of the variables without other equations.
-If we take a look at the right premise, we can also unify both \(\neg c'_1 \& c_1\) and \(\neg c'_3 \& c_3\) with \false, and \(c_0\) should be \true according to the side condition above.
+
+\[
+\infer[c'_2 \& c_2 = \true \text{ and } c'_1\& c_1 = \false]
+      {C [c'_1\& c_1], A[\true] \vdash A}
+      {A \vdash A}
+\]
+
+In this case \(c'_2 \& c_2\) must be \true, which tells us that both \(c'_2\) and \(c_2\) must be \true.
+Moreover, \(c'_1 \& c_1\) must be \false, but we can't deduce the values of the variables without other equations.
+If we take a look at the right premise, we can also unify both \(\neg c'_1 \& c_1\) with \false, and \(c_0\) should be \true according to the side condition above.
 Moreover, since we deduced earlier that \(c'_2\) must be \true, the expression attached to \(A\) in the right sequent (\(\neg c'_2 \& c_2\)) must be \false.
+So, if we substitute deduced expressions for simplicity, the right subderivation becomes the following:
 
+\[
+\infer[\neg c'_1 \& c_1 = \false]
+      {C[\neg c'_1 \& c_1], A[\false], B[\true] \vdash B}
+      {B \vdash B}
+\]
 
-The resulting system of equations allows us to conclude that \(c_1\) and \(c_3\) are \false and that the values of \(c'_1\) and \(c'_3\) are arbitrary.
-This gives us a total assignment:
-\[\set {c_0 \mapsto \true, c_1 \mapsto \false, c_2 \mapsto \true, c_3 \mapsto \false, c'_1 \mapsto \_, c'_2 \mapsto \true, c'_3 \mapsto \_}\]
-which means that, as soon as we're done with the left sub-derivation, it's clear what resources should go to the right one.
+The resulting system of equations allows us to conclude that \(c_1\) is \false and that the value of \(c'_1\) is arbitrary, since we know that \(\neg c'_1 \& c_1 = \false\) and \(c'_1\& c_1 = \false\).
+Which means we have a total assignment:
+\[\set {c_0 \mapsto \true, c_1 \mapsto \false, c_2 \mapsto \true, c'_1 \mapsto \_, c'_2 \mapsto \true}\]
+And as a result, as soon as we're done with the left sub-derivation, it's clear that \(C\) wasn't used in it and should be used to prove the right conjunct.
 
 \subsection{\texttt{iSplit} in action}
 \label{sec:isplit-in-action}
@@ -178,7 +191,7 @@ Unlike them, we also restrict ourselves to presentations with multiplicative bun
 
 \begin{definition}[Annotated formula]
   Let \(\phi\) be an arbitrary BI formula and \(c\) be a Boolean expression.
-  We call \(phi[c]\) an \emph{annotated formula}.\\
+  We call \(\phi[c]\) an \emph{annotated formula}.\\
   We also denote an expression \(c\) of formula \(\phi\) as \(\expr(\phi)\).
 \end{definition}
 

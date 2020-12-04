@@ -65,15 +65,21 @@ This is the reason why we thunk definitions in the example above.
 
 Ltac2 also features a quotation mechanism.
 In the example above \coqe{two} is a thunked Coq term, while \coqe{three} is a thunked \coqe{open_constr}, which can contain existential variables.
+In order to use an Ltac2 term that represents a Coq term inside a \coqe{constr} (or \coqe{open_constr}) quotation, we simply have to \emph{antiquote} it with a dollar symbol:
+
+\begin{coq}
+Ltac2 five () := '(\$two + \$three).
+\end{coq}
 
 Ltac2 doesn't expose Ltac1 tactics directly inside, but rather reimplements them from scratch and OCaml primitives.
-This provides great flexibility for introducing changes to them, but also means that Ltac2 isn't compatible with other tactic languages, like SSReflect~\cite[Section~3.1.3]{thecoqdevelopmentteamCoqProofAssistant2020}.
 
 \begin{coq}
 Ltac2 print_goal () := print (concat (of_string "Current goal is: ")
                                      (of_constr (Control.goal ())).
 Ltac2 split_assumption () := repeat (first [split | assumption]).
 \end{coq}
+
+This provides great flexibility for introducing changes to them, but also means that Ltac2 isn't compatible with other tactic languages, like SSReflect~\cite[Section~3.1.3]{thecoqdevelopmentteamCoqProofAssistant2020}.
 
 \subsection{Matching terms and goals}
 \label{sec:matching-terms}
@@ -114,7 +120,7 @@ This is one of the key elements that allowed us to implement pattern-matching fo
 \subsection{Notations and scopes}
 \label{subsec:ltac2-notations-scopes}
 
-Since Ltac2 makes a clear distinction between Coq terms and Ltac2 terms, it has to rely on notations to recreate automagic parsing of Ltac1.
+Since Ltac2 makes a clear distinction between Coq terms and Ltac2 terms, it has to rely on notations to recreate the ability to mix Coq and meta (Ltac1/Ltac2) terms as inputs to tactics.
 
 There are two different categories of notation machinery in Ltac2: notations and scopes.
 Notations are user-defined and look very similar to Coq \coqe{Notation} command, while scopes are custom parsers for arguments.
@@ -144,31 +150,47 @@ These exceptions can either be thrown as fatal (\coqe{throw e}) or as recoverabl
 Recoverable errors are part of backtracking system in Ltac2.
 We are going to cover it in detail in section~\ref{sec:semantics-ltac2}, but for now it suffices to say that there are three primitives, which are in the \coqe{Control} library:
 
+\begin{figure}[H]
 \begin{coq}
 Ltac2 Type 'a result := [ Val ('a) | Err (exn) ].
 
-val zero : exn -> 'a
-val plus : (unit -> 'a) -> (exn -> 'a) -> 'a
-val case : (unit -> 'a) -> ('a * (exn -> 'a)) result
+Ltac2 zero : exn -> 'a
+Ltac2 plus : (unit -> 'a) -> (exn -> 'a) -> 'a
+Ltac2 case : (unit -> 'a) -> ('a * (exn -> 'a)) result
 \end{coq}
+  \caption{Ltac2 backtracking primitives}
+  \label{fig:ltac2-backtracking-prims}
+\end{figure}
 
 The primitives perform the following actions: \coqe{zero} throws an exception, \coqe{plus} introduces a backtracking point, which will switch to the second branch if the first argument throws an exception.
 And finally, \coqe{case} matches backtracking values.
-It tries to evaluate the ``leftmost'' backtracking value from the first argument and return it in \coqe{Val} constructor, with the rest of the backtracking value.
-If the ``leftmost'' value turns out to be an error, \coqe{case} returns the exception wrapped in the \coqe{Exn} constructor.
+Intuitively, it is provided with an argument that represents a backtracking computation and
+then tries to compute the first value (\coqe{x} in the example below) from this argument and suspends the rest of the computation (\coqe{k} in the example below).
+If this first value turns out to be an exception, \coqe{case} returns the exception wrapped in the \coqe{Exn} constructor.
 
+\begin{figure}[H]
 \begin{coq}
 Ltac2 fatal_exn () := throw (MyNewException "fatal exn").
 Ltac2 regular_exn () := zero (MyNewException "thrown exn").
 Ltac2 catches_exn () := match case (regular_exn) with
+| Val ans =>
+  let (x, k) := ans in
+  plus (fun _ => x) k
 | Err e => match e with
   | MyNewException s => print (of_string s)
   | _ => zero e
   end
-| Val ans => let (x, k) := ans in
-  plus (fun _ => x) k
 end
 \end{coq}
+  \caption{Throwing and catching exceptions with backtracking primitives}
+  \label{fig:throwing-catching-example}
+\end{figure}
+
+In this example \coqe{fatal_exn} throws an exception that can't be recovered from, while \coqe{regular_exn} throws one that we can catch.
+Which is exactly what happens in \coqe{catches_exn} -- the computation (\coqe{regular_exn}) is destructed and the code jumps to the \coqe{Err e} branch, since \coqe{regular_exn} does indeed throw an exception.
+This exception is then printed.
+
+However, if \coqe{regular_exn} turned out to be a proper value, it would have been ``forced'' (in the language of lazy computations), destructed as the value (\coqe{x}) and the computation which computes alternatives (\coqe{k}) and reconstructed again (\coqe{plus (fun _ => x) k}).
 
 \subsection{Propositional solver}
 \label{sec:propositional-solver}
@@ -218,8 +240,12 @@ The monad is provided by Coq's new tactics engine \cite{spiwackAbstractTypeConst
 In a way, we can see Ltac2 as a DSL over the engine, coupled with proof-state manipulation primitives and notations.
 
 In this chapter we explain Ltac2 from precisely this point of view.
-The tactic engine itself is also explained in a blog post by \citet{pedrotCoqHoTTminuteTickingClockwork2016}, but here we try to expand on it, explaining not only how Ltac2 interfaces the monad, but also how some user-facing tactics are implemented.
+We describe the exact behavior of backtracking primitives, in section~\ref{subsec:ltac2-exceptions} above we only sketched the semantics.
+They can be formalized precisely.
+The idea is that \coqe{zero}, \coqe{plus} and \coqe{case} are to the Ltac2 monad exactly what \coqe{return} and \coqe{bind} are for Monad typeclass in Haskell.
+They are primitives for the monad and their precise definition from the user perspective is their type and the laws that guard the computation.
 
+The tactic engine itself is also explained in a blog post by \citet{pedrotCoqHoTTminuteTickingClockwork2016}, but here we try to expand on it, explaining not only how Ltac2 interfaces the monad, but also how some user-facing tactics are implemented.
 Note that we focus on the monad from a user-perspective, so the types provided in ML syntax should only be seen as guidance for the Ltac2 user, and not as ones true to the implementation.
 
 \subsection{Tactics form a monad}
@@ -237,7 +263,7 @@ val tclBind : 'a tactic -> ('a -> 'b tactic) -> 'b tactic.
 \end{ocaml}
 
 The functions above are not exposed to the user, but rather used while interpreting Ltac2 programs.
-the user can think of Ltac2 as a DSL over \coqe{tactic} monad with do-notations.
+The user can think of Ltac2 as a DSL over \coqe{tactic} monad with do-notations.
 
 This already gives us sequencing inside the language: \coqe{tactic1; tactic2} and ability to write simple programs that trasnform goals.
 Technically we could also implement non-backtracking branching, but this would require OCaml implementation instead of reliance on primitive operations inside the monad, so we postpone it until later.
@@ -246,7 +272,11 @@ We can already explain some of the primitive tactics, like \coqe{Control.goal}, 
 \begin{coq}
   Ltac2 goal : unit -> constr.
 \end{coq}\vspace{-1em}
-Morally, \coqe{goal} is implemented in OCaml as \ocamle{fun (g : goal) -> Right [g] g}.
+Morally, \coqe{goal} is implemented in OCaml as
+\begin{ocaml}
+fun (gs : goal * state) -> let (g, _) := gs in Right [g] g
+\end{ocaml}
+And since the tactic doesn't take any input, in Ltac2 \coqe{goal} is simply a thunked Coq term, a \coqe{constr}.
 
 \subsection{Backtracking monad for tactics}
 \label{sec:backtr-monad-tact}
@@ -272,15 +302,23 @@ type 'a case =
 val tclCASE : 'a tactic -> 'a case tactic
 \end{ocaml}
 
+Which get reflected into Ltac2 as the following three constructs (\coqe{result} is defined in figure~\ref{fig:ltac2-backtracking-prims}):
+\begin{coq}
+Ltac2 zero : exn -> 'a
+Ltac2 plus : (unit -> 'a) -> (exn -> 'a) -> 'a
+Ltac2 case : (unit -> 'a) -> ('a * (exn -> 'a)) result
+\end{coq}
+
 The type signature for the monad and the interface are not the easiest to grasp or to form an intuition about, so we are going to show several examples on how they apply to real-world tactics.
 The important difference to the previous monad primitives is that these are exposed inside Ltac2 and are available to the user in the \coqe{Control} module.
-These primitives come not on their own but with several laws that guard evaluation.
-In figures \ref{fig:zero_plus_eq}, \ref{fig:case_eq}, \ref{fig:let_eq}, \coqe{zero}, \coqe{plus} and \coqe{case} correspond to their respective functions and \coqe{t, u, f, g, e} are values.
+These primitives come not on their own but with several laws that guard evaluation, which were derived by \citet{kiselyovBacktrackingInterleavingTerminating2005} and are presented in Coq manual \cite[Section 3.3.2]{thecoqdevelopmentteamCoqProofAssistant2020}.
+
+In figures \ref{fig:zero_plus_eq}, \ref{fig:case_eq}, \ref{fig:let_eq} \coqe{t, u, f, g, e} are values.
 \begin{figure}[H]
 \begin{coq}
-plus t zero $\equiv$ t ()
-plus (fun () => zero e) f $\equiv$ f e
-plus (plus t f) g $\equiv$ plus t (fun e => plus (f e) g)
+plus t zero = t ()
+plus (fun () => zero e) f = f e
+plus (plus t f) g = plus t (fun e => plus (f e) g)
 \end{coq}
 \caption{Equations concerning \coqe{zero} and \coqe{plus}}
 \label{fig:zero_plus_eq}
@@ -301,8 +339,8 @@ Now let's turn to the last element of the interface -- \coqe{case}.
 Intuitively, it evaluates the thunk provided and then takes it apart, serving as a pattern-matching construction for the lists of \coqe{plus} and \coqe{zero}.
 \begin{figure}[H]
 \begin{coq}
-case (fun () => zero e) $\equiv$ Left e
-case (fun () => plus (fun () => t) f) $\equiv$ Right (t,f)
+case (fun () => zero e) = Left e
+case (fun () => plus (fun () => t) f) = Right (t,f)
 \end{coq}
 \caption{Equations concerning \coqe{case}}
 \label{fig:case_eq}
@@ -317,16 +355,18 @@ Ltac2 once t := match (case t) with
   end.
 \end{coq}
 
+\coqe{once} is provided as a primitive in the Ltac2 monad, but for our purposes this implementation suffices.
+
 And using \coqe{once}, we can also implement non-backtracking branching:
 \begin{coq}
-tactic1 ||tactic2 := once (tactic1 + tactic2).
+tactic1 || tactic2 := once (tactic1 + tactic2).
 \end{coq}
 
 Finally, there are two laws guarding the behavior of binding with respect to \coqe{plus} and \coqe{zero}.
 \begin{figure}[H]
 \begin{coq}
-(let x := zero e in u) $\equiv$ zero e
-(let x := plus t f in u) $\equiv$ (plus (fun () => let x := t in u)
+(let x := zero e in u) = zero e
+(let x := plus t f in u) = (plus (fun () => let x := t in u)
                                  (fun e => let x := f e in u))
 \end{coq}
 \caption{Equations concerning binders}
