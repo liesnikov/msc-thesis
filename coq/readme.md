@@ -41,7 +41,8 @@ Add relevant repositories
 $ opam repo add coq-released https://coq.inria.fr/opam/released
 $ opam repo add iris-dev https://gitlab.mpi-sws.org/iris/opam.git
 ```
-Install right version of the packages
+
+Install right versions of the packages
 ```
 $ opam install coq.8.11.1
 $ opam install coq-iris.dev.2020-04-09.0.272f29d3
@@ -50,8 +51,8 @@ $ opam install coq-iris-string-ident
 
 Build the files
 ```
-$ unzip archive.zip -d coq
-$ cd coq
+$ unzip thesis_cs_msc_Bohdan_Liesnikov.zip -d npm
+$ cd npm
 $ coq_makefile -f _CoqProject -o Makefile
 $ make
 $ cd splitting
