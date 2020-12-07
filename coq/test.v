@@ -21,7 +21,6 @@ Qed.
 From Local Require Import ltac2_tactics tauto_solver.
 From Ltac2 Require Import Ltac2 List.
 (*Set Ltac2 Backtrace.*)
-
 From iris.proofmode Require Import classes notation.
 
 Context {PROP : sbi}.

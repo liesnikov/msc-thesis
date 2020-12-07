@@ -366,20 +366,20 @@ We also change the definitions of iterated \(\wedge\) and \(*\) so that they ign
   \begin{align*}
     & \bigwedge  \left[(i_1, c_1) : P_1, \ldots , (i_n,c_n) : P_n \right] \defeq
       \begin{cases}
-        \bigwedge \left[(i_2, c_2) : P_2, \ldots , (i_n,c_n) : P_n \right],
-          {\small \text{for } c_1 = \false}\\
-        P_1 \wedge \left( \bigwedge \left[(i_2, c_2) : P_2, \ldots , (i_n,c_n) : P_n \right] \right),
-          {\small \text{for } c_1 = \true }
+        \bigwedge \left[(i_2, c_2) : P_2, \ldots , (i_n,c_n) : P_n \right],\\
+          {\hspace{2em} \text{for } c_1 = \false}\\
+        P_1 \wedge \left( \bigwedge \left[(i_2, c_2) : P_2, \ldots , (i_n,c_n) : P_n \right] \right),\\
+          {\hspace{2em} \text{for } c_1 = \true}
       \end{cases}\\
-    & \bigwedge [\,] \defeq \True \\
+    & \bigwedge [\,] \defeq \True &\\
     & \Sep {\left[(j_1, c'_1) :Q_1 , \ldots, (j_m, c'_m) :Q_m \right]} \defeq
       \begin{cases}
-        \Sep {\left[(j_2, c'_2) :Q_2 , \ldots, (j_m, c'_m) :Q_m \right]},
-          {\small \text{for } c'_1 = \false} \\
-        Q_1 * \left(\Sep {\left[(j_2, c'_2) :Q_2 , \ldots, (j_m, c'_m) :Q_m \right]} \right),
-          {\small \text{for } c'_1 = \true}
+        \Sep {\left[(j_2, c'_2) :Q_2 , \ldots, (j_m, c'_m) :Q_m \right]},\\
+          {\hspace{2em} \text{for } c'_1 = \false} \\
+        Q_1 * \left(\Sep {\left[(j_2, c'_2) :Q_2 , \ldots, (j_m, c'_m) :Q_m \right]} \right),\\
+          {\hspace{2em} \text{for } c'_1 = \true}
       \end{cases}\\
-    & \Sep {[\,]} \defeq \emp
+    & \Sep {[\,]} \defeq \emp &
   \end{align*}
 \end{minipage}
 

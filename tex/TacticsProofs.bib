@@ -459,13 +459,23 @@
   number = {9}
 }
 
-@article{krebbersInteractiveProofsHigherorder2017,
+@inproceedings{krebbersInteractiveProofsHigherorder2017,
   title = {Interactive Proofs in Higher-Order Concurrent Separation Logic},
-  author = {Krebbers, Robbert and Lars, Birkedal and Timany, Amin},
+  booktitle = {Proceedings of the 44th {{ACM SIGPLAN Symposium}} on {{Principles}} of {{Programming Languages}}},
+  author = {Krebbers, Robbert and Timany, Amin and Birkedal, Lars},
   year = {2017},
+  month = jan,
   pages = {205--217},
+  publisher = {{Association for Computing Machinery}},
+  address = {{New York, NY, USA}},
+  doi = {10.1145/3009837.3009855},
+  url = {https://doi.org/10.1145/3009837.3009855},
+  urldate = {2020-12-07},
+  abstract = {When using a proof assistant to reason in an embedded logic -- like separation logic -- one cannot benefit from the proof contexts and basic tactics of the proof assistant. This results in proofs that are at a too low level of abstraction because they are cluttered with bookkeeping code related to manipulating the object logic. In this paper, we introduce a so-called proof mode that extends the Coq proof assistant with (spatial and non-spatial) named proof contexts for the object logic. We show that thanks to these contexts we can implement high-level tactics for introduction and elimination of the connectives of the object logic, and thereby make reasoning in the embedded logic as seamless as reasoning in the meta logic of the proof assistant. We apply our method to Iris: a state of the art higher-order impredicative concurrent separation logic. We show that our method is very general, and is not just limited to program verification. We demonstrate its generality by formalizing correctness proofs of fine-grained concurrent algorithms, derived constructs of the Iris logic, and a unary and binary logical relation for a language with concurrency, higher-order store, polymorphism, and recursive types. This is the first formalization of a binary logical relation for such an expressive language. We also show how to use the logical relation to prove contextual refinement of fine-grained concurrent algorithms.},
   file = {/home/buzzer/my-dir/personal/Dropbox/stuff/papers/Krebbers et al/2017/Krebbers et al. - 2017 - Interactive proofs in higher-order concurrent sepa.pdf},
-  journal = {Proceedings of the 44th ACM SIGPLAN Symposium on Principles of Programming Languages}
+  isbn = {978-1-4503-4660-3},
+  keywords = {Coq,Fine-grained Concurrency,Interactive Theorem Proving,Logical Relations,Separation Logic},
+  series = {{{POPL}} 2017}
 }
 
 @article{krebbersMoSeLGeneralExtensible2018,

@@ -12,8 +12,8 @@ We are going to describe some details from the new Ltac2 part of MoSeL and then 
 The translation is mostly mechanical and serves as a platform for features developed in the following chapters.
 Namely, for a basic comparison we recreate a set of basic tactics to introduce and destruct BI connectives, like wand, conjunction, disjunction, existentials.
 We limit ourselves to this small subset, since in chapter~\ref{chap:postponed_splitting} we recreate a much larger set.
-There we essentially omitting only tactics with intro-patterns and inputs that require complicated parsing, since this isn't the focus of the thesis.
-However, the value of this chapter lies in the comparison of Ltac1 and Ltac2 implementation and we summarize our experiences taking into account the whole development and not only this basic part.
+There we essentially omitting only tactics with intro-patterns and inputs that require complicated parsing.
+However, the value of this chapter lies in the comparison of Ltac1 and Ltac2 implementation and we summarize our experiences taking into account the whole development and not only the basic MoSeL proof mode reimplementation.
 
 For the translation of Ltac1 tactics to Ltac2 the difference is mainly syntactical, so we are going to simply show two examples.
 We should note that we also switch from camel case (\coqe{iExact}) naming convention to snake case (\coqe{i_exact}) for Ltac2 tactics.
@@ -24,20 +24,28 @@ And then a simplified implementation of \coqe{i_assumption} in Ltac2.
 
 As Ltac2 replicates many of Ltac1 tactics, we can simply swap tactics for their Ltac2 counterparts.
 In the \coqe{i_exact} the most important changes are the fact that internal tactics (\coqe{iSolveTC} and others) became Ltac2 functions, that now require an explicit call to be invoked and a different notation for goal dispatch.
+We also have to use a different notation for Coq terms construction.
 \begin{figure}[H]
 \begin{coq}
 Ltac2 i_exact_spatial (j : constr) (p: constr) :=
   refine '(tac_assumption _ \$j false \$p _ _ _ _) >
-           [ pm_reflexivity () (* for the lookup *)
-           | i_solve_tc () (* perform type class search for FromAssumption*)
-           | pm_reduce (); (* evaluate env_delete and if-branch *)
-             i_solve_tc ()]
+           [ pm_reflexivity ()
+           | i_solve_tc ()
+           | pm_reduce (); i_solve_tc ()]
 \end{coq}
   \caption{Ltac2 implementation of iExactSpatial}
   \label{fig:iexact-ltac2}
 \end{figure}
-
 We also switch to \coqe{refine} instead of \coqe{eapply} due to small irrelevant differences in semantics of the tactics.
+
+For comparison, we provide the Ltac1 definition from figure~\ref{fig:ltac1-iassumption} again:
+\begin{coq}
+Tactic Notation "iExactSpatial" constr(H) constr(P) :=
+  eapply (tac_assumption _ j false P);
+    [pm_reflexivity
+    |iSolveTC
+    |pm_reduce; iSolveTC]
+\end{coq}
 
 For \coqe{iAssumption} the idea is that the user doesn't provide explicit identifier of the resource they have in mind.
 Instead, the tactic is supposed to find it on its own.
@@ -69,7 +77,7 @@ Ltac2 i_assumption () :=
                                        of_string " was found"))]
   end.
 \end{coq}
-\caption{\coqe{i_assumption} definition in Ltac2}
+\caption{Simplified \coqe{i_assumption} definition in Ltac2}
 \label{fig:i-assumption-def}
 \end{figure}
 
@@ -85,7 +93,10 @@ However, we believe and it is common knowledge\footnote{\href{https://en.wikiboo
 The only part which wasn't described so far is \coqe{i_assumption_coq ()}.
 This is an example of tactics composition -- \coqe{i_assumption_coq} is applying a different lemma from \coqe{tac_assumption}, which tries to find an assumption of shape \(\Vdash Q\) in the Coq context instead of MoSeL context.
 
-Finally, if neither of the searches -- by \coqe{find} or \coqe{i_assumption_coq} -- yields any results we throw an Iris exception (\coqe{Iriception}) with a message on what couldn't be found in the context.
+Finally, we try to search in the intuitionistic (\coqe{find '(true) gp q}), the spatial (\coqe{find '(false) gs q}) and the Coq contexts sequentially.
+If neither of the searches yields any results we throw an Iris exception (\coqe{Iriception}) with a message on what couldn't be found in the context.
+
+The differences from Ltac1 implementation are again just syntactical and don't contain anything of interest except things already discussed for \coqe{iExactSpatial}, so we don't bore the reader with the direct comparison.
 
 \section{The examplary proof}
 \label{sec:examplary-proof-in-ltac2-mosel}

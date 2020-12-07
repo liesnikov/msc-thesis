@@ -43,7 +43,7 @@ The idea for implementation is simple, we match two different kinds of proof sta
 
 which translates to the following implementation:
 
-\begin{minipage}{\linewidth}
+\begin{figure}[H]
 \begin{coq}
 Ltac2 i_assumption' () :=
   iMatch! goal with
@@ -51,7 +51,9 @@ Ltac2 i_assumption' () :=
   | [a : ?e |- ?e] => i_exact (ipm_id a)
   end.
 \end{coq}
-\end{minipage}
+  \caption{Implementation of the extended iAssumption}
+  \label{fig:iassumption-prime}
+\end{figure}
 
 If neither of those conditions is true, it's going to fail with a {\color{red} \texttt{Match\_failure}} exception.
 
@@ -99,12 +101,12 @@ The first two options are equivalent and match only hypotheses with constraints 
 The third one binds the expression attached to the resource a to \coqe{c} in case the user wants to manipulate it or force its unification with either $\true$ or $\false$ manually.
 The last one only matches hypotheses which are guaranteed to be present in the context, as opposed to ones which may or may not be in this branch of the proof after splitting the context.
 This generalizes to arbitrary expressions, so the user can also write \coqe{<?c1 & ?c2>}.
-\item There is also a technical limitation: at the moment it is not possible to implement non-linear patterns in Ltac2, so technically it isn't possible to implement \coqe{i_assumption'} for \emph{pattern-matching} to ensure that the goal and the conclusion of the wand match.
-  The presented implementation is still correct, as \coqe{iApply} (and \coqe{iExact}) will ensure that the conclusion and the goal match.
-  However, this does degrade performance because some backtracking branches are cut off later than necessary.
-  Lack of linearity means that technically the implementation above is equivalent to the following, which preserves the conciseness.
+\item There is also a technical limitation: at the moment it is not possible to implement non-linear patterns in Ltac2 -- i.e.\ patterns, that have more than one occurrence of variables.
+  The reason for this is a limited API for patterns and pattern-matching in Ltac2 and we discuss it further in section~\ref{sec:desir-feat-ltac2-five}.
 
-\begin{minipage}{\linewidth}
+  However, if non-linear patterns aren't available, one should naturally question the implementation given in figure~\ref{fig:iassumption-prime}.
+  Due to the nature of our implementation of \coqe{iMatch} the tactic above is equivalent to the following:
+\begin{figure}[H]
 \begin{coq}
 Ltac2 i_assumption'' :=
   iMatch! goal with
@@ -112,24 +114,27 @@ Ltac2 i_assumption'' :=
   | [a : ?e |- _] => i_exact (ipm_id a)
   end.
 \end{coq}
-\end{minipage}
+  \caption{Exnteded iAssumption without non-linear patterns}
+  \label{fig:iassumption-double-prime}
+\end{figure}
+  Where the second entrance of every named binder is replaced by a wildcard pattern.
 
-We discuss the source of the limitation further in section~\ref{sec:desir-feat-ltac2-five}.
+  And both versions are, in fact, correct.
+  The reason for this is that while we don't match the goal against the conclusion of the wand during the \emph{pattern-matching} phase, \coqe{iApply} (and \coqe{iExact}) will ensure that the conclusion and the goal match.
+  This, however, does degrade performance because some backtracking branches are cut off later than necessary -- at the tactic application phase and not at the pattern-matching phase.
 \end{itemize}
 
 \subsection{Implementation details}
 \label{subsec:implementation_details}
 
-From Ltac2 we take the \coqe{Pattern.matches} function, the \coqe{match! goal} tactical and the notation (a scope, in Ltac2 terms) for goal pattern-matching.
-The high-level idea behind implementation is the following: through the scope we get the parsed patterns, then we take apart the current MoSeL proof state, extracting both the context and the goal from it.
-Finally we combine patterns parsed by the scope and the hypotheses from the context to create a matching that returns substitution for binders.
+In order to implement \coqe{iMatch} we will need the \coqe{Pattern.matches} function, the \coqe{match! goal} tactical and the notation (a scope, in Ltac2 terms) for goal pattern-matching.
+The high-level idea behind implementation is the following: through the scope we get the parsed patterns, then we take apart the current MoSeL proof state with \coqe{match goal}, extracting both the context and the goal from it.
+Finally we combine patterns parsed by the scope and the hypotheses from the context and pass to \coqe{Pattern.matches} to create a substitution for binders.
 
-In order to explain the implementation we will need the Ltac2 monad again.
-As we remember from section~\ref{sec:semantics-ltac2}, it is a state, a list (non-binary choice) and captures exceptions simultaneously.
-However, for the purposes of this chapter it suffices to have backtracking list monad \coqe{M}.
-To this end, we take \coqe{(Control.zero : forall a, exn -> M a)} to be an empty list constructor
-and \coqe{(Control.plus : forall a, M a -> M a -> M a)} to be the \coqe{append} operator for lists.
-
+In order to explain the implementation in details we have to rely on Ltac2's monadic capabilities again.
+As we remember from section~\ref{sec:semantics-ltac2}, Ltac2's ambient monad is a state, a backtracking non-binary choice (list) and captures exceptions simultaneously.
+However, for the purposes of this chapter it suffices to have only backtracking list monad \coqe{tactic}.
+To this end, we take \coqe{Control.zero} to be an empty list constructor for the monad and \coqe{Control.plus} to be the \coqe{append} operator.
 For simplicity, let's also assume that patterns can't contain contexts, e.g. \coqe{context a [I]} isn't allowed.
 They don't add much in terms of conceptual complexity and the only change required to accommodate them would be to also pass results of their matches around.
 
@@ -139,7 +144,7 @@ Ltac2 Notation "iMatch!" "goal" "with" m(goal_matching) "end" :=
   i_match_one_goal m.
 \end{coq}
 This provides \coqe{i_match_one_goal} with a list of branch-matching tuples.
-Every such pattern consists of a list of patterns for hypotheses, a pattern for the goal and a substitution function that computes the value of the right-hand side of the branch when provided with the values which are bound by patterns.
+Every such tuple consists of a list of patterns for hypotheses, a pattern for the goal and a substitution function that computes the value of the right-hand side of the branch when provided with the values which are bound by patterns.
 
 \begin{coq}
 Ltac2 i_match_goal pats :=
@@ -148,7 +153,7 @@ Ltac2 i_match_goal pats :=
   | ph :: pt =>
     let (pat, f) := ph in
     let (phyps, pconcl) := pat in
-    let rest := fun () => interp pt in
+    let rest := fun _ => interp pt in
     let cur := fun () =>
       let (hids, subst) := i_match_patterns_goal phyps pconcl in
       f hids subst
@@ -173,9 +178,9 @@ f hids subst
 According to the equation~\ref{fig:let_eq}, which we described in section~\ref{sec:backtr-monad-tact}, the above evaluates to
 \begin{coq}
 Control.plus
-  (let (hids, subst) := (h, s) in
+  (fun () => let (hids, subst) := (h, s) in
    f hids subst)
-  (let (hids, subst) := foo in
+  (fun e => let (hids, subst) := foo e in
    f hids subst)
 \end{coq}
 
@@ -187,7 +192,7 @@ This results in the following redex:
 let cur := fun () => Control.zero e
 in Control.plus cur rest
 \end{coq}
-Such a redex evaluates to \coqe{rest}, which is equivalent to switching to a different branch from the user perspective.
+Such a redex evaluates to \coqe{rest e}, which is equivalent to switching to a different branch from the user perspective.
 
 \section{Backtracking and variants of \texttt{iMatch}}
 
@@ -224,10 +229,10 @@ This could make one think that -- if there are two hypotheses: \coqe{H1:P}, \coq
   end
 \end{coq}
 
-However, precisely because of the backtracking both of them will.
+However, precisely because of the backtracking both of them will match the context.
 The first branch will indeed succeed immediately, since the first pattern will be matched against the first hypothesis in sequential order.
 However, for the second snippet, \coqe{P} still matches \coqe{_}, but as soon as we reach the second pattern, we have to match \coqe{P} against \coqe{Q}, which isn't possible.
-The implementation will then backtrack to the point of pairinjg the first pattern (\coqe{_}) and unify it with the second element of the context, \coqe{Q}.
+The implementation will then backtrack to the point of pairing the first pattern (\coqe{_}) and unify it with the second element of the context, \coqe{Q}.
 This will allow for the second pattern to match the right hypothesis and for \coqe{iMatch} to pass binders to the right-hand side of the pattern-match.
 
 Consider another example, which doesn't rely on the order and simply uses unification would go as follows.
@@ -282,14 +287,27 @@ This behavior is precisely what allowed us to modify \coqe{i_assumption'} only s
 P}
 \end{minipage}
 
-With the current implementation of \coqe{i_assumption''}, its repetition using the \coqe{do} tactical (e.g.\ \coqe{do 2 i_assumption''}) is going to fail.
+If we use \coqe{do 2 i_assumption''} on such a goal, it might fail.
 The reason for this is that, while \coqe{r} can be applied to the current goal, there is no resource that can be provided to the wand after it has been applied.
+And since \coqe{iMatch} erases the backtracking points after the tactic on the right-hand side of the match succeeds, second invocation of \coqe{i_assumption''} is going to fail and there is no way to backtrack and apply a different wand.
 
-However, if we expose backtracking points after the match, failures in the later tactics (the second \coqe{i_assumption''} in our example), will cause it to backtrack and
-to choose a different hypothesis to apply, if available.
-This variant is called \coqe{iMultiMatch}, and the only necessary change to the \coqe{i_assumption''} definition is changing the name.
+However, if use \coqe{iMultiMatch} and expose backtracking points, failures in the later tactics (the second \coqe{i_assumption''} in our example), will cause it to backtrack and to choose a different hypothesis to apply, if available.
+So, if we use \coqe{i_assumption_back} (implementation if figure~\ref{fig:iassumption-multi}), in \coqe{do 2 i_assumption_back}, it is going to close the goal above.
 
-In terms of implementation of \coqe{iMatch}, we first have to implement \coqe{iMultiMatch} and then erase backtracking points once it succeeds.
+\begin{figure}[H]
+\begin{coq}
+Ltac2 i_assumption'' :=
+  iMultiMatch! goal with
+  | [a : ?e -* ?f |- _] => i_apply (ipm_id a)
+  | [a : ?e |- _] => i_exact (ipm_id a)
+  end.
+\end{coq}
+  \caption{Extended iAssumption with iMultiMatch}
+  \label{fig:iassumption-multi}
+\end{figure}
+The only necessary change to the \coqe{i_assumption''} definition is switching from \coqe{iMatch} to \coqe{iMultiMatch}.
+
+In terms of the implementation, we first have to implement \coqe{iMultiMatch} and then erase backtracking points once it succeeds.
 Or, in terms of primitives from section~\ref{subsec:implementation_details}, \coqe{i_match_one_goal p := Control.once (i_match_goal p)}.
 \end{itemize}
 

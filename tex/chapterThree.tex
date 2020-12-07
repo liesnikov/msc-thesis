@@ -246,18 +246,19 @@ Elements of the context end up above the line, one line for each hypothesis, and
 
 In fact, the definition is slightly more general, as it incorporates two contexts: \(\IntuD\) and \(\SpatD\)
 \[\entailsD Q\]
-Where \(\IntuD\) is also a list of resources, but in the definition of the entailment it gets mapped to iterated non-separating conjunction with intuitionistic modality \(\intuit\).
-The modality captures resources, which can both be discarded and duplicated.
+Where \(\IntuD\) is also a list of resources, but ones that can be both duplicated and discarded.
+This is captured by the intuitionistic modality \(\intuit\).
+And then, due to the properties of the modality, we can fold the list with a non-separating conjunction \(\wedge\) instead of separating one \(*\).
 
 \[\entailsD Q \defeq \intuit \left(\bigwedge \IntuD\right) * \left(\Sep \SpatD\right) \vdash Q\]
 
-We use \(\ast\) and \(\wedge\) on the left-hand side of the entailment here for better readability, but they can also be translated into bunches, if this presentation is more comfortable for the reader.
+We use \(\ast\) and \(\wedge\) on the left-hand side of the entailment here for better readability, but separating conjunctions can also be translated to multiplicative bunches, if this presentation is more comfortable for the reader.
 
 \subsection{Rules for MoSeL}
 \label{sec:rules-regular-ipm}
 
 While stepping through the proof above we have hinted at the correspondence between tactics and formal rules.
-However, the rules we listed then were rules for BI, and not for MoSeL entailment.
+However, the rules we listed then were rules for BI, and not for MoSeL entailment, which differ mostly by the structure of the context.
 So, in this section, we present the rules that are used in the tactics.
 We aren't going to give a complete list, but just a few for the purpose of illustration.
 
@@ -459,13 +460,11 @@ Global Instance emp_affine : Affine emp.
 Global Instance and_affine_l P Q : Affine P → Affine (P /\ Q).
 Global Instance and_affine_r P Q : Affine Q → Affine (P /\ Q).
 Global Instance sep_affine P Q : Affine P → Affine Q → Affine (P * Q).
-$\ldots$
 \end{coq}
 
 And modalities
 \begin{coq}
 Global Instance affinely_affine P : Affine (<affine> P).
-$\ldots$
 \end{coq}
 
 For the environment to be affine we simply require all resources in the context to be affine and declare instances for both constructors.
@@ -484,24 +483,15 @@ Class FromAssumption {PROP : bi} (p : bool) (P Q : PROP) :=
 \end{coq}
 where \coqe{$\intuit$?p} is a technical connective which represents optional modality.
 
-There are two subclasses of it, providing instances where either the first or the second proposition is treated as an input.
-\begin{coq}
-Class KnownLFromAssumption {PROP : bi} (p : bool) (P Q : PROP) :=
-  knownl_from_assumption :> FromAssumption p P Q.
-Class KnownRFromAssumption {PROP : bi} (p : bool) (P Q : PROP) :=
-  knownr_from_assumption :> FromAssumption p P Q.
-\end{coq}
-
-The difference between their instances is that for \coqe{KnownLFromAssumption} we ``match'' input \(P\) with structural rules and Q is an output and vice-versa for \coqe{KnownRFromAssumption}.
-This allows for more effective search, but for our purposes it is a mere technicality, so we will only consider \coqe{KnownRFromAssumption}.
 The simplest instance we can declare is just an identity \coqe{P |- P}, which doesn't have to match either the left or the right input, so it uses \coqe{FromAssumption} directly.
 
 \begin{coq}
 Lemma from_assumption_exact {PROP : bi} p (P : PROP) : FromAssumption p P P.
 \end{coq}
 
-There are several more instances defined in MoSeL, which generalize it.
-For example, given that we can prove \(\intuit P \vdash Q\), we can also prove  \(\intuit P \vdash \intuit Q\).
+However, not all instances are this simple, and more advanced ones match either \coqe{P} or \coqe{Q}.
+For example, \coqe{KnownRFromAssumption} is a subclass of \coqe{FromAssumption}, which matches \coqe{Q}.
+It allows us to declare an instance which states, that given that we can prove \(\intuit P \vdash Q\), we can also prove  \(\intuit P \vdash \intuit Q\).
 \begin{coq}
 Global Instance from_assumption_intuitionistically_r P Q :
   FromAssumption true P Q → KnownRFromAssumption true P ($\intuit$ Q).
@@ -548,7 +538,7 @@ For example, in order to apply \coqe{tac_assumption} for a specific resource \co
 
 \begin{figure}[H]
 \begin{coq}
-Tactic Notation "iExactSpatial" constr(H) :=
+Tactic Notation "iExactSpatial" constr(H) constr(P) :=
   eapply (tac_assumption _ j false P);
     [pm_reflexivity (* for the lookup *)
     |iSolveTC (* perform type class search for FromAssumption*)
